@@ -1,13 +1,255 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COLABORADOR
+  GERENTE
+  RH
+}
+
+enum ColaboradorStatus {
+  ATIVO
+  INATIVO
+  DESLIGADO
+  EM_EXPERIENCIA
+}
+
+enum DocumentStatus {
+  PENDENTE
+  ENVIADO
+  VALIDADO
+  REJEITADO
+}
+
+enum PenalidadeStatus {
+  ATIVA
+  VENCIDA
+  CANCELADA
+}
+
+enum PenalidadeTipo {
+  INCONSISTENCIA_PONTO
+  QUEDA_CONDUTA
+  ADVERTENCIA
+  SUSPENSAO
+}
+
+enum PremioStatus {
+  ATIVO
+  PAGO
+  CANCELADO
+}
+
+enum PontoStatus {
+  PENDENTE
+  VALIDADO
+  INCONSISTENTE
+}
+
+enum PontoInconformidade {
+  FALTA_INJUSTIFICADA
+  ATRASO
+  SAIDA_ANTECIPADA
+  PONTO_NAO_REGISTRADO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  role          Role      @default(COLABORADOR)
+  lojaId        String?
+  loja          Loja?     @relation(fields: [lojaId], references: [id])
+  colaboradorId String?   @unique
+  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdPenalidades  Penalidade[] @relation("GeradoPor")
+  editedPremios       Premio[]     @relation("EditadoPor")
+  pontoValidado       RegistroPonto[] @relation("CriadoPor")
+  documentosAssinados Documento[]
+}
+
+model Colaborador {
+  id                      String            @id @default(cuid())
+  nomeCompleto            String
+  cpf                     String            @unique
+  rg                      String
+  dataNascimento          DateTime
+  enderecoComprovantePath String?
+  telefonePrincipal       String
+  telefoneSecundario      String?
+  email                   String?           @unique
+  pisFotoPath            String?
+  historicoEscolarPath    String?
+  ctpsDigitalPath        String?
+  contaBancoBrasil       String
+  possuiFilhosMenores14  Boolean           @default(false)
+  certidaoFilhosPath     String?
+  fotoPerfilPath         String?
+  contratoAssinadoPath   String?
+  status                  ColaboradorStatus @default(EM_EXPERIENCIA)
+  
+  funcaoId String
+  funcao   Funcao @relation(fields: [funcaoId], references: [id])
+  
+  setorId  String
+  setor    Setor  @relation(fields: [setorId], references: [id])
+  
+  lojaId   String
+  loja     Loja   @relation(fields: [lojaId], references: [id])
+
+  user     User?
+
+  documentos       Documento[]
+  penalidades      Penalidade[]
+  uniformes        ControleUniforme[]
+  premios          Premio[]
+  registrosPonto   RegistroPonto[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Loja {
+  id           String        @id @default(cuid())
+  nome         String
+  cidade       String?
+  colaboradores Colaborador[]
+  usuarios      User[]
+  estoque      EstoqueUniforme[]
+  pontoConsolidado RegistroPonto[]
+}
+
+model Setor {
+  id            String        @id @default(cuid())
+  nome          String
+  colaboradores Colaborador[]
+  funcoes       Funcao[]
+}
+
+model Funcao {
+  id           String        @id @default(cuid())
+  nome         String
+  setorId      String
+  setor        Setor         @relation(fields: [setorId], references: [id])
+  salarioBase  Float
+  
+  colaboradores Colaborador[]
+  premios      PremioTemplate[]
+  uniformes    UniformeTemplate[]
+}
+
+model Documento {
+  id            String         @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador    @relation(fields: [colaboradorId], references: [id])
+  nome          String
+  path          String
+  status        DocumentStatus @default(PENDENTE)
+  observacao    String?
+  validadoPorId String?
+  validadoPor   User?          @relation(fields: [validadoPorId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Penalidade {
+  id             String           @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador      @relation(fields: [colaboradorId], references: [id])
+  tipo           PenalidadeTipo
+  descricao      String
+  dataOcorrencia DateTime
+  validadeAte    DateTime
+  status         PenalidadeStatus @default(ATIVA)
+  geradoPorId    String
+  geradoPor      User             @relation("GeradoPor", fields: [geradoPorId], references: [id])
+  notificacaoEnviada Boolean      @default(false)
+  
+  registroPontoId String?        @unique
+  registroPonto   RegistroPonto? @relation(fields: [registroPontoId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Premio {
+  id            String       @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id])
+  tipo          String       // Meta Perda, Venda, Campanha, etc.
+  valorOriginal Float
+  valorFinal    Float
+  dataReferencia DateTime
+  validadeAte    DateTime?
+  status         PremioStatus @default(ATIVO)
+  editadoPorId   String?
+  editadoPor     User?        @relation("EditadoPor", fields: [editadoPorId], references: [id])
+  observacao     String?
+  
+  createdAt DateTime @default(now())
+}
+
+model RegistroPonto {
+  id             String               @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador          @relation(fields: [colaboradorId], references: [id])
+  data           DateTime
+  tipo           PontoInconformidade?
+  justificativa  String?
+  status         PontoStatus          @default(PENDENTE)
+  rapGerado      Boolean              @default(false)
+  
+  penalidade     Penalidade?
+  
+  criadoPorId    String
+  criadoPor      User                 @relation("CriadoPor", fields: [criadoPorId], references: [id])
+  lojaId         String?
+  loja           Loja?                @relation(fields: [lojaId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model ControleUniforme {
+  id             String      @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id])
+  item           String
+  tamanho        String
+  dataRecebimento DateTime
+  dataTrocaPrevista DateTime?
+  devolvido      Boolean     @default(false)
+  fotoDevolucaoPath String?
+  
+  createdAt DateTime @default(now())
+}
+
+model EstoqueUniforme {
+  id      String @id @default(cuid())
+  lojaId  String
+  loja    Loja   @relation(fields: [lojaId], references: [id])
+  item    String
+  tamanho String
+  quantidade Int @default(0)
+}
+
+model PremioTemplate {
+  id       String   @id @default(cuid())
+  nome     String
+  funcoes  Funcao[]
+}
+
+model UniformeTemplate {
+  id       String   @id @default(cuid())
+  nome     String
+  funcoes  Funcao[]
 }

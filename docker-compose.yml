@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pontocerto
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pontocerto?schema=public
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=y0uR_SuP3r_S3cr3t_N3xt4uth_K3y
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
