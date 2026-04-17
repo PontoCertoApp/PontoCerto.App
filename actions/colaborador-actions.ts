@@ -3,8 +3,8 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ColaboradorStatus } from "@prisma/client";
 import { createAction } from "@/lib/safe-action";
+import { ColaboradorStatus } from "@/lib/enums";
 
 export const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),

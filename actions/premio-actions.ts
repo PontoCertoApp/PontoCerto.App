@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { PremioStatus } from "@prisma/client";
+import { PremioStatus } from "@/lib/enums";
 import { auth } from "@/auth";
 
 const premioSchema = z.object({

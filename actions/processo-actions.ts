@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { ColaboradorStatus } from "@prisma/client";
+import { ColaboradorStatus } from "@/lib/enums";
 
 export async function aprovarContratacao(id: string) {
   try {

@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { PenalidadeStatus, PenalidadeTipo } from "@prisma/client";
+import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
 
 export async function getPenalidades() {
   return await prisma.penalidade.findMany({

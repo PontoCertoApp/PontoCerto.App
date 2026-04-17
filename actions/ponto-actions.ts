@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { PontoStatus, PontoInconformidade, PenalidadeTipo, PenalidadeStatus } from "@prisma/client";
+import { PontoStatus, PontoInconformidade, PenalidadeTipo, PenalidadeStatus } from "@/lib/enums";
 import { auth } from "@/auth";
 
 const registroPontoSchema = z.object({
