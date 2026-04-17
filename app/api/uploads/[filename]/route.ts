@@ -5,15 +5,14 @@ import { auth } from "@/auth";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
+  const { filename } = await params;
   const session = await auth();
   
   if (!session) {
     return new NextResponse("Não autorizado", { status: 401 });
   }
-
-  const filename = params.filename;
   const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
   const filePath = path.join(process.cwd(), UPLOAD_DIR, filename);
 
