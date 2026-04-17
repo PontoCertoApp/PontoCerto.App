@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Briefcase,
   Clock,
   AlertTriangle,
   Gift,
@@ -12,9 +11,11 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ChevronRight,
   MoreHorizontal,
   Building2,
+  Moon,
+  Sun,
+  Monitor
 } from "lucide-react";
 
 import {
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -101,27 +103,31 @@ const items = [
 
 export function AppSidebar() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const user = session?.user as any;
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="font-bold">PC</span>
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
+      <SidebarHeader className="h-20 flex justify-center px-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent opacity-50" />
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="font-black text-lg italic">PC</span>
           </div>
-          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-            <span className="font-bold text-lg">PontoCerto</span>
-            <span className="text-xs text-muted-foreground">RH Integrado</span>
+          <div className="flex flex-col gap-0 leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="font-black text-xl tracking-tighter text-foreground">PontoCerto</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">RH Integrado</span>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+            Menu Principal
+          </SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
             {items.map((item) => {
               if (item.role && !item.role.includes(user?.role)) return null;
 
@@ -131,14 +137,22 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <>
-                      <SidebarMenuButton tooltip={item.title} isActive={isActive}>
-                        <item.icon />
+                      <SidebarMenuButton 
+                        tooltip={item.title} 
+                        isActive={isActive}
+                        className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                      >
+                        <item.icon className={`size-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className="border-l-2 ml-6 border-primary/10">
                         {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                            <SidebarMenuSubButton 
+                              asChild 
+                              isActive={pathname === subItem.url}
+                              className={`h-8 text-xs font-medium ${pathname === subItem.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                            >
                               <Link href={subItem.url}>{subItem.title}</Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -146,9 +160,14 @@ export function AppSidebar() {
                       </SidebarMenuSub>
                     </>
                   ) : (
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                    <SidebarMenuButton 
+                      asChild 
+                      tooltip={item.title} 
+                      isActive={isActive}
+                      className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted"}`}
+                    >
                       <Link href={item.url}>
-                        <item.icon />
+                        <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -160,48 +179,81 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t border-border/50 p-4">
         <SidebarMenu>
+           {/* Theme Toggle in Sidebar */}
+           <SidebarMenuItem className="mb-2 group-data-[collapsible=icon]:hidden">
+             <div className="flex items-center justify-between px-2 py-1 bg-muted/40 rounded-xl border border-border/50">
+                <button 
+                  onClick={() => setTheme("light")}
+                  className={`p-1.5 rounded-lg transition-all ${theme === "light" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Sun size={14} />
+                </button>
+                <button 
+                   onClick={() => setTheme("dark")}
+                   className={`p-1.5 rounded-lg transition-all ${theme === "dark" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Moon size={14} />
+                </button>
+                <button 
+                   onClick={() => setTheme("system")}
+                   className={`p-1.5 rounded-lg transition-all ${theme === "system" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Monitor size={14} />
+                </button>
+             </div>
+           </SidebarMenuItem>
+
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl transition-all hover:bg-muted active:scale-95"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
                     <AvatarImage src={user?.image} alt={user?.name} />
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
                       {user?.name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate font-semibold">{user?.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
+                    <span className="truncate font-bold text-foreground">{user?.name}</span>
+                    <span className="truncate text-[10px] font-black uppercase text-primary/60">
                       {user?.role}
-                    </span>
+                    </span >
                   </div>
-                  <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
+                  <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-xl border-border/50 shadow-2xl p-2"
+                side="top"
                 align="end"
-                sideOffset={4}
+                sideOffset={10}
               >
-                <DropdownMenuItem asChild>
+                <div className="flex items-center gap-3 p-3 border-b mb-1 border-border/50">
+                   <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary">{user?.name?.charAt(0)}</AvatarFallback>
+                   </Avatar>
+                   <div className="flex flex-col">
+                      <span className="text-sm font-bold">{user?.name}</span>
+                      <span className="text-xs text-muted-foreground">{user?.email}</span>
+                   </div>
+                </div>
+                <DropdownMenuItem asChild className="rounded-lg h-10 cursor-pointer">
                   <Link href="/perfil" className="flex items-center gap-2">
-                    <Settings className="size-4" />
-                    <span>Configurações</span>
+                    <Settings className="size-4 opacity-70" />
+                    <span>Configurações da Conta</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive flex items-center gap-2"
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
                   onClick={() => signOut({ callbackUrl: "/login" })}
                 >
                   <LogOut className="size-4" />
-                  <span>Sair do Sistema</span>
+                  <span>Sair do PontoCerto</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

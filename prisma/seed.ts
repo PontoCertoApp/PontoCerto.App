@@ -1,4 +1,4 @@
-import { PrismaClient, Role, ColaboradorStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -8,7 +8,7 @@ async function main() {
 
   // 1. Create Default Store
   const lojaMatriz = await prisma.loja.upsert({
-    where: { id: "matriz" }, // Using id as a dummy check or just use create
+    where: { id: "matriz" },
     update: {},
     create: {
       id: "matriz",
@@ -56,7 +56,7 @@ async function main() {
       lojaId: lojaMatriz.id,
       setorId: setorRH.id,
       funcaoId: funcaoRH.id,
-      status: ColaboradorStatus.ATIVO,
+      status: "ATIVO",
     },
   });
 
@@ -65,13 +65,13 @@ async function main() {
     where: { email: "admin@pontocerto.com" },
     update: {
       password: hashedPassword,
-      role: Role.RH,
+      role: "RH",
     },
     create: {
       name: "Admin RH",
       email: "admin@pontocerto.com",
       password: hashedPassword,
-      role: Role.RH,
+      role: "RH",
       lojaId: lojaMatriz.id,
       colaboradorId: rhColaborador.id,
     },

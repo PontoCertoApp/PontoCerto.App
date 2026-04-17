@@ -4,22 +4,22 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ColaboradorStatus } from "@prisma/client";
+import { createAction } from "@/lib/safe-action";
 
-const colaboradorSchema = z.object({
-  nomeCompleto: z.string().min(3),
-  cpf: z.string().length(11),
+export const colaboradorSchema = z.object({
+  nomeCompleto: z.string().min(3, "Nome muito curto"),
+  cpf: z.string().length(11, "CPF deve ter 11 dígitos"),
   rg: z.string().min(5),
   dataNascimento: z.string(),
   telefonePrincipal: z.string(),
   telefoneSecundario: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   contaBancoBrasil: z.string(),
   possuiFilhosMenores14: z.boolean(),
   funcaoId: z.string(),
   setorId: z.string(),
   lojaId: z.string(),
   
-  // Paths from upload
   enderecoComprovantePath: z.string().optional(),
   pisFotoPath: z.string().optional(),
   historicoEscolarPath: z.string().optional(),
@@ -29,49 +29,90 @@ const colaboradorSchema = z.object({
   contratoAssinadoPath: z.string().optional(),
 });
 
-export async function createColaborador(data: z.infer<typeof colaboradorSchema>) {
-  try {
+/**
+ * Senior Refactor: Standardized Action
+ */
+export const createColaborador = createAction(
+  colaboradorSchema,
+  ["RH"], // Only RH can create
+  async (data) => {
     const colaborador = await prisma.colaborador.create({
       data: {
-        nomeCompleto: data.nomeCompleto,
-        cpf: data.cpf,
-        rg: data.rg,
+        ...data,
         dataNascimento: new Date(data.dataNascimento),
-        telefonePrincipal: data.telefonePrincipal,
-        telefoneSecundario: data.telefoneSecundario,
         email: data.email || null,
-        contaBancoBrasil: data.contaBancoBrasil,
-        possuiFilhosMenores14: data.possuiFilhosMenores14,
-        funcaoId: data.funcaoId,
-        setorId: data.setorId,
-        lojaId: data.lojaId,
         status: ColaboradorStatus.EM_EXPERIENCIA,
-        
-        enderecoComprovantePath: data.enderecoComprovantePath,
-        pisFotoPath: data.pisFotoPath,
-        historicoEscolarPath: data.historicoEscolarPath,
-        ctpsDigitalPath: data.ctpsDigitalPath,
-        certidaoFilhosPath: data.certidaoFilhosPath,
-        fotoPerfilPath: data.fotoPerfilPath,
-        contratoAssinadoPath: data.contratoAssinadoPath,
       },
     });
 
     revalidatePath("/colaboradores");
-    return { success: true, data: colaborador };
-  } catch (error) {
-    console.error(error);
-    return { success: false, error: "Erro ao cadastrar colaborador. Verifique se o CPF já existe." };
+    return colaborador;
   }
+);
+
+/**
+ * Senior Refactor: Advanced Search & Pagination
+ */
+export async function getColaboradoresPaged({
+  query = "",
+  status,
+  lojaId,
+  page = 1,
+  limit = 10,
+}: {
+  query?: string;
+  status?: ColaboradorStatus;
+  lojaId?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    AND: [
+      query
+        ? {
+            OR: [
+              { nomeCompleto: { contains: query } },
+              { cpf: { contains: query } },
+            ],
+          }
+        : {},
+      status ? { status } : {},
+      lojaId ? { lojaId } : {},
+    ],
+  };
+
+  const [total, items] = await Promise.all([
+    prisma.colaborador.count({ where }),
+    prisma.colaborador.findMany({
+      where,
+      include: {
+        funcao: true,
+        loja: true,
+        setor: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  return {
+    items,
+    metadata: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
+// Legacy helper for simple lists
 export async function getColaboradores() {
   return await prisma.colaborador.findMany({
-    include: {
-      funcao: true,
-      loja: true,
-      setor: true,
-    },
+    include: { funcao: true, loja: true, setor: true },
     orderBy: { createdAt: "desc" },
   });
 }

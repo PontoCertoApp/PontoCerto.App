@@ -3,68 +3,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  COLABORADOR
-  GERENTE
-  RH
-}
-
-enum ColaboradorStatus {
-  ATIVO
-  INATIVO
-  DESLIGADO
-  EM_EXPERIENCIA
-}
-
-enum DocumentStatus {
-  PENDENTE
-  ENVIADO
-  VALIDADO
-  REJEITADO
-}
-
-enum PenalidadeStatus {
-  ATIVA
-  VENCIDA
-  CANCELADA
-}
-
-enum PenalidadeTipo {
-  INCONSISTENCIA_PONTO
-  QUEDA_CONDUTA
-  ADVERTENCIA
-  SUSPENSAO
-}
-
-enum PremioStatus {
-  ATIVO
-  PAGO
-  CANCELADO
-}
-
-enum PontoStatus {
-  PENDENTE
-  VALIDADO
-  INCONSISTENTE
-}
-
-enum PontoInconformidade {
-  FALTA_INJUSTIFICADA
-  ATRASO
-  SAIDA_ANTECIPADA
-  PONTO_NAO_REGISTRADO
-}
+// Enums converted to Strings for SQLite compatibility
+// Role: COLABORADOR | GERENTE | RH
+// ColaboradorStatus: ATIVO | INATIVO | DESLIGADO | EM_EXPERIENCIA
+// DocumentStatus: PENDENTE | ENVIADO | VALIDADO | REJEITADO
+// PenalidadeStatus: ATIVA | VENCIDA | CANCELADA
+// PenalidadeTipo: INCONSISTENCIA_PONTO | QUEDA_CONDUTA | ADVERTENCIA | SUSPENSAO
+// PremioStatus: ATIVO | PAGO | CANCELADO
+// PontoStatus: PENDENTE | VALIDADO | INCONSISTENTE
+// PontoInconformidade: FALTA_INJUSTIFICADA | ATRASO | SAIDA_ANTECIPADA | PONTO_NAO_REGISTRADO
 
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   password      String
-  role          Role      @default(COLABORADOR)
+  role          String    @default("COLABORADOR")
   lojaId        String?
   loja          Loja?     @relation(fields: [lojaId], references: [id])
   colaboradorId String?   @unique
@@ -96,7 +54,7 @@ model Colaborador {
   certidaoFilhosPath     String?
   fotoPerfilPath         String?
   contratoAssinadoPath   String?
-  status                  ColaboradorStatus @default(EM_EXPERIENCIA)
+  status                  String            @default("EM_EXPERIENCIA")
   
   funcaoId String
   funcao   Funcao @relation(fields: [funcaoId], references: [id])
@@ -140,7 +98,7 @@ model Funcao {
   id           String        @id @default(cuid())
   nome         String
   setorId      String
-  setor        Setor         @relation(fields: [setorId], references: [id])
+  setor    Setor  @relation(fields: [setorId], references: [id])
   salarioBase  Float
   
   colaboradores Colaborador[]
@@ -154,7 +112,7 @@ model Documento {
   colaborador   Colaborador    @relation(fields: [colaboradorId], references: [id])
   nome          String
   path          String
-  status        DocumentStatus @default(PENDENTE)
+  status        String         @default("PENDENTE")
   observacao    String?
   validadoPorId String?
   validadoPor   User?          @relation(fields: [validadoPorId], references: [id])
@@ -166,11 +124,11 @@ model Penalidade {
   id             String           @id @default(cuid())
   colaboradorId  String
   colaborador    Colaborador      @relation(fields: [colaboradorId], references: [id])
-  tipo           PenalidadeTipo
+  tipo           String
   descricao      String
   dataOcorrencia DateTime
   validadeAte    DateTime
-  status         PenalidadeStatus @default(ATIVA)
+  status         String           @default("ATIVA")
   geradoPorId    String
   geradoPor      User             @relation("GeradoPor", fields: [geradoPorId], references: [id])
   notificacaoEnviada Boolean      @default(false)
@@ -186,12 +144,12 @@ model Premio {
   id            String       @id @default(cuid())
   colaboradorId String
   colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id])
-  tipo          String       // Meta Perda, Venda, Campanha, etc.
+  tipo          String       
   valorOriginal Float
   valorFinal    Float
   dataReferencia DateTime
   validadeAte    DateTime?
-  status         PremioStatus @default(ATIVO)
+  status         String       @default("ATIVO")
   editadoPorId   String?
   editadoPor     User?        @relation("EditadoPor", fields: [editadoPorId], references: [id])
   observacao     String?
@@ -204,9 +162,9 @@ model RegistroPonto {
   colaboradorId  String
   colaborador    Colaborador          @relation(fields: [colaboradorId], references: [id])
   data           DateTime
-  tipo           PontoInconformidade?
+  tipo           String?
   justificativa  String?
-  status         PontoStatus          @default(PENDENTE)
+  status         String               @default("PENDENTE")
   rapGerado      Boolean              @default(false)
   
   penalidade     Penalidade?
