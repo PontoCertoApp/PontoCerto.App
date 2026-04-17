@@ -17,7 +17,8 @@ import {
   Briefcase,
   AlertTriangle,
   Download,
-  Loader2
+  Loader2,
+  Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
