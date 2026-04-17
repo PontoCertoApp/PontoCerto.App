@@ -205,9 +205,8 @@ export default function ColaboradorDetalhesPage() {
       </div>
       
       <div className="flex justify-end pt-6">
-         <Button 
-          variant="destructive" 
-          variant="outline" 
+         <Button
+          variant="outline"
           className="text-destructive border-destructive hover:bg-destructive hover:text-white"
           onClick={() => {
             if(confirm("Iniciar processo de desligamento?")) {
