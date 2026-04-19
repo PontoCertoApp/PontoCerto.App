@@ -18,6 +18,8 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV production
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
 # Criar pasta para dados persistentes (Banco e Uploads)
 RUN mkdir -p /data/uploads
@@ -30,7 +32,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
-ENV PORT 3000
 
-# Script para rodar migrations e iniciar o app
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# Script para garantir que o banco existe e iniciar o app
+# Usamos 'db push' porque não existem arquivos de migração no repo.
+CMD ["sh", "-c", "npx prisma db push && npm start"]
+
