@@ -21,6 +21,9 @@ ENV NODE_ENV production
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
+# Fallback para DATABASE_URL caso não seja fornecida pelo host
+ENV DATABASE_URL="file:/data/prod.db"
+
 # Criar pasta para dados persistentes e garantir permissões
 RUN mkdir -p /data/uploads && chmod -R 777 /data
 VOLUME /data
@@ -33,7 +36,8 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-# Script para garantir que o banco existe e iniciar o app com logs de diagnóstico
-CMD ["sh", "-c", "echo '--- DIAGNOSTICO STARTUP ---' && echo 'Verificando /data:' && ls -ld /data && npx prisma db push && echo '--- PRISMA DB PUSH OK ---' && npm start"]
+# Script para garantir que o banco existe e iniciar o app
+CMD ["sh", "-c", "npx prisma db push && npm start"]
+
 
 
