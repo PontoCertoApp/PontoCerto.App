@@ -9,12 +9,6 @@ import {
   sendGestorReport,
 } from "@/lib/email/send";
 
-if (process.env.NODE_ENV === "production") {
-  throw new Error(
-    "app/api/email/test/route.ts não deve existir em produção. Remova este arquivo antes do deploy."
-  );
-}
-
 const schema = z.object({
   template: z.enum([
     "welcome",
