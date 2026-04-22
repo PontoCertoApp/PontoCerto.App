@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -89,7 +89,7 @@ export default function NovoColaboradorPage() {
   const [funcoes, setFuncoes] = useState<any[]>([]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: {
       nomeCompleto: "",
       cpf: "",

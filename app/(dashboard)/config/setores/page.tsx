@@ -43,12 +43,17 @@ import { Input } from "@/components/ui/input";
 import { createSetor, getSetores, deleteSetor } from "@/actions/setor-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface Setor {
+  id: string;
+  nome: string;
+}
+
 const setorSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
 });
 
 export default function SetoresPage() {
-  const [setores, setSetores] = useState<any[]>([]);
+  const [setores, setSetores] = useState<Setor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -104,11 +109,9 @@ export default function SetoresPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Setor
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Setor
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

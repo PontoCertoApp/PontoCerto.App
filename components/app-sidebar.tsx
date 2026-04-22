@@ -105,7 +105,7 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
-  const user = session?.user as any;
+  const user = session?.user;
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
@@ -129,7 +129,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {items.map((item) => {
-              if (item.role && !item.role.includes(user?.role)) return null;
+              if (item.role && !item.role.includes(user?.role ?? "")) return null;
 
               const isActive = pathname.startsWith(item.url);
 
@@ -148,28 +148,26 @@ export function AppSidebar() {
                       <SidebarMenuSub className="border-l-2 ml-6 border-primary/10">
                         {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton 
-                              asChild 
+                            <SidebarMenuSubButton
+                              render={<Link href={subItem.url} />}
                               isActive={pathname === subItem.url}
                               className={`h-8 text-xs font-medium ${pathname === subItem.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                             >
-                              <Link href={subItem.url}>{subItem.title}</Link>
+                              {subItem.title}
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         ))}
                       </SidebarMenuSub>
                     </>
                   ) : (
-                    <SidebarMenuButton 
-                      asChild 
-                      tooltip={item.title} 
+                    <SidebarMenuButton
+                      render={<Link href={item.url} />}
+                      tooltip={item.title}
                       isActive={isActive}
                       className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted"}`}
                     >
-                      <Link href={item.url}>
-                        <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
-                        <span>{item.title}</span>
-                      </Link>
+                      <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
+                      <span>{item.title}</span>
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>
@@ -207,25 +205,20 @@ export function AppSidebar() {
 
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl transition-all hover:bg-muted active:scale-95"
-                >
-                  <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
-                    <AvatarImage src={user?.image} alt={user?.name} />
-                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                      {user?.name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
-                    <span className="truncate font-bold text-foreground">{user?.name}</span>
-                    <span className="truncate text-[10px] font-black uppercase text-primary/60">
-                      {user?.role}
-                    </span >
-                  </div>
-                  <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />
-                </SidebarMenuButton>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl transition-all hover:bg-muted active:scale-95" />}>
+                <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
+                  <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? undefined} />
+                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                    {user?.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
+                  <span className="truncate font-bold text-foreground">{user?.name}</span>
+                  <span className="truncate text-[10px] font-black uppercase text-primary/60">
+                    {user?.role}
+                  </span>
+                </div>
+                <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-xl border-border/50 shadow-2xl p-2"
@@ -242,11 +235,9 @@ export function AppSidebar() {
                       <span className="text-xs text-muted-foreground">{user?.email}</span>
                    </div>
                 </div>
-                <DropdownMenuItem asChild className="rounded-lg h-10 cursor-pointer">
-                  <Link href="/perfil" className="flex items-center gap-2">
-                    <Settings className="size-4 opacity-70" />
-                    <span>Configurações da Conta</span>
-                  </Link>
+                <DropdownMenuItem render={<Link href="/perfil" />} className="rounded-lg h-10 cursor-pointer flex items-center gap-2">
+                  <Settings className="size-4 opacity-70" />
+                  <span>Configurações da Conta</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"

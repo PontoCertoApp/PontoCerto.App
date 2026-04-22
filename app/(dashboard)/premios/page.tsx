@@ -54,6 +54,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPremios, createPremio } from "@/actions/premio-actions";
 import { getColaboradores } from "@/actions/colaborador-actions";
 
+interface Premio {
+  id: string;
+  tipo: string;
+  valorFinal: number;
+  dataReferencia: string | Date;
+  status: string;
+  colaborador: { nomeCompleto: string; loja: { nome: string } };
+}
+
+interface ColaboradorOption {
+  id: string;
+  nomeCompleto: string;
+  loja: { nome: string };
+}
+
 const prizeTypes = [
   "Meta de Perda",
   "Meta de Venda",
@@ -65,8 +80,8 @@ const prizeTypes = [
 ];
 
 export default function PremiosPage() {
-  const [premios, setPremios] = useState<any[]>([]);
-  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [premios, setPremios] = useState<Premio[]>([]);
+  const [colaboradores, setColaboradores] = useState<ColaboradorOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -139,11 +154,9 @@ export default function PremiosPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Conceder Prêmio
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Conceder Prêmio
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -155,7 +168,7 @@ export default function PremiosPage() {
             <div className="grid gap-4 py-4">
                <div className="space-y-2">
                  <Label>Colaborador Elegível</Label>
-                 <Select value={selectedColabId} onValueChange={setSelectedColabId}>
+                 <Select value={selectedColabId} onValueChange={(val) => setSelectedColabId(val ?? "")}>
                    <SelectTrigger>
                      <SelectValue placeholder="Selecione o colaborador" />
                    </SelectTrigger>
@@ -170,7 +183,7 @@ export default function PremiosPage() {
                </div>
                <div className="space-y-2">
                  <Label>Tipo de Prêmio</Label>
-                 <Select value={selectedType} onValueChange={setSelectedType}>
+                 <Select value={selectedType} onValueChange={(val) => setSelectedType(val ?? "")}>
                    <SelectTrigger>
                      <SelectValue placeholder="Selecione o tipo" />
                    </SelectTrigger>

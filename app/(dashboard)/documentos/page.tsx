@@ -44,15 +44,26 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import { getDocumentosPendentes, validarDocumento } from "@/actions/documento-actions";
 
+type DocumentoStatus = "PENDENTE" | "ENVIADO" | "VALIDADO" | "REJEITADO";
+
+interface Documento {
+  id: string;
+  nome: string;
+  path: string;
+  status: DocumentoStatus;
+  createdAt: string | Date;
+  colaborador: { nomeCompleto: string; loja: { nome: string } };
+}
+
 export default function DocumentosPage() {
-  const [documentos, setDocumentos] = useState<any[]>([]);
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Validation State
-  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+
+  const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [obs, setObs] = useState("");
   const [isValidating, setIsValidating] = useState(false);
@@ -60,7 +71,7 @@ export default function DocumentosPage() {
   async function loadData() {
     setIsLoading(true);
     const data = await getDocumentosPendentes();
-    setDocumentos(data);
+    setDocumentos(data as unknown as Documento[]);
     setIsLoading(false);
   }
 
@@ -73,7 +84,7 @@ export default function DocumentosPage() {
     d.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: DocumentoStatus) => {
     switch (status) {
       case "PENDENTE": return <Badge variant="outline" className="text-amber-500 border-amber-500">Pendente</Badge>;
       case "ENVIADO": return <Badge className="bg-blue-500">Enviado</Badge>;
@@ -207,10 +218,8 @@ export default function DocumentosPage() {
                          setIsDialogOpen(open);
                          if (open) setSelectedDoc(d);
                        }}>
-                         <DialogTrigger asChild>
-                           <Button size="sm" variant="ghost">
-                             <Eye className="h-4 w-4" />
-                           </Button>
+                         <DialogTrigger render={<Button size="sm" variant="ghost" />}>
+                           <Eye className="h-4 w-4" />
                          </DialogTrigger>
                          <DialogContent className="max-w-2xl">
                            <DialogHeader>
@@ -229,10 +238,8 @@ export default function DocumentosPage() {
                                     <span className="text-xs text-muted-foreground">Colaborador: {d.colaborador.nomeCompleto}</span>
                                   </div>
                                 </div>
-                                <Button variant="outline" size="sm" asChild>
-                                   <a href={`/api/uploads/${d.path.split('/').pop()}`} target="_blank" rel="noopener noreferrer">
-                                     <Download className="mr-2 h-4 w-4" /> Baixar Origial
-                                   </a>
+                                <Button variant="outline" size="sm" render={<a href={`/api/uploads/${d.path.split('/').pop()}`} target="_blank" rel="noopener noreferrer" />}>
+                                  <Download className="mr-2 h-4 w-4" /> Baixar Original
                                 </Button>
                              </div>
 

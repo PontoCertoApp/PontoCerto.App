@@ -64,10 +64,32 @@ import {
 } from "@/actions/uniforme-actions";
 import { getColaboradores } from "@/actions/colaborador-actions";
 
+interface ControleUniforme {
+  id: string;
+  item: string;
+  tamanho: string;
+  dataRecebimento: string | Date;
+  dataTrocaPrevista: string | Date | null;
+  colaborador: { nomeCompleto: string; loja: { nome: string } };
+}
+
+interface EstoqueUniforme {
+  id: string;
+  item: string;
+  tamanho: string;
+  quantidade: number;
+  loja: { nome: string };
+}
+
+interface ColaboradorOption {
+  id: string;
+  nomeCompleto: string;
+}
+
 export default function UniformesPage() {
-  const [historico, setHistorico] = useState<any[]>([]);
-  const [estoque, setEstoque] = useState<any[]>([]);
-  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [historico, setHistorico] = useState<ControleUniforme[]>([]);
+  const [estoque, setEstoque] = useState<EstoqueUniforme[]>([]);
+  const [colaboradores, setColaboradores] = useState<ColaboradorOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -134,11 +156,9 @@ export default function UniformesPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Entregar Uniforme
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Entregar Uniforme
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -150,7 +170,7 @@ export default function UniformesPage() {
             <div className="grid gap-4 py-4">
                <div className="space-y-2">
                  <Label>Colaborador</Label>
-                 <Select value={selectedColabId} onValueChange={setSelectedColabId}>
+                 <Select value={selectedColabId} onValueChange={(val) => setSelectedColabId(val ?? "")}>
                    <SelectTrigger>
                      <SelectValue placeholder="Selecione o colaborador" />
                    </SelectTrigger>
@@ -164,7 +184,7 @@ export default function UniformesPage() {
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
                    <Label>Item</Label>
-                   <Select value={item} onValueChange={setItem}>
+                   <Select value={item} onValueChange={(val) => setItem(val ?? "")}>
                      <SelectTrigger>
                        <SelectValue placeholder="Selecione" />
                      </SelectTrigger>
@@ -178,7 +198,7 @@ export default function UniformesPage() {
                  </div>
                  <div className="space-y-2">
                    <Label>Tamanho</Label>
-                   <Select value={tamanho} onValueChange={setTamanho}>
+                   <Select value={tamanho} onValueChange={(val) => setTamanho(val ?? "")}>
                      <SelectTrigger>
                        <SelectValue placeholder="Selecione" />
                      </SelectTrigger>

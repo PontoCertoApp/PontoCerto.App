@@ -52,13 +52,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getColaboradoresPaged } from "@/actions/colaborador-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 
+type ColaboradorStatus = "ATIVO" | "EM_EXPERIENCIA" | "DESLIGADO";
+
+interface ColaboradorItem {
+  id: string;
+  nomeCompleto: string;
+  cpf: string;
+  status: ColaboradorStatus;
+  funcao: { nome: string };
+  setor: { nome: string };
+  loja: { nome: string };
+}
+
+interface PagedResult {
+  items: ColaboradorItem[];
+  metadata: { total: number; totalPages: number; page: number };
+}
+
 export default function ColaboradoresPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // State
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PagedResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Params from URL or defaults
@@ -73,11 +89,11 @@ export default function ColaboradoresPage() {
     setIsLoading(true);
     const result = await getColaboradoresPaged({
       query: debouncedSearch,
-      status: status as any,
+      status: status as ColaboradorStatus | undefined,
       page,
       limit: 10
     });
-    setData(result);
+    setData(result as unknown as PagedResult);
     setIsLoading(false);
   }
 
@@ -94,7 +110,7 @@ export default function ColaboradoresPage() {
     router.push(`?${params.toString()}`, { scroll: false });
   }, [debouncedSearch]);
 
-  const StatusBadge = (status: string) => {
+  const StatusBadge = (status: ColaboradorStatus) => {
     switch (status) {
       case "ATIVO":
         return <Badge className="bg-green-500 hover:bg-green-600"><UserCheck className="mr-1 h-3 w-3" /> Ativo</Badge>;
@@ -122,10 +138,8 @@ export default function ColaboradoresPage() {
             Gerenciamento centralizado de colaboradores e contratos.
           </p>
         </div>
-        <Button asChild className="shadow-lg shadow-primary/20">
-          <Link href="/colaboradores/novo">
-            <Plus className="mr-2 h-4 w-4" /> Novo Colaborador
-          </Link>
+        <Button render={<Link href="/colaboradores/novo" />} className="shadow-lg shadow-primary/20">
+          <Plus className="mr-2 h-4 w-4" /> Novo Colaborador
         </Button>
       </div>
 
@@ -146,7 +160,7 @@ export default function ColaboradoresPage() {
                 value={status || "ALL"} 
                 onValueChange={(val) => {
                    const params = new URLSearchParams(searchParams);
-                   if (val === "ALL") params.delete("status");
+                   if (val === "ALL" || !val) params.delete("status");
                    else params.set("status", val);
                    params.set("page", "1");
                    router.push(`?${params.toString()}`);
@@ -203,7 +217,7 @@ export default function ColaboradoresPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              data?.items?.map((c: any) => (
+              data?.items?.map((c) => (
                 <TableRow key={c.id} className="group hover:bg-muted/30 transition-colors">
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -236,16 +250,14 @@ export default function ColaboradoresPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                      <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                           <Link href={`/colaboradores/${c.id}`}>Ver Ficha Funcional</Link>
+                        <DropdownMenuItem render={<Link href={`/colaboradores/${c.id}`} />}>
+                          Ver Ficha Funcional
                         </DropdownMenuItem>
                         <DropdownMenuItem>Editar Dados</DropdownMenuItem>
                         <DropdownMenuItem className="text-blue-600">Documentação</DropdownMenuItem>
@@ -261,16 +273,15 @@ export default function ColaboradoresPage() {
         </Table>
       </div>
       
-      {/* Pagination Footer */}
-      {!isLoading && data?.metadata?.totalPages > 1 && (
+      {!isLoading && data && data.metadata.totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
            <p className="text-sm text-muted-foreground">
              Mostrando <span className="font-bold text-foreground">{(page-1)*10 + 1}</span> a <span className="font-bold text-foreground">{Math.min(page*10, data.metadata.total)}</span> de <span className="font-bold text-foreground">{data.metadata.total}</span> resultados
            </p>
            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
               >
@@ -278,10 +289,10 @@ export default function ColaboradoresPage() {
               </Button>
               <div className="flex items-center gap-1">
                  {Array.from({ length: data.metadata.totalPages }).map((_, i) => (
-                    <Button 
-                      key={i} 
-                      variant={page === i + 1 ? "default" : "outline"} 
-                      size="sm" 
+                    <Button
+                      key={i}
+                      variant={page === i + 1 ? "default" : "outline"}
+                      size="sm"
                       className="w-8 h-8 p-0"
                       onClick={() => handlePageChange(i + 1)}
                     >
@@ -289,9 +300,9 @@ export default function ColaboradoresPage() {
                     </Button>
                  ))}
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === data.metadata.totalPages}
               >

@@ -40,20 +40,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  getPenalidades, 
-  updatePenalidadeStatus 
+import {
+  getPenalidades,
+  updatePenalidadeStatus
 } from "@/actions/penalidade-actions";
+import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
+
+interface Penalidade {
+  id: string;
+  tipo: string;
+  descricao: string;
+  dataOcorrencia: string | Date;
+  status: string;
+  colaborador: { nomeCompleto: string; loja: { nome: string } };
+}
 
 export default function PenalidadesPage() {
-  const [penalidades, setPenalidades] = useState<any[]>([]);
+  const [penalidades, setPenalidades] = useState<Penalidade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   async function loadData() {
     setIsLoading(true);
     const data = await getPenalidades();
-    setPenalidades(data);
+    setPenalidades(data as unknown as Penalidade[]);
     setIsLoading(false);
   }
 
@@ -85,7 +95,7 @@ export default function PenalidadesPage() {
     }
   };
 
-  async function handleStatusUpdate(id: string, status: any) {
+  async function handleStatusUpdate(id: string, status: PenalidadeStatus) {
     await updatePenalidadeStatus(id, status);
     toast.success("Status atualizado!");
     loadData();
@@ -204,10 +214,8 @@ export default function PenalidadesPage() {
                     <TableCell>{getStatusBadge(p.status)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
+                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+                          <MoreVertical className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem className="flex items-center gap-2">

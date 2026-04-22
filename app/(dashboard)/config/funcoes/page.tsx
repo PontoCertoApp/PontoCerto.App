@@ -52,15 +52,27 @@ import { getSetores } from "@/actions/setor-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+interface Funcao {
+  id: string;
+  nome: string;
+  salarioBase: number;
+  setor: { nome: string };
+}
+
+interface Setor {
+  id: string;
+  nome: string;
+}
+
 const funcaoSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   setorId: z.string().min(1, "Selecione um setor"),
-  salarioBase: z.coerce.number().min(0, "Salário deve ser positivo"),
+  salarioBase: z.number().min(0, "Salário deve ser positivo"),
 });
 
 export default function FuncoesPage() {
-  const [funcoes, setFuncoes] = useState<any[]>([]);
-  const [setores, setSetores] = useState<any[]>([]);
+  const [funcoes, setFuncoes] = useState<Funcao[]>([]);
+  const [setores, setSetores] = useState<Setor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -122,11 +134,9 @@ export default function FuncoesPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Função
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Função
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

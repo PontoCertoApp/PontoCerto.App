@@ -44,13 +44,19 @@ import { Input } from "@/components/ui/input";
 import { createLoja, getLojas, deleteLoja } from "@/actions/loja-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface Loja {
+  id: string;
+  nome: string;
+  cidade: string | null;
+}
+
 const lojaSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   cidade: z.string().min(2, "Cidade deve ter pelo menos 2 caracteres"),
 });
 
 export default function LojasPage() {
-  const [lojas, setLojas] = useState<any[]>([]);
+  const [lojas, setLojas] = useState<Loja[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -107,11 +113,9 @@ export default function LojasPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Loja
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Loja
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

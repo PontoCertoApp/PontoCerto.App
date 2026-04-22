@@ -62,22 +62,38 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-import { 
-  getInconformidadesDoDia, 
-  getColaboradoresSemPontoNoDia, 
-  registrarInconformidade 
+import {
+  getInconformidadesDoDia,
+  getColaboradoresSemPontoNoDia,
+  registrarInconformidade
 } from "@/actions/ponto-actions";
+
+type TipoInconformidade = "FALTA_INJUSTIFICADA" | "ATRASO" | "SAIDA_ANTECIPADA" | "PONTO_NAO_REGISTRADO";
+
+interface ColaboradorSemPonto {
+  id: string;
+  nomeCompleto: string;
+  loja: { nome: string };
+  setor: { nome: string };
+}
+
+interface RegistroPonto {
+  id: string;
+  tipo: TipoInconformidade;
+  rapGerado: boolean;
+  createdAt: string | Date;
+  colaborador: { nomeCompleto: string };
+}
 
 export default function PontoPage() {
   const [date, setDate] = useState<Date>(new Date());
-  const [pendentes, setPendentes] = useState<any[]>([]);
-  const [tratados, setTratados] = useState<any[]>([]);
+  const [pendentes, setPendentes] = useState<ColaboradorSemPonto[]>([]);
+  const [tratados, setTratados] = useState<RegistroPonto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedColab, setSelectedColab] = useState<any>(null);
-  
-  // Form State
-  const [tipo, setTipo] = useState("FALTA_INJUSTIFICADA");
+  const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
+
+  const [tipo, setTipo] = useState<TipoInconformidade>("FALTA_INJUSTIFICADA");
   const [justificativa, setJustificativa] = useState("");
   const [gerarRap, setGerarRap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,8 +104,8 @@ export default function PontoPage() {
       getColaboradoresSemPontoNoDia(date),
       getInconformidadesDoDia(date),
     ]);
-    setPendentes(p);
-    setTratados(t);
+    setPendentes(p as unknown as ColaboradorSemPonto[]);
+    setTratados(t as unknown as RegistroPonto[]);
     setIsLoading(false);
   }
 
@@ -104,7 +120,7 @@ export default function PontoPage() {
     const result = await registrarInconformidade({
       colaboradorId: selectedColab.id,
       data: date,
-      tipo: tipo as any,
+      tipo,
       justificativa,
       gerarRap,
     });
@@ -127,14 +143,14 @@ export default function PontoPage() {
     setSelectedColab(null);
   }
 
-  const InconformidadeBadge = (tipo: string) => {
-    const labels: any = {
+  const InconformidadeBadge = (tipo: TipoInconformidade) => {
+    const labels: Record<TipoInconformidade, { label: string; color: string }> = {
       FALTA_INJUSTIFICADA: { label: "Falta Injustificada", color: "bg-red-500" },
       ATRASO: { label: "Atraso", color: "bg-amber-500" },
       SAIDA_ANTECIPADA: { label: "Saída Antecipada", color: "bg-orange-500" },
       PONTO_NAO_REGISTRADO: { label: "Ponto Não Registrado", color: "bg-blue-500" },
     };
-    const item = labels[tipo] || { label: tipo, color: "bg-gray-500" };
+    const item = labels[tipo] ?? { label: tipo, color: "bg-gray-500" };
     return <Badge className={item.color}>{item.label}</Badge>;
   };
 
@@ -149,17 +165,9 @@ export default function PontoPage() {
         </div>
         <div className="flex items-center gap-2">
            <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
-              </Button>
+            <PopoverTrigger render={<Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !date && "text-muted-foreground")} />}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
               <Calendar
@@ -261,10 +269,8 @@ export default function PontoPage() {
                             if (open) setSelectedColab(c);
                             else resetForm();
                           }}>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                Tratar <AlertCircle className="ml-2 h-4 w-4" />
-                              </Button>
+                            <DialogTrigger render={<Button size="sm" variant="outline" />}>
+                              Tratar <AlertCircle className="ml-2 h-4 w-4" />
                             </DialogTrigger>
                             <DialogContent className="max-w-md">
                               <DialogHeader>
@@ -277,7 +283,7 @@ export default function PontoPage() {
                               <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
                                   <Label>Tipo de Inconformidade</Label>
-                                  <Select value={tipo} onValueChange={setTipo}>
+                                  <Select value={tipo} onValueChange={(val) => val && setTipo(val as TipoInconformidade)}>
                                     <SelectTrigger>
                                       <SelectValue />
                                     </SelectTrigger>
