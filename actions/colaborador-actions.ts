@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAction } from "@/lib/safe-action";
 import { ColaboradorStatus } from "@/lib/enums";
+import { sendWelcomeEmail } from "@/lib/email/send";
 
 export const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
@@ -34,8 +35,13 @@ export const colaboradorSchema = z.object({
  */
 export const createColaborador = createAction(
   colaboradorSchema,
-  ["RH"], // Only RH can create
+  ["RH"],
   async (data) => {
+    const [funcao, loja] = await Promise.all([
+      prisma.funcao.findUnique({ where: { id: data.funcaoId }, select: { nome: true } }),
+      prisma.loja.findUnique({ where: { id: data.lojaId }, select: { nome: true } }),
+    ]);
+
     const colaborador = await prisma.colaborador.create({
       data: {
         ...data,
@@ -44,6 +50,17 @@ export const createColaborador = createAction(
         status: ColaboradorStatus.EM_EXPERIENCIA,
       },
     });
+
+    // Fire-and-forget — email failure never blocks the action
+    if (colaborador.email) {
+      sendWelcomeEmail(colaborador.email, {
+        colaboradorNome: colaborador.nomeCompleto,
+        cargo: funcao?.nome ?? "Colaborador",
+        loja: loja?.nome ?? "Empresa",
+        dataAdmissao: new Date().toLocaleDateString("pt-BR"),
+        loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
+      }).catch((err) => console.error("[email/welcome] Falha:", err));
+    }
 
     revalidatePath("/colaboradores");
     return colaborador;

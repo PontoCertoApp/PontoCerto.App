@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PremioStatus } from "@/lib/enums";
 import { auth } from "@/auth";
+import { sendPremioNotification } from "@/lib/email/send";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const premioSchema = z.object({
   colaboradorId: z.string(),
@@ -33,6 +36,11 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
       return { success: false, error: "Regra Respeito: Colaborador já possui 3 prêmios ativos simultâneos." };
     }
 
+    const colaborador = await prisma.colaborador.findUnique({
+      where: { id: data.colaboradorId },
+      select: { nomeCompleto: true, email: true },
+    });
+
     const premio = await prisma.premio.create({
       data: {
         colaboradorId: data.colaboradorId,
@@ -45,6 +53,18 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
         editadoPorId: session.user.id,
       },
     });
+
+    // Fire-and-forget email notification
+    if (colaborador?.email) {
+      sendPremioNotification(colaborador.email, {
+        colaboradorNome: colaborador.nomeCompleto,
+        email: colaborador.email,
+        tipoPremio: data.tipo,
+        valor: data.valorFinal,
+        mesReferencia: format(data.dataReferencia, "MMMM/yyyy", { locale: ptBR }),
+        observacao: data.observacao,
+      }).catch((err) => console.error("[email/premio] Falha:", err));
+    }
 
     revalidatePath("/premios");
     return { success: true, data: premio };

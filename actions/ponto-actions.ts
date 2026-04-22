@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PontoStatus, PontoInconformidade, PenalidadeTipo, PenalidadeStatus } from "@/lib/enums";
 import { auth } from "@/auth";
+import { sendPontoNotification } from "@/lib/email/send";
 
 const registroPontoSchema = z.object({
   colaboradorId: z.string(),
@@ -20,8 +21,12 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   const userId = session.user.id!;
 
   try {
+    const colaborador = await prisma.colaborador.findUnique({
+      where: { id: data.colaboradorId },
+      select: { nomeCompleto: true, email: true },
+    });
+
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create Ponto record
       const registro = await tx.registroPonto.create({
         data: {
           colaboradorId: data.colaboradorId,
@@ -34,7 +39,6 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
         },
       });
 
-      // 2. If generarRap, create Penalidade
       if (data.gerarRap) {
         await tx.penalidade.create({
           data: {
@@ -42,7 +46,7 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
             tipo: PenalidadeTipo.INCONSISTENCIA_PONTO,
             descricao: `Penalidade gerada por inconformidade de ponto: ${data.tipo}. Data: ${data.data.toLocaleDateString()}`,
             dataOcorrencia: data.data,
-            validadeAte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+            validadeAte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             status: PenalidadeStatus.ATIVA,
             geradoPorId: userId,
             registroPontoId: registro.id,
@@ -52,6 +56,18 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
 
       return registro;
     });
+
+    // Fire-and-forget email notification
+    if (colaborador?.email) {
+      sendPontoNotification(colaborador.email, {
+        colaboradorNome: colaborador.nomeCompleto,
+        email: colaborador.email,
+        data: data.data.toLocaleDateString("pt-BR"),
+        tipo: data.tipo,
+        justificativa: data.justificativa,
+        rapGerado: data.gerarRap,
+      }).catch((err) => console.error("[email/ponto] Falha:", err));
+    }
 
     revalidatePath("/ponto");
     return { success: true, data: result };
