@@ -1,7 +1,7 @@
 "use server";
 
 import * as React from "react";
-import { resend, FROM_ADDRESS, FROM_ADDRESS_SYSTEM } from "./resend";
+import { getResend, FROM_ADDRESS, FROM_ADDRESS_SYSTEM } from "./resend";
 import { WelcomeEmail } from "./templates/welcome";
 import { PontoNotificationEmail } from "./templates/ponto-notification";
 import { PenalidadeNotificationEmail } from "./templates/penalidade-notification";
@@ -29,7 +29,7 @@ export async function sendWelcomeEmail(
   props: WelcomeEmailProps
 ): Promise<EmailSendResult> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS,
       to,
       subject: `Bem-vindo(a) ao PontoCerto, ${props.colaboradorNome.split(" ")[0]}!`,
@@ -48,7 +48,7 @@ export async function sendPontoNotification(
   props: PontoNotificationProps
 ): Promise<EmailSendResult> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS_SYSTEM,
       to,
       subject: `[PontoCerto] Inconformidade de ponto registrada — ${props.data}`,
@@ -74,7 +74,7 @@ export async function sendPenalidadeNotification(
   };
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS_SYSTEM,
       to,
       subject: `[PontoCerto] ${TIPO_LABELS[props.tipo] ?? props.tipo} registrada`,
@@ -93,7 +93,7 @@ export async function sendPremioNotification(
   props: PremioNotificationProps
 ): Promise<EmailSendResult> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS,
       to,
       subject: `[PontoCerto] Parabéns! Você recebeu um prêmio — ${props.tipoPremio}`,
@@ -112,7 +112,7 @@ export async function sendPasswordResetEmail(
   props: PasswordResetProps
 ): Promise<EmailSendResult> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS_SYSTEM,
       to,
       subject: "[PontoCerto] Redefinição de senha solicitada",
@@ -131,7 +131,7 @@ export async function sendGestorReport(
   props: GestorReportProps
 ): Promise<EmailSendResult> {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_ADDRESS_SYSTEM,
       to,
       subject: `[PontoCerto] Relatório Gerencial — ${props.loja} · ${props.periodo}`,
