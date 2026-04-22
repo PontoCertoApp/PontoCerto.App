@@ -1,19 +1,21 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { Adapter } from "next-auth/adapters";
 import prisma from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import type { UserRole } from "@/types/next-auth";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as Adapter,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
   },
   providers: [
     Credentials({
-      async authorize(credentials) {
+      async authorize(credentials, _request) {
         const parsedCredentials = z
           .object({ email: z.string().email(), password: z.string().min(6) })
           .safeParse(credentials);
@@ -24,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!user) return null;
           const passwordsMatch = await bcrypt.compare(password, user.password);
 
-          if (passwordsMatch) return user;
+          if (passwordsMatch) return user as unknown as import("next-auth").User;
         }
 
         return null;
@@ -32,11 +34,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.lojaId = (user as any).lojaId;
-        token.colaboradorId = (user as any).colaboradorId;
+        token.role = user.role as UserRole;
+        token.lojaId = (user.lojaId ?? null) as string | null;
+        token.colaboradorId = (user.colaboradorId ?? null) as string | null;
       }
       return token;
     },
@@ -44,10 +46,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
-      if (token.role && session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).lojaId = token.lojaId;
-        (session.user as any).colaboradorId = token.colaboradorId;
+      if (session.user) {
+        session.user.role = (token.role ?? "COLABORADOR") as UserRole;
+        session.user.lojaId = (token.lojaId ?? null) as string | null;
+        session.user.colaboradorId = (token.colaboradorId ?? null) as string | null;
       }
       return session;
     },
