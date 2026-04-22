@@ -1,5 +1,3 @@
-"use server";
-
 import { Resend } from "resend";
 
 if (!process.env.RESEND_API_KEY) {
