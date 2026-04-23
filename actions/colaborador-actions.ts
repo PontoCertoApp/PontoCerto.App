@@ -17,8 +17,8 @@ export const colaboradorSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   contaBancoBrasil: z.string(),
   possuiFilhosMenores14: z.boolean(),
-  funcaoId: z.string(),
-  setorId: z.string(),
+  funcaoNome: z.string().min(1, "Obrigatório"),
+  setorNome: z.string().min(1, "Obrigatório"),
   lojaId: z.string().optional(),
   
   enderecoComprovantePath: z.string().optional(),
@@ -41,23 +41,53 @@ export const createColaborador = createAction(
     const lojaId = session?.user?.lojaId;
     if (!lojaId) throw new Error("Usuário sem loja vinculada.");
 
-    const [funcao, loja] = await Promise.all([
-      prisma.funcao.findUnique({ where: { id: data.funcaoId }, select: { nome: true } }),
-      prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } }),
-    ]);
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Get or Create Setor
+      let setor = await tx.setor.findFirst({
+        where: { nome: data.setorNome }
+      });
+      if (!setor) {
+        setor = await tx.setor.create({
+          data: { nome: data.setorNome }
+        });
+      }
 
-    const colaborador = await prisma.colaborador.create({
-      data: {
-        ...data,
-        lojaId,
-        dataNascimento: new Date(data.dataNascimento),
-        email: data.email || null,
-        status: ColaboradorStatus.EM_EXPERIENCIA,
-      },
+      // 2. Get or Create Funcao
+      let funcao = await tx.funcao.findFirst({
+        where: { nome: data.funcaoNome, setorId: setor.id }
+      });
+      if (!funcao) {
+        funcao = await tx.funcao.create({
+          data: { 
+            nome: data.funcaoNome, 
+            setorId: setor.id,
+            salarioBase: 0 
+          }
+        });
+      }
+
+      const { setorNome, funcaoNome, ...rest } = data;
+
+      const colaborador = await tx.colaborador.create({
+        data: {
+          ...rest,
+          lojaId,
+          setorId: setor.id,
+          funcaoId: funcao.id,
+          dataNascimento: new Date(data.dataNascimento),
+          email: data.email || null,
+          status: ColaboradorStatus.EM_EXPERIENCIA,
+        },
+      });
+
+      return { colaborador, funcao, setor };
     });
+
+    const { colaborador, funcao } = result;
 
     // Fire-and-forget — email failure never blocks the action
     if (colaborador.email) {
+      const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
       sendWelcomeEmail(colaborador.email, {
         colaboradorNome: colaborador.nomeCompleto,
         cargo: funcao?.nome ?? "Colaborador",

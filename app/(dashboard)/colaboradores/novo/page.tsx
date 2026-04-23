@@ -63,8 +63,8 @@ const formSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   
   lojaId: z.string().optional(),
-  setorId: z.string().min(1, "Obrigatório"),
-  funcaoId: z.string().min(1, "Obrigatório"),
+  setorNome: z.string().min(1, "Obrigatório"),
+  funcaoNome: z.string().min(1, "Obrigatório"),
   contaBancoBrasil: z.string().min(1, "Obrigatório"),
   possuiFilhosMenores14: z.boolean().default(false),
   
@@ -99,8 +99,8 @@ export default function NovoColaboradorPage() {
       telefoneSecundario: "",
       email: "",
       lojaId: "",
-      setorId: "",
-      funcaoId: "",
+      setorNome: "",
+      funcaoNome: "",
       contaBancoBrasil: "",
       possuiFilhosMenores14: false,
     },
@@ -108,9 +108,7 @@ export default function NovoColaboradorPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [s, f] = await Promise.all([getSetores(), getFuncoes()]);
-      setSetores(s);
-      setFuncoes(f);
+      // No longer need to load setores and funcoes for select
     }
     loadData();
   }, []);
@@ -123,7 +121,7 @@ export default function NovoColaboradorPage() {
     if (currentStep === 1) {
       fieldsToValidate = ["nomeCompleto", "cpf", "rg", "dataNascimento", "telefonePrincipal"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["setorId", "funcaoId", "contaBancoBrasil"];
+      fieldsToValidate = ["setorNome", "funcaoNome", "contaBancoBrasil"];
     }
 
     const isValid = await form.trigger(fieldsToValidate as any);
@@ -283,44 +281,26 @@ export default function NovoColaboradorPage() {
                   >
                     <FormField
                       control={form.control}
-                      name="setorId"
+                      name="setorNome"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Setor</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o setor" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {setores.map(s => (
-                                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <Input placeholder="Ex: Operacional, Administrativo..." {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
                       control={form.control}
-                      name="funcaoId"
+                      name="funcaoNome"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Função (Cargo)</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o cargo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {funcoes.map(f => (
-                                <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <Input placeholder="Ex: Atendente, Gerente..." {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
