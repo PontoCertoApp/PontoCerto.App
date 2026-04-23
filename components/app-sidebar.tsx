@@ -39,8 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
-import { logout } from "@/actions/logout";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -219,9 +218,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onSelect={() => {
-                    logout();
-                  }}
+                  onSelect={() => signOut({ callbackUrl: "/login" })}
                 >
                   <LogOut className="size-4" />
                   <span>Sair do PontoCerto</span>
