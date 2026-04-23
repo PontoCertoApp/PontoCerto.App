@@ -218,9 +218,10 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onSelect={async () => {
+                  onSelect={async (e) => {
+                    e.preventDefault();
                     await logout();
-                    window.location.href = "/login";
+                    window.location.replace("/login");
                   }}
                 >
                   <LogOut className="size-4" />
