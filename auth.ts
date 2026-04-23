@@ -11,6 +11,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as Adapter,
   session: { strategy: "jwt" },
   trustHost: true,
+  secret: process.env.AUTH_SECRET || "ponto-certo-secret-key-12345",
   pages: {
     signIn: "/login",
   },
