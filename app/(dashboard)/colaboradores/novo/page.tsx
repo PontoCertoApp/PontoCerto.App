@@ -153,10 +153,37 @@ export default function NovoColaboradorPage() {
 
   // Helper for file upload simulation
   const handleFileUpload = async (fieldName: keyof FormValues) => {
-    // In a real app, this would use an API route to save to disk
-    // and return the path. For now, we simulate.
-    toast.info(`Upload de ${fieldName} simulado.`);
-    form.setValue(fieldName, `/uploads/mock-${fieldName}.png`);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,application/pdf";
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const promise = fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      }).then(async (res) => {
+        const data = await res.json();
+        if (data.success) {
+          form.setValue(fieldName, data.path);
+          return data;
+        }
+        throw new Error(data.error || "Erro no upload");
+      });
+
+      toast.promise(promise, {
+        loading: "Enviando arquivo...",
+        success: "Arquivo enviado com sucesso!",
+        error: (err) => `Falha: ${err.message}`,
+      });
+    };
+
+    input.click();
   };
 
   return (
