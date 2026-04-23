@@ -52,6 +52,7 @@ export default function RegisterPage() {
         toast.success("Conta criada com sucesso! Entrando...");
         
         // Auto sign in after registration using server action
+        // O redirecionamento acontece dentro da action e não deve ser capturado pelo catch de erro genérico
         await loginUser({
           email: data.email,
           password: data.password,
@@ -59,7 +60,11 @@ export default function RegisterPage() {
       } else {
         toast.error(result.error || "Ocorreu um erro ao criar sua conta.");
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Se for um erro de redirecionamento do Next.js (comum em server actions), não mostramos o toast de erro
+      if (error?.message === "NEXT_REDIRECT") return;
+      
+      console.error("Erro no cadastro:", error);
       toast.error("Erro inesperado. Tente novamente mais tarde.");
     } finally {
       setIsLoading(false);

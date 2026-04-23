@@ -45,7 +45,8 @@ export default function LoginPage() {
         setErrorMessage(result.error || "E-mail ou senha incorretos.");
       }
       // O redirecionamento é feito pela server action
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === "NEXT_REDIRECT") return;
       setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setIsLoading(false);
