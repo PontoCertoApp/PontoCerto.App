@@ -53,10 +53,14 @@ export default function RegisterPage() {
         
         // Auto sign in after registration using server action
         // O redirecionamento acontece dentro da action e não deve ser capturado pelo catch de erro genérico
-        await loginUser({
+        const loginResult = await loginUser({
           email: data.email,
           password: data.password,
         });
+
+        if (loginResult && loginResult.success) {
+          window.location.href = "/dashboard";
+        }
       } else {
         toast.error(result.error || "Ocorreu um erro ao criar sua conta.");
       }

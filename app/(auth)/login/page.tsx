@@ -43,8 +43,12 @@ export default function LoginPage() {
 
       if (result && !result.success) {
         setErrorMessage(result.error || "E-mail ou senha incorretos.");
+        return;
       }
-      // O redirecionamento é feito pela server action
+
+      if (result && result.success) {
+        window.location.href = "/dashboard";
+      }
     } catch (error: any) {
       if (error?.message === "NEXT_REDIRECT") return;
       setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");

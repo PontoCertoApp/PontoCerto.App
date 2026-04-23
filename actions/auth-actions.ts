@@ -74,8 +74,9 @@ export async function loginUser(data: any) {
     await signIn("credentials", {
       email: data.email,
       password: data.password,
-      redirectTo: "/dashboard",
+      redirect: false,
     });
+    return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -85,7 +86,6 @@ export async function loginUser(data: any) {
           return { success: false, error: "Ocorreu um erro na autenticação." };
       }
     }
-    // IMPORTANTE: Re-lançar o erro para que o Next.js trate o redirecionamento
     throw error;
   }
 }
