@@ -216,13 +216,15 @@ export function AppSidebar() {
                   <Settings className="size-4 opacity-70" />
                   <span>Configurações da Conta</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onSelect={() => signOut({ callbackUrl: "/login" })}
-                >
-                  <LogOut className="size-4" />
-                  <span>Sair do PontoCerto</span>
-                </DropdownMenuItem>
+                <form action={logout} className="w-full">
+                  <button 
+                    type="submit" 
+                    className="w-full flex items-center gap-2 rounded-lg h-10 px-2 cursor-pointer transition-colors text-destructive hover:bg-destructive/10 outline-none"
+                  >
+                    <LogOut className="size-4" />
+                    <span className="text-sm font-medium">Sair do PontoCerto</span>
+                  </button>
+                </form>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
