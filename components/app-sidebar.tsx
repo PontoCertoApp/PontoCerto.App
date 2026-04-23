@@ -13,9 +13,6 @@ import {
   LogOut,
   MoreHorizontal,
   Building2,
-  Moon,
-  Sun,
-  Monitor
 } from "lucide-react";
 
 import {
@@ -39,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -137,8 +134,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <>
-                      <SidebarMenuButton 
-                        tooltip={item.title} 
+                      <SidebarMenuButton
+                        tooltip={item.title}
                         isActive={isActive}
                         className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                       >
@@ -179,7 +176,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-border/50 p-4">
         <SidebarMenu>
-
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl transition-all hover:bg-muted active:scale-95" />}>
@@ -204,23 +200,24 @@ export function AppSidebar() {
                 sideOffset={10}
               >
                 <div className="flex items-center gap-3 p-3 border-b mb-1 border-border/50">
-                   <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary">{user?.name?.charAt(0)}</AvatarFallback>
-                   </Avatar>
-                   <div className="flex flex-col">
-                      <span className="text-sm font-bold">{user?.name}</span>
-                      <span className="text-xs text-muted-foreground">{user?.email}</span>
-                   </div>
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary/10 text-primary">{user?.name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold">{user?.name}</span>
+                    <span className="text-xs text-muted-foreground">{user?.email}</span>
+                  </div>
                 </div>
-                <DropdownMenuItem render={<Link href="/dashboard" />} className="rounded-lg h-10 cursor-pointer flex items-center gap-2">
+                <DropdownMenuItem
+                  render={<Link href="/dashboard" />}
+                  className="rounded-lg h-10 cursor-pointer flex items-center gap-2"
+                >
                   <Settings className="size-4 opacity-70" />
                   <span>Configurações da Conta</span>
                 </DropdownMenuItem>
-                 <DropdownMenuItem
+                <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onSelect={() => {
-                    logout();
-                  }}
+                  onClick={() => signOut({ callbackUrl: "/login" })}
                 >
                   <LogOut className="size-4" />
                   <span>Sair do PontoCerto</span>
