@@ -19,7 +19,6 @@ import { registerUser, loginUser } from "@/actions/auth-actions";
 const registerSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
-  companyName: z.string().min(2, "O nome da empresa deve ter pelo menos 2 caracteres"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
@@ -134,19 +133,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Nome da Empresa</Label>
-                <Input
-                  id="companyName"
-                  placeholder="Nome da sua empresa ou unidade"
-                  {...register("companyName")}
-                  className={errors.companyName ? "border-destructive" : ""}
-                  disabled={isLoading}
-                />
-                {errors.companyName && (
-                  <p className="text-xs text-destructive font-medium">{errors.companyName.message}</p>
-                )}
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>

@@ -9,7 +9,6 @@ import { AuthError } from "next-auth";
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
-  companyName: z.string().min(2, "Nome da empresa deve ter pelo menos 2 caracteres"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
@@ -31,10 +30,10 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
 
     // Create Loja and User in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create the Loja (Company)
+      // 1. Create the Loja (Company) with a default name
       const loja = await tx.loja.create({
         data: {
-          nome: validatedData.companyName,
+          nome: "Minha Empresa",
         },
       });
 
