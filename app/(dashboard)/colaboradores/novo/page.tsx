@@ -136,19 +136,15 @@ export default function NovoColaboradorPage() {
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
-    try {
-      const result = await createColaborador(values);
-      if (result.success) {
-        toast.success("Colaborador cadastrado com sucesso!");
-        router.push("/colaboradores");
-      } else {
-        toast.error(result.error as string);
-      }
-    } catch (e) {
-      toast.error("Erro inesperado ao salvar.");
-    } finally {
-      setIsSubmitting(false);
+    const result = await createColaborador(values);
+    if (result.success) {
+      toast.success("Colaborador cadastrado com sucesso!");
+      router.push("/colaboradores");
+    } else {
+      console.error("[SUBMIT_ERROR]:", result.error);
+      toast.error(result.error as string || "Erro ao salvar cadastro.");
     }
+    setIsSubmitting(false);
   }
 
   // Helper for file upload simulation

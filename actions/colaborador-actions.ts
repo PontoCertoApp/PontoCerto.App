@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createAction } from "@/lib/safe-action";
 import { ColaboradorStatus } from "@/lib/enums";
 import { sendWelcomeEmail } from "@/lib/email/send";
+import { auth } from "@/auth";
 
 export const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
@@ -37,105 +38,113 @@ export const createColaborador = createAction(
   colaboradorSchema,
   ["RH"],
   async (data) => {
-    const session = await auth();
-    const lojaId = session?.user?.lojaId;
-    if (!lojaId) throw new Error("Usuário sem loja vinculada.");
+    try {
+      const session = await auth();
+      const lojaId = session?.user?.lojaId;
+      if (!lojaId) throw new Error("Usuário sem loja vinculada.");
 
-    // Check for existing CPF or Email
-    const existing = await prisma.colaborador.findFirst({
-      where: {
-        OR: [
-          { cpf: data.cpf },
-          { email: data.email && data.email !== "" ? data.email : undefined }
-        ].filter(Boolean) as any
-      }
-    });
-
-    if (existing) {
-      if (existing.cpf === data.cpf) throw new Error("Já existe um colaborador com este CPF.");
-      if (data.email && existing.email === data.email) throw new Error("Já existe um colaborador com este E-mail.");
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Get or Create Setor
-      let setor = await tx.setor.findFirst({
-        where: { nome: data.setorNome }
+      // Check for existing CPF or Email
+      const existing = await prisma.colaborador.findFirst({
+        where: {
+          OR: [
+            { cpf: data.cpf },
+            { email: data.email && data.email !== "" ? data.email : undefined }
+          ].filter(Boolean) as any
+        }
       });
-      if (!setor) {
-        setor = await tx.setor.create({
-          data: { nome: data.setorNome }
+
+      if (existing) {
+        if (existing.cpf === data.cpf) throw new Error("Já existe um colaborador com este CPF.");
+        if (data.email && existing.email === data.email) throw new Error("Já existe um colaborador com este E-mail.");
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Get or Create Setor
+        let setor = await tx.setor.findFirst({
+          where: { nome: data.setorNome }
         });
-      }
+        if (!setor) {
+          setor = await tx.setor.create({
+            data: { nome: data.setorNome }
+          });
+        }
 
-      // 2. Get or Create Funcao
-      let funcao = await tx.funcao.findFirst({
-        where: { nome: data.funcaoNome, setorId: setor.id }
-      });
-      if (!funcao) {
-        funcao = await tx.funcao.create({
-          data: { 
-            nome: data.funcaoNome, 
+        // 2. Get or Create Funcao
+        let funcao = await tx.funcao.findFirst({
+          where: { nome: data.funcaoNome, setorId: setor.id }
+        });
+        if (!funcao) {
+          funcao = await tx.funcao.create({
+            data: { 
+              nome: data.funcaoNome, 
+              setorId: setor.id,
+              salarioBase: 0 
+            }
+          });
+        }
+
+        const { setorNome, funcaoNome, lojaId: _, ...rest } = data;
+
+        const colaborador = await tx.colaborador.create({
+          data: {
+            ...rest,
+            lojaId,
             setorId: setor.id,
-            salarioBase: 0 
-          }
+            funcaoId: funcao.id,
+            dataNascimento: new Date(data.dataNascimento),
+            email: data.email || null,
+            status: ColaboradorStatus.EM_EXPERIENCIA,
+          },
         });
-      }
 
-      const { setorNome, funcaoNome, lojaId: _, ...rest } = data;
+        // 4. Create separate Documento records for the dashboard tracking
+        const docsToCreate = [
+          { nome: "Comprovante de Endereço", path: data.enderecoComprovantePath },
+          { nome: "Foto do PIS", path: data.pisFotoPath },
+          { nome: "Histórico Escolar", path: data.historicoEscolarPath },
+          { nome: "CTPS Digital", path: data.ctpsDigitalPath },
+          { nome: "Certidão de Nascimento (Filhos)", path: data.certidaoFilhosPath },
+          { nome: "Foto de Perfil", path: data.fotoPerfilPath },
+          { nome: "Contrato Assinado", path: data.contratoAssinadoPath },
+        ].filter(d => d.path);
 
-      const colaborador = await tx.colaborador.create({
-        data: {
-          ...rest,
-          lojaId,
-          setorId: setor.id,
-          funcaoId: funcao.id,
-          dataNascimento: new Date(data.dataNascimento),
-          email: data.email || null,
-          status: ColaboradorStatus.EM_EXPERIENCIA,
-        },
+        if (docsToCreate.length > 0) {
+          await tx.documento.createMany({
+            data: docsToCreate.map(d => ({
+              colaboradorId: colaborador.id,
+              nome: d.nome,
+              path: d.path!,
+              status: "PENDENTE"
+            }))
+          });
+        }
+
+        return { colaborador, funcao, setor };
       });
 
-      // 4. Create separate Documento records for the dashboard tracking
-      const docsToCreate = [
-        { nome: "Comprovante de Endereço", path: data.enderecoComprovantePath },
-        { nome: "Foto do PIS", path: data.pisFotoPath },
-        { nome: "Histórico Escolar", path: data.historicoEscolarPath },
-        { nome: "CTPS Digital", path: data.ctpsDigitalPath },
-        { nome: "Certidão de Nascimento (Filhos)", path: data.certidaoFilhosPath },
-        { nome: "Foto de Perfil", path: data.fotoPerfilPath },
-        { nome: "Contrato Assinado", path: data.contratoAssinadoPath },
-      ].filter(d => d.path);
+      const { colaborador, funcao } = result;
 
-      if (docsToCreate.length > 0) {
-        await tx.documento.createMany({
-          data: docsToCreate.map(d => ({
-            colaboradorId: colaborador.id,
-            nome: d.nome,
-            path: d.path!,
-            status: "PENDENTE"
-          }))
-        });
+      // Fire-and-forget — email failure never blocks the action
+      if (colaborador.email) {
+        const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
+        sendWelcomeEmail(colaborador.email, {
+          colaboradorNome: colaborador.nomeCompleto,
+          cargo: funcao?.nome ?? "Colaborador",
+          loja: loja?.nome ?? "Empresa",
+          dataAdmissao: new Date().toLocaleDateString("pt-BR"),
+          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
+        }).catch((err) => console.error("[email/welcome] Falha:", err));
       }
 
-      return { colaborador, funcao, setor };
-    });
-
-    const { colaborador, funcao } = result;
-
-    // Fire-and-forget — email failure never blocks the action
-    if (colaborador.email) {
-      const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
-      sendWelcomeEmail(colaborador.email, {
-        colaboradorNome: colaborador.nomeCompleto,
-        cargo: funcao?.nome ?? "Colaborador",
-        loja: loja?.nome ?? "Empresa",
-        dataAdmissao: new Date().toLocaleDateString("pt-BR"),
-        loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
-      }).catch((err) => console.error("[email/welcome] Falha:", err));
+      revalidatePath("/colaboradores");
+      return colaborador;
+    } catch (error: any) {
+      console.error("[CREATE_COLAB_ERROR]:", error);
+      if (error.code === 'P2002') {
+        throw new Error("Conflito de dados: CPF ou E-mail já cadastrado.");
+      }
+      throw error;
     }
-
-    revalidatePath("/colaboradores");
-    return colaborador;
   }
 );
 
