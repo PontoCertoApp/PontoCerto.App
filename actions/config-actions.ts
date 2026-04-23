@@ -16,7 +16,7 @@ export const lojaSchema = z.object({
 export const upsertLoja = createAction(
   lojaSchema,
   ["RH"],
-  async (data) => {
+  async (data, session) => {
     const loja = await prisma.loja.upsert({
       where: { id: data.id || "TEMP" },
       update: { nome: data.nome, cidade: data.cidade },
@@ -37,7 +37,7 @@ export const setorSchema = z.object({
 export const upsertSetor = createAction(
   setorSchema,
   ["RH"],
-  async (data) => {
+  async (data, session) => {
     const setor = await prisma.setor.upsert({
       where: { id: data.id || "TEMP" },
       update: { nome: data.nome },
@@ -60,7 +60,7 @@ export const funcaoSchema = z.object({
 export const upsertFuncao = createAction(
   funcaoSchema,
   ["RH"],
-  async (data) => {
+  async (data, session) => {
     const funcao = await prisma.funcao.upsert({
       where: { id: data.id || "TEMP" },
       update: { 

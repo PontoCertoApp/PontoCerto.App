@@ -38,7 +38,7 @@ export async function safeAction<T, S extends z.ZodType>(
 export const createAction = <T, S extends z.ZodType>(
   schema: S | null,
   roles: string[] | null,
-  handler: (data: z.infer<S>, userId: string) => Promise<T>
+  handler: (data: z.infer<S>, session: any) => Promise<T>
 ) => {
   return async (data: z.infer<S>): Promise<ActionState<T>> => {
     const session = await auth();
@@ -49,7 +49,7 @@ export const createAction = <T, S extends z.ZodType>(
 
     try {
       if (schema) schema.parse(data);
-      const result = await handler(data, session.user.id!);
+      const result = await handler(data, session);
       return { success: true, data: result };
     } catch (e: any) {
       console.error("[ACTION_ERROR]:", e);

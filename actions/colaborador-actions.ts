@@ -37,11 +37,10 @@ export const colaboradorSchema = z.object({
 export const createColaborador = createAction(
   colaboradorSchema,
   ["RH"],
-  async (data) => {
+  async (data, session) => {
     console.log("[CREATE_COLABORADOR] Iniciando processo para:", data.nomeCompleto);
     try {
-      const session = await auth();
-      console.log("[CREATE_COLABORADOR] Sessão recuperada:", session?.user?.email);
+      console.log("[CREATE_COLABORADOR] Sessão recebida do wrapper:", session?.user?.email);
       
       const lojaId = session?.user?.lojaId;
       if (!lojaId) {
