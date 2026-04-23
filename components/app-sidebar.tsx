@@ -179,29 +179,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-border/50 p-4">
         <SidebarMenu>
-           {/* Theme Toggle in Sidebar */}
-           <SidebarMenuItem className="mb-2 group-data-[collapsible=icon]:hidden">
-             <div className="flex items-center justify-between px-2 py-1 bg-muted/40 rounded-xl border border-border/50">
-                <button 
-                  onClick={() => setTheme("light")}
-                  className={`p-1.5 rounded-lg transition-all ${theme === "light" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  <Sun size={14} />
-                </button>
-                <button 
-                   onClick={() => setTheme("dark")}
-                   className={`p-1.5 rounded-lg transition-all ${theme === "dark" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  <Moon size={14} />
-                </button>
-                <button 
-                   onClick={() => setTheme("system")}
-                   className={`p-1.5 rounded-lg transition-all ${theme === "system" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  <Monitor size={14} />
-                </button>
-             </div>
-           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <DropdownMenu>
@@ -241,7 +218,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onSelect={() => signOut({ callbackUrl: "/" })}
                 >
                   <LogOut className="size-4" />
                   <span>Sair do PontoCerto</span>
