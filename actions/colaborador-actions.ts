@@ -41,6 +41,21 @@ export const createColaborador = createAction(
     const lojaId = session?.user?.lojaId;
     if (!lojaId) throw new Error("Usuário sem loja vinculada.");
 
+    // Check for existing CPF or Email
+    const existing = await prisma.colaborador.findFirst({
+      where: {
+        OR: [
+          { cpf: data.cpf },
+          { email: data.email && data.email !== "" ? data.email : undefined }
+        ].filter(Boolean) as any
+      }
+    });
+
+    if (existing) {
+      if (existing.cpf === data.cpf) throw new Error("Já existe um colaborador com este CPF.");
+      if (data.email && existing.email === data.email) throw new Error("Já existe um colaborador com este E-mail.");
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Get or Create Setor
       let setor = await tx.setor.findFirst({
@@ -66,7 +81,7 @@ export const createColaborador = createAction(
         });
       }
 
-      const { setorNome, funcaoNome, ...rest } = data;
+      const { setorNome, funcaoNome, lojaId: _, ...rest } = data;
 
       const colaborador = await tx.colaborador.create({
         data: {
@@ -79,6 +94,28 @@ export const createColaborador = createAction(
           status: ColaboradorStatus.EM_EXPERIENCIA,
         },
       });
+
+      // 4. Create separate Documento records for the dashboard tracking
+      const docsToCreate = [
+        { nome: "Comprovante de Endereço", path: data.enderecoComprovantePath },
+        { nome: "Foto do PIS", path: data.pisFotoPath },
+        { nome: "Histórico Escolar", path: data.historicoEscolarPath },
+        { nome: "CTPS Digital", path: data.ctpsDigitalPath },
+        { nome: "Certidão de Nascimento (Filhos)", path: data.certidaoFilhosPath },
+        { nome: "Foto de Perfil", path: data.fotoPerfilPath },
+        { nome: "Contrato Assinado", path: data.contratoAssinadoPath },
+      ].filter(d => d.path);
+
+      if (docsToCreate.length > 0) {
+        await tx.documento.createMany({
+          data: docsToCreate.map(d => ({
+            colaboradorId: colaborador.id,
+            nome: d.nome,
+            path: d.path!,
+            status: "PENDENTE"
+          }))
+        });
+      }
 
       return { colaborador, funcao, setor };
     });
