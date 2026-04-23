@@ -19,7 +19,7 @@ export const colaboradorSchema = z.object({
   possuiFilhosMenores14: z.boolean(),
   funcaoId: z.string(),
   setorId: z.string(),
-  lojaId: z.string(),
+  lojaId: z.string().optional(),
   
   enderecoComprovantePath: z.string().optional(),
   pisFotoPath: z.string().optional(),
@@ -37,14 +37,19 @@ export const createColaborador = createAction(
   colaboradorSchema,
   ["RH"],
   async (data) => {
+    const session = await auth();
+    const lojaId = session?.user?.lojaId;
+    if (!lojaId) throw new Error("Usuário sem loja vinculada.");
+
     const [funcao, loja] = await Promise.all([
       prisma.funcao.findUnique({ where: { id: data.funcaoId }, select: { nome: true } }),
-      prisma.loja.findUnique({ where: { id: data.lojaId }, select: { nome: true } }),
+      prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } }),
     ]);
 
     const colaborador = await prisma.colaborador.create({
       data: {
         ...data,
+        lojaId,
         dataNascimento: new Date(data.dataNascimento),
         email: data.email || null,
         status: ColaboradorStatus.EM_EXPERIENCIA,

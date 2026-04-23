@@ -62,7 +62,7 @@ const formSchema = z.object({
   telefoneSecundario: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   
-  lojaId: z.string().min(1, "Obrigatório"),
+  lojaId: z.string().optional(),
   setorId: z.string().min(1, "Obrigatório"),
   funcaoId: z.string().min(1, "Obrigatório"),
   contaBancoBrasil: z.string().min(1, "Obrigatório"),
@@ -108,8 +108,7 @@ export default function NovoColaboradorPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [l, s, f] = await Promise.all([getLojas(), getSetores(), getFuncoes()]);
-      setLojas(l);
+      const [s, f] = await Promise.all([getSetores(), getFuncoes()]);
       setSetores(s);
       setFuncoes(f);
     }
@@ -124,7 +123,7 @@ export default function NovoColaboradorPage() {
     if (currentStep === 1) {
       fieldsToValidate = ["nomeCompleto", "cpf", "rg", "dataNascimento", "telefonePrincipal"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["lojaId", "setorId", "funcaoId", "contaBancoBrasil"];
+      fieldsToValidate = ["setorId", "funcaoId", "contaBancoBrasil"];
     }
 
     const isValid = await form.trigger(fieldsToValidate as any);
@@ -282,28 +281,6 @@ export default function NovoColaboradorPage() {
                     exit={{ opacity: 0, x: -20 }}
                     className="grid grid-cols-1 md:grid-cols-2 gap-6"
                   >
-                    <FormField
-                      control={form.control}
-                      name="lojaId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Loja Vinculada</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione a loja" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {lojas.map(l => (
-                                <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <FormField
                       control={form.control}
                       name="setorId"
