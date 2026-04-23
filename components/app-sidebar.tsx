@@ -39,7 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { logout } from "@/actions/logout";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -212,13 +213,15 @@ export function AppSidebar() {
                       <span className="text-xs text-muted-foreground">{user?.email}</span>
                    </div>
                 </div>
-                <DropdownMenuItem render={<Link href="/perfil" />} className="rounded-lg h-10 cursor-pointer flex items-center gap-2">
+                <DropdownMenuItem render={<Link href="/dashboard" />} className="rounded-lg h-10 cursor-pointer flex items-center gap-2">
                   <Settings className="size-4 opacity-70" />
                   <span>Configurações da Conta</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onSelect={() => signOut({ callbackUrl: "/login" })}
+                  onSelect={() => {
+                    logout();
+                  }}
                 >
                   <LogOut className="size-4" />
                   <span>Sair do PontoCerto</span>
