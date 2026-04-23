@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { loginUser } from "@/actions/auth-actions";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -39,19 +39,13 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+      const result = await loginUser(data);
 
-      if (result?.error) {
-        setErrorMessage("E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.");
-      } else {
-        router.push("/dashboard");
-        router.refresh();
+      if (result && !result.success) {
+        setErrorMessage(result.error || "E-mail ou senha incorretos.");
       }
-    } catch {
+      // O redirecionamento é feito pela server action
+    } catch (error) {
       setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setIsLoading(false);

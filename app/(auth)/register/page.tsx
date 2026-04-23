@@ -9,13 +9,12 @@ import { Clock, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { registerUser } from "@/actions/auth-actions";
+import { registerUser, loginUser } from "@/actions/auth-actions";
 
 const registerSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
@@ -52,20 +51,11 @@ export default function RegisterPage() {
       if (result.success) {
         toast.success("Conta criada com sucesso! Entrando...");
         
-        // Auto sign in after registration
-        const signInResult = await signIn("credentials", {
+        // Auto sign in after registration using server action
+        await loginUser({
           email: data.email,
           password: data.password,
-          redirect: false,
         });
-
-        if (signInResult?.error) {
-          toast.error("Erro ao entrar automaticamente. Por favor, faça login.");
-          router.push("/login");
-        } else {
-          router.push("/dashboard");
-          router.refresh();
-        }
       } else {
         toast.error(result.error || "Ocorreu um erro ao criar sua conta.");
       }

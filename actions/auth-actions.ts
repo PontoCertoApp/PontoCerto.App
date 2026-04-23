@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -64,5 +66,26 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
     }
     console.error("Registration error:", error);
     return { success: false, error: "Ocorreu um erro ao processar seu cadastro." };
+  }
+}
+
+export async function loginUser(data: any) {
+  try {
+    await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirectTo: "/dashboard",
+    });
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { success: false, error: "E-mail ou senha inválidos." };
+        default:
+          return { success: false, error: "Ocorreu um erro na autenticação." };
+      }
+    }
+    throw error;
   }
 }
