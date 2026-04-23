@@ -10,16 +10,19 @@ import {
   CartesianGrid
 } from "recharts";
 
-const data = [
-  { name: "Jan", total: 120 },
-  { name: "Fev", total: 125 },
-  { name: "Mar", total: 122 },
-  { name: "Abr", total: 130 },
-  { name: "Mai", total: 135 },
-  { name: "Jun", total: 142 },
-];
+interface DashboardChartProps {
+  data?: { name: string; total: number }[];
+}
 
-export function DashboardChart() {
+export function DashboardChart({ data = [] }: DashboardChartProps) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[350px] w-full items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
+        Aguardando dados reais...
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>

@@ -129,3 +129,13 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     },
   });
 }
+export async function getTotalAtivos() {
+  const session = await auth();
+  if (!session?.user?.lojaId) return 0;
+  return await prisma.colaborador.count({
+    where: {
+      lojaId: session.user.lojaId,
+      status: "ATIVO",
+    },
+  });
+}

@@ -25,77 +25,65 @@ import {
 import { DashboardChart } from "@/components/dashboard-chart";
 import { Badge } from "@/components/ui/badge";
 
-interface DashboardClientProps {
-  userName: string;
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  target: string;
+  time: string;
+  icon: any;
+  color: string;
 }
 
-export function DashboardClient({ userName }: DashboardClientProps) {
+interface DashboardClientProps {
+  userName: string;
+  stats: {
+    totalColaboradores: number;
+    pendenciasPonto: number;
+    rapsAtivos: number;
+    documentosPendentes: number;
+  };
+  activities: Activity[];
+  chartData: { name: string; total: number }[];
+}
+
+export function DashboardClient({ userName, stats: dbStats, activities, chartData }: DashboardClientProps) {
   const stats = [
     {
       title: "Colaboradores",
-      value: "142",
-      description: "+4 desde o último mês",
+      value: dbStats.totalColaboradores.toString(),
+      description: "Total na base de dados",
       icon: Users,
-      trend: "+2.5%",
+      trend: "Real",
       color: "text-blue-500",
       bg: "bg-blue-500/10"
     },
     {
       title: "Pendências Ponto",
-      value: "12",
+      value: dbStats.pendenciasPonto.toString(),
       description: "Ações necessárias hoje",
       icon: Clock,
-      trend: "-10%",
+      trend: "Pendente",
       color: "text-amber-500",
       bg: "bg-amber-500/10"
     },
     {
       title: "RAPs Ativos",
-      value: "3",
+      value: dbStats.rapsAtivos.toString(),
       description: "Pendentes de assinatura",
       icon: AlertTriangle,
-      trend: "Estável",
+      trend: "Ação",
       color: "text-destructive",
       bg: "bg-destructive/10"
     },
     {
       title: "Documentos",
-      value: "8",
+      value: dbStats.documentosPendentes.toString(),
       description: "Validar recebidos",
       icon: FileCheck,
-      trend: "+12%",
+      trend: "Pendente",
       color: "text-emerald-500",
       bg: "bg-emerald-500/10"
-    },
-  ];
-
-  const activities = [
-    {
-      id: 1,
-      type: "DOC",
-      title: "Documento validado",
-      target: "João Silva",
-      time: "Há 10 min",
-      icon: FileText,
-      color: "bg-blue-500/20 text-blue-500"
-    },
-    {
-      id: 2,
-      type: "CONTRATO",
-      title: "Admissão iniciada",
-      target: "Maria Souza",
-      time: "Há 45 min",
-      icon: UserPlus,
-      color: "bg-emerald-500/20 text-emerald-500"
-    },
-    {
-      id: 3,
-      type: "PENALIDADE",
-      title: "RAP Gerado",
-      target: "Carlos Lima",
-      time: "Há 2 horas",
-      icon: ShieldAlert,
-      color: "bg-destructive/20 text-destructive"
     },
   ];
 
@@ -143,7 +131,9 @@ export function DashboardClient({ userName }: DashboardClientProps) {
             <div className="glass-card flex items-center gap-3 p-2 pl-4 pr-1 rounded-2xl">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Competência</span>
-                <span className="text-sm font-bold">Outubro / 2023</span>
+                <span className="text-sm font-bold">
+                  {new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date())}
+                </span>
               </div>
               <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                 <Calendar className="size-5" />
@@ -168,7 +158,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
                 <CardContent>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black">{stat.value}</span>
-                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-none px-2 py-0">
+                    <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 border-none px-2 py-0">
                       {stat.trend}
                     </Badge>
                   </div>
@@ -194,7 +184,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
                 </div>
               </CardHeader>
               <CardContent>
-                <DashboardChart />
+                <DashboardChart data={chartData} />
               </CardContent>
             </Card>
           </motion.div>
@@ -212,28 +202,35 @@ export function DashboardClient({ userName }: DashboardClientProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {activities.map((act) => (
-                    <motion.div 
-                      key={act.id} 
-                      className="flex items-center gap-4 group p-3 -mx-3 rounded-2xl hover:bg-muted/30 transition-all"
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${act.color} shadow-sm transition-transform group-hover:scale-110`}>
-                        <act.icon className="h-6 w-6" strokeWidth={2.5} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate leading-none">
-                          {act.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          Colaborador: <span className="font-bold text-foreground/80">{act.target}</span>
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-black uppercase text-muted-foreground/40 whitespace-nowrap">
-                        {act.time}
-                      </span>
-                    </motion.div>
-                  ))}
+                  {activities.length > 0 ? (
+                    activities.map((act) => (
+                      <motion.div 
+                        key={act.id} 
+                        className="flex items-center gap-4 group p-3 -mx-3 rounded-2xl hover:bg-muted/30 transition-all"
+                        whileHover={{ x: 5 }}
+                      >
+                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${act.color} shadow-sm transition-transform group-hover:scale-110`}>
+                          <act.icon className="h-6 w-6" strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate leading-none">
+                            {act.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {act.type === "DOC" ? "Colaborador: " : "Alvo: "} 
+                            <span className="font-bold text-foreground/80">{act.target}</span>
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-muted-foreground/40 whitespace-nowrap">
+                          {act.time}
+                        </span>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                      <p className="text-sm font-medium">Nenhuma atividade recente.</p>
+                    </div>
+                  )}
                   <button className="w-full mt-4 flex items-center justify-center gap-2 p-4 rounded-2xl bg-muted/50 hover:bg-primary hover:text-primary-foreground text-sm font-bold transition-all group">
                     Histórico Completo
                     <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -248,19 +245,19 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           {[
             { 
               title: "Módulo Ponto", 
-              desc: "12 colaboradores com pendência de assinatura.", 
+              desc: `${dbStats.pendenciasPonto} colaboradores com pendência de assinatura.`, 
               cta: "Tratar Agora", 
               color: "bg-primary text-primary-foreground" 
             },
             { 
               title: "Uniformes", 
-              desc: "5 trocas agendadas para os próximos 7 dias.", 
+              desc: "Controle de entrega e trocas de uniformes.", 
               cta: "Ver Lista", 
               color: "bg-slate-900 text-white dark:bg-white dark:text-black" 
             },
             { 
-              title: "Contratações", 
-              desc: "3 novos talentos ingressando na próxima segunda.", 
+              title: "Documentação", 
+              desc: `${dbStats.documentosPendentes} documentos aguardando validação.`, 
               cta: "Gerenciar", 
               color: "bg-indigo-600 text-white" 
             }

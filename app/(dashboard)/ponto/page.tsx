@@ -65,7 +65,8 @@ import { cn } from "@/lib/utils";
 import {
   getInconformidadesDoDia,
   getColaboradoresSemPontoNoDia,
-  registrarInconformidade
+  registrarInconformidade,
+  getTotalAtivos
 } from "@/actions/ponto-actions";
 
 type TipoInconformidade = "FALTA_INJUSTIFICADA" | "ATRASO" | "SAIDA_ANTECIPADA" | "PONTO_NAO_REGISTRADO";
@@ -89,6 +90,7 @@ export default function PontoPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [pendentes, setPendentes] = useState<ColaboradorSemPonto[]>([]);
   const [tratados, setTratados] = useState<RegistroPonto[]>([]);
+  const [totalColaboradores, setTotalColaboradores] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
@@ -100,12 +102,14 @@ export default function PontoPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [p, t] = await Promise.all([
+    const [p, t, total] = await Promise.all([
       getColaboradoresSemPontoNoDia(date),
       getInconformidadesDoDia(date),
+      getTotalAtivos()
     ]);
     setPendentes(p as unknown as ColaboradorSemPonto[]);
     setTratados(t as unknown as RegistroPonto[]);
+    setTotalColaboradores(total);
     setIsLoading(false);
   }
 
@@ -190,8 +194,10 @@ export default function PontoPage() {
             <CardTitle className="text-sm font-medium">Equipe Ponto OK</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">85%</div>
-             <p className="text-xs text-muted-foreground">120 colaboradores ativos hoje</p>
+             <div className="text-2xl font-bold">
+               {totalColaboradores === 0 ? "100%" : `${Math.round(((totalColaboradores - pendentes.length) / totalColaboradores) * 100)}%`}
+             </div>
+             <p className="text-xs text-muted-foreground">{totalColaboradores} colaboradores ativos hoje</p>
           </CardContent>
         </Card>
         <Card className="bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/20">

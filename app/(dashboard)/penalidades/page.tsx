@@ -44,6 +44,7 @@ import {
   getPenalidades,
   updatePenalidadeStatus
 } from "@/actions/penalidade-actions";
+import { getTotalAtivos } from "@/actions/ponto-actions";
 import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
 
 interface Penalidade {
@@ -58,12 +59,17 @@ interface Penalidade {
 export default function PenalidadesPage() {
   const [penalidades, setPenalidades] = useState<Penalidade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalAtivos, setTotalAtivos] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
   async function loadData() {
     setIsLoading(true);
-    const data = await getPenalidades();
+    const [data, total] = await Promise.all([
+      getPenalidades(),
+      getTotalAtivos()
+    ]);
     setPenalidades(data as unknown as Penalidade[]);
+    setTotalAtivos(total);
     setIsLoading(false);
   }
 
@@ -152,7 +158,9 @@ export default function PenalidadesPage() {
             <CardTitle className="text-sm font-medium text-green-600">Taxa de Conformidade</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold text-green-600">97.4%</div>
+             <div className="text-2xl font-bold text-green-600">
+               {totalAtivos === 0 ? "100%" : `${Math.round(((totalAtivos - penalidades.filter(p => p.status === "ATIVA").length) / totalAtivos) * 100)}%`}
+             </div>
           </CardContent>
         </Card>
       </div>
