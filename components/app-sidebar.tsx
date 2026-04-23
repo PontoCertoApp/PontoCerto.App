@@ -39,7 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -103,7 +103,7 @@ const items = [
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const pathname = usePathname();
   const user = session?.user;
 
@@ -216,15 +216,15 @@ export function AppSidebar() {
                   <Settings className="size-4 opacity-70" />
                   <span>Configurações da Conta</span>
                 </DropdownMenuItem>
-                <form action={logout} className="w-full">
-                  <button 
-                    type="submit" 
-                    className="w-full flex items-center gap-2 rounded-lg h-10 px-2 cursor-pointer transition-colors text-destructive hover:bg-destructive/10 outline-none"
-                  >
-                    <LogOut className="size-4" />
-                    <span className="text-sm font-medium">Sair do PontoCerto</span>
-                  </button>
-                </form>
+                 <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
+                  onSelect={() => {
+                    logout();
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  <span>Sair do PontoCerto</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
