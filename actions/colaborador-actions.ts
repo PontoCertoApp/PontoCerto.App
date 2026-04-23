@@ -38,12 +38,19 @@ export const createColaborador = createAction(
   colaboradorSchema,
   ["RH"],
   async (data) => {
+    console.log("[CREATE_COLABORADOR] Iniciando processo para:", data.nomeCompleto);
     try {
       const session = await auth();
+      console.log("[CREATE_COLABORADOR] Sessão recuperada:", session?.user?.email);
+      
       const lojaId = session?.user?.lojaId;
-      if (!lojaId) throw new Error("Usuário sem loja vinculada.");
+      if (!lojaId) {
+        console.error("[CREATE_COLABORADOR] Erro: Usuário sem lojaId");
+        throw new Error("Usuário sem loja vinculada.");
+      }
 
       // Check for existing CPF or Email
+      console.log("[CREATE_COLABORADOR] Verificando duplicidade (CPF:", data.cpf, ")");
       const existing = await prisma.colaborador.findFirst({
         where: {
           OR: [
@@ -54,37 +61,34 @@ export const createColaborador = createAction(
       });
 
       if (existing) {
-        if (existing.cpf === data.cpf) throw new Error("Já existe um colaborador com este CPF.");
-        if (data.email && existing.email === data.email) throw new Error("Já existe um colaborador com este E-mail.");
+        const msg = existing.cpf === data.cpf 
+          ? "Já existe um colaborador com este CPF." 
+          : "Já existe um colaborador com este E-mail.";
+        console.warn("[CREATE_COLABORADOR] Duplicidade encontrada:", msg);
+        throw new Error(msg);
       }
 
+      console.log("[CREATE_COLABORADOR] Iniciando transação de banco...");
       const result = await prisma.$transaction(async (tx) => {
         // 1. Get or Create Setor
-        let setor = await tx.setor.findFirst({
-          where: { nome: data.setorNome }
-        });
+        let setor = await tx.setor.findFirst({ where: { nome: data.setorNome } });
         if (!setor) {
-          setor = await tx.setor.create({
-            data: { nome: data.setorNome }
-          });
+          console.log("[CREATE_COLABORADOR] Criando novo setor:", data.setorNome);
+          setor = await tx.setor.create({ data: { nome: data.setorNome } });
         }
 
         // 2. Get or Create Funcao
-        let funcao = await tx.funcao.findFirst({
-          where: { nome: data.funcaoNome, setorId: setor.id }
-        });
+        let funcao = await tx.funcao.findFirst({ where: { nome: data.funcaoNome, setorId: setor.id } });
         if (!funcao) {
+          console.log("[CREATE_COLABORADOR] Criando nova função:", data.funcaoNome);
           funcao = await tx.funcao.create({
-            data: { 
-              nome: data.funcaoNome, 
-              setorId: setor.id,
-              salarioBase: 0 
-            }
+            data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 }
           });
         }
 
         const { setorNome, funcaoNome, lojaId: _, ...rest } = data;
 
+        console.log("[CREATE_COLABORADOR] Criando registro do Colaborador...");
         const colaborador = await tx.colaborador.create({
           data: {
             ...rest,
@@ -97,7 +101,7 @@ export const createColaborador = createAction(
           },
         });
 
-        // 4. Create separate Documento records for the dashboard tracking
+        // 4. Create separate Documento records
         const docsToCreate = [
           { nome: "Comprovante de Endereço", path: data.enderecoComprovantePath },
           { nome: "Foto do PIS", path: data.pisFotoPath },
@@ -109,6 +113,7 @@ export const createColaborador = createAction(
         ].filter(d => d.path);
 
         if (docsToCreate.length > 0) {
+          console.log("[CREATE_COLABORADOR] Salvando", docsToCreate.length, "documentos no banco...");
           await tx.documento.createMany({
             data: docsToCreate.map(d => ({
               colaboradorId: colaborador.id,
@@ -122,9 +127,10 @@ export const createColaborador = createAction(
         return { colaborador, funcao, setor };
       });
 
+      console.log("[CREATE_COLABORADOR] Cadastro concluído com sucesso id:", result.colaborador.id);
+
       const { colaborador, funcao } = result;
 
-      // Fire-and-forget — email failure never blocks the action
       if (colaborador.email) {
         const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
         sendWelcomeEmail(colaborador.email, {
@@ -139,7 +145,7 @@ export const createColaborador = createAction(
       revalidatePath("/colaboradores");
       return colaborador;
     } catch (error: any) {
-      console.error("[CREATE_COLAB_ERROR]:", error);
+      console.error("[CREATE_COLABORADOR_FATAL]:", error);
       if (error.code === 'P2002') {
         throw new Error("Conflito de dados: CPF ou E-mail já cadastrado.");
       }
