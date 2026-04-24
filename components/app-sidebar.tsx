@@ -106,10 +106,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
-      <SidebarHeader className="h-20 flex justify-center px-6 relative overflow-hidden">
+      <SidebarHeader className="h-20 flex justify-center px-6 group-data-[collapsible=icon]:px-0 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent opacity-50" />
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center relative z-10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <span className="font-black text-lg italic">PC</span>
           </div>
           <div className="flex flex-col gap-0 leading-tight group-data-[collapsible=icon]:hidden">
