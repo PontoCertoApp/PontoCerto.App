@@ -222,7 +222,7 @@ export default function PenalidadesPage() {
                     <TableCell>{getStatusBadge(p.status)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+                        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted/50 outline-none transition-colors">
                           <MoreVertical className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

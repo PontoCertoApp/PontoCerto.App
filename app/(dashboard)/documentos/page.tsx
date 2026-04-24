@@ -218,7 +218,7 @@ export default function DocumentosPage() {
                          setIsDialogOpen(open);
                          if (open) setSelectedDoc(d);
                        }}>
-                         <DialogTrigger render={<Button size="sm" variant="ghost" />}>
+                         <DialogTrigger className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted/50 outline-none transition-colors">
                            <Eye className="h-4 w-4" />
                          </DialogTrigger>
                          <DialogContent className="max-w-2xl">
@@ -238,9 +238,11 @@ export default function DocumentosPage() {
                                     <span className="text-xs text-muted-foreground">Colaborador: {d.colaborador.nomeCompleto}</span>
                                   </div>
                                 </div>
-                                <Button variant="outline" size="sm" render={<a href={`/api/uploads/${d.path.split('/').pop()}`} target="_blank" rel="noopener noreferrer" />}>
-                                  <Download className="mr-2 h-4 w-4" /> Baixar Original
-                                </Button>
+                                 <a href={`/api/uploads/${d.path.split('/').pop()}`} target="_blank" rel="noopener noreferrer">
+                                   <Button variant="outline" size="sm">
+                                     <Download className="mr-2 h-4 w-4" /> Baixar Original
+                                   </Button>
+                                 </a>
                              </div>
 
                              <div className="h-[200px] border-2 border-dashed rounded-lg bg-muted/30 flex items-center justify-center p-4">

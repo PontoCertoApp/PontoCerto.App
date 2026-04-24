@@ -134,7 +134,7 @@ export default function FuncoesPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={<Button />}>
+          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
             <Plus className="mr-2 h-4 w-4" />
             Nova Função
           </DialogTrigger>

@@ -138,9 +138,11 @@ export default function ColaboradoresPage() {
             Gerenciamento centralizado de colaboradores e contratos.
           </p>
         </div>
-        <Button render={<Link href="/colaboradores/novo" />} className="shadow-lg shadow-primary/20">
-          <Plus className="mr-2 h-4 w-4" /> Novo Colaborador
-        </Button>
+        <Link href="/colaboradores/novo">
+          <Button className="shadow-lg shadow-primary/20">
+            <Plus className="mr-2 h-4 w-4" /> Novo Colaborador
+          </Button>
+        </Link>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
@@ -250,13 +252,13 @@ export default function ColaboradoresPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+                      <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted/50 outline-none transition-colors">
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem render={<Link href={`/colaboradores/${c.id}`} />}>
+                        <DropdownMenuItem onClick={() => router.push(`/colaboradores/${c.id}`)}>
                           Ver Ficha Funcional
                         </DropdownMenuItem>
                         <DropdownMenuItem>Editar Dados</DropdownMenuItem>

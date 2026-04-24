@@ -169,7 +169,7 @@ export default function PontoPage() {
         </div>
         <div className="flex items-center gap-2">
            <Popover>
-            <PopoverTrigger render={<Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !date && "text-muted-foreground")} />}>
+            <PopoverTrigger className={cn("flex h-9 w-[240px] items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm font-normal ring-offset-background transition-colors hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50", !date && "text-muted-foreground")}>
               <CalendarIcon className="mr-2 h-4 w-4" />
               {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione a data</span>}
             </PopoverTrigger>
@@ -275,7 +275,7 @@ export default function PontoPage() {
                             if (open) setSelectedColab(c);
                             else resetForm();
                           }}>
-                            <DialogTrigger render={<Button size="sm" variant="outline" />}>
+                            <DialogTrigger className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-muted transition-colors outline-none">
                               Tratar <AlertCircle className="ml-2 h-4 w-4" />
                             </DialogTrigger>
                             <DialogContent className="max-w-md">
