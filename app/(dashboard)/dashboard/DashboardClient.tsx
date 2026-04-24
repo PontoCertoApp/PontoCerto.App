@@ -28,13 +28,17 @@ import { Badge } from "@/components/ui/badge";
 
 interface Activity {
   id: string;
-  type: string;
+  type: "DOC" | "CONTRATO" | "PENALIDADE";
   title: string;
   target: string;
   time: string;
-  icon: any;
-  color: string;
 }
+
+const ACTIVITY_ICON_MAP = {
+  DOC:        { Icon: FileText,   color: "bg-blue-500/20 text-blue-500" },
+  CONTRATO:   { Icon: UserPlus,   color: "bg-emerald-500/20 text-emerald-500" },
+  PENALIDADE: { Icon: ShieldAlert, color: "bg-destructive/20 text-destructive" },
+} as const;
 
 interface DashboardClientProps {
   userName: string;
@@ -204,14 +208,16 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
               <CardContent>
                 <div className="space-y-6">
                   {activities.length > 0 ? (
-                    activities.map((act) => (
-                      <motion.div 
-                        key={act.id} 
+                    activities.map((act) => {
+                      const { Icon, color } = ACTIVITY_ICON_MAP[act.type];
+                      return (
+                      <motion.div
+                        key={act.id}
                         className="flex items-center gap-4 group p-3 -mx-3 rounded-2xl hover:bg-muted/30 transition-all"
                         whileHover={{ x: 5 }}
                       >
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${act.color} shadow-sm transition-transform group-hover:scale-110`}>
-                          <act.icon className="h-6 w-6" strokeWidth={2.5} />
+                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${color} shadow-sm transition-transform group-hover:scale-110`}>
+                          <Icon className="h-6 w-6" strokeWidth={2.5} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate leading-none">
@@ -226,7 +232,8 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
                           {act.time}
                         </span>
                       </motion.div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                       <p className="text-sm font-medium">Nenhuma atividade recente.</p>

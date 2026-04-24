@@ -1,11 +1,6 @@
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { DashboardClient } from "./DashboardClient";
-import { 
-  FileText, 
-  UserPlus, 
-  ShieldAlert 
-} from "lucide-react";
 import { formatDistanceToNow, format, subMonths, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -55,32 +50,26 @@ export default async function DashboardPage() {
   const activities = [
     ...recentDocs.map(d => ({
       id: d.id,
-      type: "DOC",
+      type: "DOC" as const,
       title: `Documento ${d.status === 'VALIDADO' ? 'validado' : 'recebido'}`,
       target: d.colaborador.nomeCompleto,
       time: formatDistanceToNow(new Date(d.createdAt), { addSuffix: true, locale: ptBR }),
-      icon: FileText,
-      color: "bg-blue-500/20 text-blue-500"
     })),
     ...recentColabs.map(c => ({
       id: c.id,
-      type: "CONTRATO",
+      type: "CONTRATO" as const,
       title: "Admissão iniciada",
       target: c.nomeCompleto,
       time: formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: ptBR }),
-      icon: UserPlus,
-      color: "bg-emerald-500/20 text-emerald-500"
     })),
     ...recentPenalties.map(p => ({
       id: p.id,
-      type: "PENALIDADE",
+      type: "PENALIDADE" as const,
       title: "RAP Gerado",
       target: p.colaborador.nomeCompleto,
       time: formatDistanceToNow(new Date(p.createdAt), { addSuffix: true, locale: ptBR }),
-      icon: ShieldAlert,
-      color: "bg-destructive/20 text-destructive"
     }))
-  ].sort((a, b) => 0).slice(0, 5);
+  ].slice(0, 5);
 
   // 3. Fetch Chart Data (Last 6 months)
   const chartData = await Promise.all(
