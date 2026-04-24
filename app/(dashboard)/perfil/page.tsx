@@ -3,13 +3,15 @@
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { 
-  User, 
-  Mail, 
-  Shield, 
-  Building, 
-  Key, 
-  Save,
-  CheckCircle2
+  CheckCircle2,
+  Camera,
+  Loader2,
+  User,
+  Mail,
+  Shield,
+  Building,
+  Key,
+  Save
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,9 +19,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { updateProfile } from "@/actions/user-actions";
+import { useState } from "react";
 
 export default function PerfilPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
+  const [isUploading, setIsUploading] = useState(false);
   const user = session?.user;
 
   const container = {
@@ -38,6 +44,54 @@ export default function PerfilPage() {
     show: { opacity: 1, x: 0 }
   };
 
+  const handlePhotoUpload = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadResult = await res.json();
+
+        if (uploadResult.success) {
+          const result = await updateProfile({ image: uploadResult.path });
+          if (result.success) {
+            // Update the session to reflect the new image immediately
+            await update({
+              ...session,
+              user: {
+                ...session?.user,
+                image: uploadResult.path
+              }
+            });
+            toast.success("Foto de perfil atualizada!");
+          } else {
+            toast.error(result.error || "Erro ao salvar no banco");
+          }
+        } else {
+          toast.error(uploadResult.error || "Erro no upload");
+        }
+      } catch (err) {
+        toast.error("Erro inesperado ao atualizar foto");
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
+    input.click();
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-10 py-6">
       <motion.div 
@@ -47,16 +101,24 @@ export default function PerfilPage() {
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
         
-        <div className="relative">
-          <Avatar className="h-32 w-32 border-4 border-background shadow-2xl">
-            <AvatarImage src={user?.image ?? undefined} />
+        <div className="relative group">
+          <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105">
+            <AvatarImage src={user?.image ?? undefined} className="object-cover" />
             <AvatarFallback className="text-4xl font-black bg-primary text-primary-foreground">
               {user?.name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg border-2 border-background">
-            <User className="size-5" />
-          </div>
+          <button 
+            onClick={handlePhotoUpload}
+            disabled={isUploading}
+            className="absolute bottom-0 right-0 p-3 bg-primary text-primary-foreground rounded-full shadow-lg border-4 border-background hover:bg-primary/90 transition-all active:scale-90 disabled:opacity-50"
+          >
+            {isUploading ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <Camera className="size-5" />
+            )}
+          </button>
         </div>
 
         <div className="flex flex-col items-center md:items-start gap-2 relative z-10">
