@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPremios, createPremio } from "@/actions/premio-actions";
+import { getPremios, createPremio, getPremiosStats } from "@/actions/premio-actions";
 import { getColaboradores } from "@/actions/colaborador-actions";
 
 interface Premio {
@@ -85,6 +85,7 @@ export default function PremiosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [stats, setStats] = useState({ totalPremiado: 0, pctComPremio: 0 });
 
   // Form State
   const [selectedColabId, setSelectedColabId] = useState("");
@@ -95,9 +96,10 @@ export default function PremiosPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [p, c] = await Promise.all([getPremios(), getColaboradores()]);
+    const [p, c, s] = await Promise.all([getPremios(), getColaboradores(), getPremiosStats()]);
     setPremios(p);
     setColaboradores(c);
+    setStats(s);
     setIsLoading(false);
   }
 
@@ -229,19 +231,23 @@ export default function PremiosPage() {
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold">R$ 12.450,00</div>
-             <p className="text-xs text-muted-foreground">+R$ 1.200 em relação ao teto</p>
+             <div className="text-2xl font-bold">
+               {isLoading ? "—" : `R$ ${stats.totalPremiado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+             </div>
+             <p className="text-xs text-muted-foreground">Total de prêmios ativos no mês atual</p>
            </CardContent>
          </Card>
          <Card className="bg-gradient-to-br from-green-500/10 to-transparent">
            <CardHeader className="pb-2">
              <CardTitle className="text-sm font-medium flex items-center gap-2">
-               <TrendingUp className="h-4 w-4" /> Bônus de Produtividade
+               <TrendingUp className="h-4 w-4" /> Colaboradores Premiados
              </CardTitle>
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold text-green-600">88%</div>
-             <p className="text-xs text-muted-foreground">Colaboradores atingiram a primeira meta</p>
+             <div className="text-2xl font-bold text-green-600">
+               {isLoading ? "—" : `${stats.pctComPremio}%`}
+             </div>
+             <p className="text-xs text-muted-foreground">Colaboradores ativos com prêmio este mês</p>
            </CardContent>
          </Card>
          <Card className="bg-gradient-to-br from-amber-500/10 to-transparent">

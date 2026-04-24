@@ -93,3 +93,28 @@ export async function updatePremioStatus(id: string, status: PremioStatus) {
   });
   revalidatePath("/premios");
 }
+
+export async function getPremiosStats() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const [premiosDoMes, totalAtivos] = await Promise.all([
+    prisma.premio.findMany({
+      where: {
+        status: PremioStatus.ATIVO,
+        dataReferencia: { gte: startOfMonth, lte: endOfMonth },
+      },
+      select: { colaboradorId: true, valorFinal: true },
+    }),
+    prisma.colaborador.count({ where: { status: "ATIVO" } }),
+  ]);
+
+  const totalPremiado = premiosDoMes.reduce((sum, p) => sum + p.valorFinal, 0);
+  const colaboradoresComPremio = new Set(premiosDoMes.map((p) => p.colaboradorId)).size;
+  const pctComPremio = totalAtivos > 0
+    ? Math.round((colaboradoresComPremio / totalAtivos) * 100)
+    : 0;
+
+  return { totalPremiado, pctComPremio };
+}
