@@ -37,7 +37,7 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
 
 # Script para garantir que o banco existe e iniciar o app
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]
 
 
 

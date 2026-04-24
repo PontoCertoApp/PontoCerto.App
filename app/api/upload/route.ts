@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
     
     // Path: /data/uploads for production volume, or public/uploads for dev
     // For this environment, we'll try to use a persistent-like path or public
-    const uploadDir = join(process.cwd(), "public", "uploads");
+    // Use UPLOAD_DIR env or default to public/uploads
+    const uploadDir = process.env.UPLOAD_DIR 
+      ? (process.env.UPLOAD_DIR.startsWith("/") ? process.env.UPLOAD_DIR : join(process.cwd(), process.env.UPLOAD_DIR))
+      : join(process.cwd(), "public", "uploads");
     
     try {
       await mkdir(uploadDir, { recursive: true });
