@@ -28,8 +28,9 @@ export async function createPenalidade(data: z.infer<typeof penalidadeSchema>) {
       data: {
         colaboradorId: data.colaboradorId,
         tipo: data.tipo,
-        motivo: data.motivo,
+        descricao: data.motivo,
         dataOcorrencia: data.dataOcorrencia,
+        validadeAte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // Default 90 days validity
         geradoPorId: session.user.id,
         status: PenalidadeStatus.ATIVA,
       },

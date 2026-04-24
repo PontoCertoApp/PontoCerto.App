@@ -47,6 +47,8 @@ import {
 import { getTotalAtivos } from "@/actions/ponto-actions";
 import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
 
+import { exportToExcel } from "@/lib/utils/export";
+
 interface Penalidade {
   id: string;
   tipo: string;
@@ -59,8 +61,30 @@ interface Penalidade {
 export default function PenalidadesPage() {
   const [penalidades, setPenalidades] = useState<Penalidade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [totalAtivos, setTotalAtivos] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const dataToExport = filtered.map(p => ({
+        'Colaborador': p.colaborador.nomeCompleto,
+        'Loja': p.colaborador.loja.nome,
+        'Tipo': p.tipo,
+        'Descrição': p.descricao,
+        'Data': format(new Date(p.dataOcorrencia), "dd/MM/yyyy"),
+        'Status': p.status
+      }));
+      
+      exportToExcel(dataToExport, "Relatorio_Penalidades");
+      toast.success("Relatório exportado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao exportar relatório.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   async function loadData() {
     setIsLoading(true);
@@ -116,8 +140,16 @@ export default function PenalidadesPage() {
             Monitoramento de conduta e histórico disciplinar.
           </p>
         </div>
-        <Button variant="outline">
-          <FileDown className="mr-2 h-4 w-4" />
+        <Button 
+          variant="outline" 
+          onClick={handleExport} 
+          disabled={isExporting || filtered.length === 0}
+        >
+          {isExporting ? (
+            <Clock className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileDown className="mr-2 h-4 w-4" />
+          )}
           Exportar Relatório
         </Button>
       </div>

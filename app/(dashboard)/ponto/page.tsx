@@ -69,6 +69,8 @@ import {
   getTotalAtivos
 } from "@/actions/ponto-actions";
 
+import { exportToExcel } from "@/lib/utils/export";
+
 type TipoInconformidade = "FALTA_INJUSTIFICADA" | "ATRASO" | "SAIDA_ANTECIPADA" | "PONTO_NAO_REGISTRADO";
 
 interface ColaboradorSemPonto {
@@ -92,6 +94,7 @@ export default function PontoPage() {
   const [tratados, setTratados] = useState<RegistroPonto[]>([]);
   const [totalColaboradores, setTotalColaboradores] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
 
@@ -99,6 +102,26 @@ export default function PontoPage() {
   const [justificativa, setJustificativa] = useState("");
   const [gerarRap, setGerarRap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const dataToExport = tratados.map(t => ({
+        'Colaborador': t.colaborador.nomeCompleto,
+        'Inconformidade': t.tipo,
+        'RAP Gerado': t.rapGerado ? "Sim" : "Não",
+        'Data Ocorrência': format(new Date(date), "dd/MM/yyyy"),
+        'Horário Registro': format(new Date(t.createdAt), "HH:mm")
+      }));
+      
+      exportToExcel(dataToExport, `Relatorio_Ponto_${format(date, "dd_MM_yyyy")}`);
+      toast.success("Relatório exportado!");
+    } catch (error) {
+      toast.error("Erro ao exportar.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   async function loadData() {
     setIsLoading(true);
@@ -184,6 +207,10 @@ export default function PontoPage() {
           </Popover>
           <Button variant="outline" size="icon" onClick={() => loadData()}>
             <ArrowRight className="h-4 w-4 rotate-90" />
+          </Button>
+          <Button variant="outline" onClick={handleExport} disabled={isExporting || tratados.length === 0}>
+            {isExporting ? <Clock className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+            Exportar Dia
           </Button>
         </div>
       </div>
