@@ -51,7 +51,19 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { getColaboradoresPaged } from "@/actions/colaborador-actions";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+
+import { getColaboradoresPaged, deleteColaborador } from "@/actions/colaborador-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 
 type ColaboradorStatus = "ATIVO" | "EM_EXPERIENCIA" | "DESLIGADO";
@@ -129,6 +141,18 @@ export default function ColaboradoresPage() {
     const params = new URLSearchParams(searchParams);
     params.set("page", newPage.toString());
     router.push(`?${params.toString()}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const result = await deleteColaborador(id);
+      if (result.success) {
+        toast.success("Colaborador excluído com sucesso.");
+        loadData();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao excluir colaborador.");
+    }
   };
 
   return (
@@ -267,9 +291,34 @@ export default function ColaboradoresPage() {
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive">
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem 
+                              variant="destructive" 
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o colaborador
+                                <strong> {c.nomeCompleto} </strong> e removerá todos os dados relacionados (documentos, penalidades, ponto).
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(c.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Sim, Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

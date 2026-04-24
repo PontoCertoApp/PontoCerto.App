@@ -242,3 +242,27 @@ export async function getColaboradorById(id: string) {
     },
   });
 }
+
+export const deleteColaborador = createAction(
+  z.string(),
+  ["RH"],
+  async (id) => {
+    try {
+      await prisma.$transaction([
+        prisma.documento.deleteMany({ where: { colaboradorId: id } }),
+        prisma.penalidade.deleteMany({ where: { colaboradorId: id } }),
+        prisma.premio.deleteMany({ where: { colaboradorId: id } }),
+        prisma.controleUniforme.deleteMany({ where: { colaboradorId: id } }),
+        prisma.registroPonto.deleteMany({ where: { colaboradorId: id } }),
+        prisma.user.deleteMany({ where: { colaboradorId: id } }),
+        prisma.colaborador.delete({ where: { id } }),
+      ]);
+      
+      revalidatePath("/colaboradores");
+      return { success: true };
+    } catch (error) {
+      console.error("[DELETE_COLABORADOR_ERROR]:", error);
+      throw new Error("Falha ao excluir colaborador.");
+    }
+  }
+);
