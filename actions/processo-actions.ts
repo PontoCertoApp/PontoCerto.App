@@ -29,3 +29,16 @@ export async function iniciarDesligamento(id: string) {
     return { success: false, error: "Erro ao iniciar desligamento" };
   }
 }
+
+export async function reprovarExperiencia(id: string) {
+  try {
+    await prisma.colaborador.update({
+      where: { id },
+      data: { status: ColaboradorStatus.INATIVO },
+    });
+    revalidatePath("/colaboradores");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Erro ao reprovar experiência" };
+  }
+}

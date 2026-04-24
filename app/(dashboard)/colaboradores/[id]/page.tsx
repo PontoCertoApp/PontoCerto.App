@@ -40,9 +40,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import { getColaboradorById } from "@/actions/colaborador-actions";
-import { aprovarContratacao, iniciarDesligamento } from "@/actions/processo-actions";
+import { aprovarContratacao, iniciarDesligamento, reprovarExperiencia } from "@/actions/processo-actions";
 
 export default function ColaboradorDetalhesPage() {
   const { id } = useParams();
@@ -70,6 +81,19 @@ export default function ColaboradorDetalhesPage() {
     const res = await aprovarContratacao(colab.id);
     if (res.success) {
       toast.success("Colaborador aprovado com sucesso!");
+      const found = await getColaboradorById(id as string);
+      setColab(found);
+    } else {
+      toast.error(res.error as string);
+    }
+    setIsProcessing(false);
+  }
+
+  async function handleReprovar() {
+    setIsProcessing(true);
+    const res = await reprovarExperiencia(colab.id);
+    if (res.success) {
+      toast.success("Experiência reprovada.");
       const found = await getColaboradorById(id as string);
       setColab(found);
     } else {
@@ -150,9 +174,30 @@ export default function ColaboradorDetalhesPage() {
                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                        Efetivar Admissão
                     </Button>
-                    <Button variant="outline" className="text-destructive hover:bg-destructive hover:text-white" onClick={() => toast.error("Função de rejeição em breve")}>
-                       Reprovar Experiência
-                    </Button>
+                     <AlertDialog>
+                       <AlertDialogTrigger asChild>
+                         <Button variant="outline" className="text-destructive hover:bg-destructive hover:text-white">
+                            Reprovar Experiência
+                         </Button>
+                       </AlertDialogTrigger>
+                       <AlertDialogContent>
+                         <AlertDialogHeader>
+                           <AlertDialogTitle>Reprovar Experiência?</AlertDialogTitle>
+                           <AlertDialogDescription>
+                             Isso marcará o colaborador como <strong>Inativo</strong>. Esta ação confirma que o colaborador não passou no período de experiência.
+                           </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         <AlertDialogFooter>
+                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                           <AlertDialogAction 
+                             onClick={handleReprovar}
+                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                           >
+                             Confirmar Reprovação
+                           </AlertDialogAction>
+                         </AlertDialogFooter>
+                       </AlertDialogContent>
+                     </AlertDialog>
                   </div>
                 )}
              </CardContent>
