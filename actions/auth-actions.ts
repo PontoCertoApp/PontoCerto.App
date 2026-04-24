@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { sendBoasVindas } from "@/lib/email/send";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -50,6 +51,13 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
 
       return { user, loja };
     });
+
+    // Send welcome email asynchronously
+    sendBoasVindas(result.user.email as string, {
+      nomeUsuario: result.user.name || "Usuário",
+      empresa: result.loja.nome,
+      loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`
+    }).catch(err => console.error("[WELCOME_EMAIL_ERROR]:", err));
 
     return { 
       success: true, 

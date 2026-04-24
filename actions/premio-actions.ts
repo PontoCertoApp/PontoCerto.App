@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PremioStatus } from "@/lib/enums";
 import { auth } from "@/auth";
-import { sendPremioNotification } from "@/lib/email/send";
+import { sendPremiosConcedido } from "@/lib/email/send";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -56,13 +56,11 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
 
     // Fire-and-forget email notification
     if (colaborador?.email) {
-      sendPremioNotification(colaborador.email, {
+      sendPremiosConcedido(colaborador.email, {
         colaboradorNome: colaborador.nomeCompleto,
-        email: colaborador.email,
-        tipoPremio: data.tipo,
-        valor: data.valorFinal,
-        mesReferencia: format(data.dataReferencia, "MMMM/yyyy", { locale: ptBR }),
-        observacao: data.observacao,
+        nomePremio: data.tipo,
+        valorOuDescricao: `R$ ${data.valorFinal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+        mensagem: data.observacao || "Parabéns pelo seu desempenho!",
       }).catch((err) => console.error("[email/premio] Falha:", err));
     }
 

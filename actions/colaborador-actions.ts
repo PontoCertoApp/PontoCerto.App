@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAction } from "@/lib/safe-action";
 import { ColaboradorStatus } from "@/lib/enums";
-import { sendWelcomeEmail } from "@/lib/email/send";
+import { sendBoasVindas, sendColaboradorCadastrado } from "@/lib/email/send";
 import { auth } from "@/auth";
 
 const colaboradorSchema = z.object({
@@ -132,13 +132,24 @@ export const createColaborador = createAction(
 
       if (colaborador.email) {
         const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
-        sendWelcomeEmail(colaborador.email, {
-          colaboradorNome: colaborador.nomeCompleto,
-          cargo: funcao?.nome ?? "Colaborador",
-          loja: loja?.nome ?? "Empresa",
-          dataAdmissao: new Date().toLocaleDateString("pt-BR"),
+        
+        // 1. Send Welcome to Colaborador
+        sendBoasVindas(colaborador.email, {
+          nomeUsuario: colaborador.nomeCompleto,
+          empresa: loja?.nome ?? "PontoCerto",
           loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
         }).catch((err) => console.error("[email/welcome] Falha:", err));
+
+        // 2. Send Notification to RH (session user)
+        if (session?.user?.email) {
+          sendColaboradorCadastrado(session.user.email, {
+            rhNome: session.user.name || "RH",
+            colaboradorNome: colaborador.nomeCompleto,
+            cargo: funcao?.nome ?? "Colaborador",
+            setor: setor?.nome ?? "Geral",
+            dataAdmissao: new Date().toLocaleDateString("pt-BR"),
+          }).catch((err) => console.error("[email/rh-notification] Falha:", err));
+        }
       }
 
       revalidatePath("/colaboradores");
