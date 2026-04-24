@@ -44,8 +44,8 @@ EXPOSE 3000
 # Script de inicialização robusto
 RUN echo '#!/bin/sh\n\
 echo "Iniciando PontoCerto..."\n\
-echo "Verificando Banco de Dados em $DATABASE_URL"\n\
-npx prisma db push --accept-data-loss || echo "Aviso: db push falhou"\n\
+echo "DATABASE_URL: $DATABASE_URL"\n\
+./node_modules/.bin/prisma db push --accept-data-loss || echo "Aviso: db push falhou"\n\
 echo "Iniciando Next.js na porta $PORT..."\n\
 npm start' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 

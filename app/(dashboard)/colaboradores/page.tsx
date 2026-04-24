@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { 
-  Users, 
-  Search, 
-  Plus, 
-  Filter, 
-  MoreHorizontal, 
-  MapPin, 
+import {
+  Users,
+  Search,
+  Plus,
+  Filter,
+  MoreHorizontal,
+  MapPin,
   Briefcase,
   ChevronLeft,
   ChevronRight,
-  Loader2,
+  Clock,
   UserCheck,
   UserMinus,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,7 +37,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -115,7 +117,7 @@ export default function ColaboradoresPage() {
       case "ATIVO":
         return <Badge className="bg-green-500 hover:bg-green-600"><UserCheck className="mr-1 h-3 w-3" /> Ativo</Badge>;
       case "EM_EXPERIENCIA":
-        return <Badge className="bg-blue-500 hover:bg-blue-600"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Experiência</Badge>;
+        return <Badge className="bg-blue-500 hover:bg-blue-600"><Clock className="mr-1 h-3 w-3" /> Experiência</Badge>;
       case "DESLIGADO":
         return <Badge variant="destructive"><UserMinus className="mr-1 h-3 w-3" /> Desligado</Badge>;
       default:
@@ -252,19 +254,22 @@ export default function ColaboradoresPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted/50 outline-none transition-colors">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <DropdownMenuTrigger>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
+                      <DropdownMenuContent align="end" className="w-52">
                         <DropdownMenuItem onClick={() => router.push(`/colaboradores/${c.id}`)}>
-                          Ver Ficha Funcional
+                          <Eye className="mr-2 h-4 w-4" /> Ver Perfil
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Editar Dados</DropdownMenuItem>
-                        <DropdownMenuItem className="text-blue-600">Documentação</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/colaboradores/${c.id}`)}>
+                          <Pencil className="mr-2 h-4 w-4" /> Editar
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">Lançar Penalidade</DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive">
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
