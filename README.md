@@ -29,8 +29,20 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Configuração de E-mail (Resend)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Este projeto utiliza o [Resend](https://resend.com) para o envio de e-mails transacionais (boas-vindas, notificações de RH, etc).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Crie uma conta em [resend.com](https://resend.com).
+2. Vá em **API Keys** e crie uma nova chave.
+3. Adicione a chave ao seu arquivo `.env`:
+   ```bash
+   RESEND_API_KEY="sua_chave_aqui"
+   ```
+4. Os templates de e-mail estão localizados em `lib/email/templates` e utilizam o **React Email**.
+
+## Deploy no Easypanel
+
+Para que o sistema funcione corretamente em produção:
+- Certifique-se de montar um volume em `/data` para persistência do SQLite e Uploads.
+- Configure as variáveis `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL` e `RESEND_API_KEY` no painel do Easypanel.
