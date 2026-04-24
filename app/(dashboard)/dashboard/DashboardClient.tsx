@@ -20,8 +20,10 @@ import {
   ShieldAlert,
   Calendar,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Link
 } from "lucide-react";
+import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
 import { Badge } from "@/components/ui/badge";
 
@@ -247,19 +249,22 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
               title: "Módulo Ponto", 
               desc: `${dbStats.pendenciasPonto} colaboradores com pendência de assinatura.`, 
               cta: "Tratar Agora", 
-              color: "bg-primary text-primary-foreground" 
+              color: "bg-primary text-primary-foreground",
+              href: "/ponto"
             },
             { 
               title: "Uniformes", 
               desc: "Controle de entrega e trocas de uniformes.", 
               cta: "Ver Lista", 
-              color: "bg-slate-900 text-white dark:bg-white dark:text-black" 
+              color: "bg-slate-900 text-white dark:bg-white dark:text-black",
+              href: "/uniformes"
             },
             { 
               title: "Documentação", 
               desc: `${dbStats.documentosPendentes} documentos aguardando validação.`, 
               cta: "Gerenciar", 
-              color: "bg-indigo-600 text-white" 
+              color: "bg-indigo-600 text-white",
+              href: "/documentos"
             }
           ].map((feature, i) => (
             <motion.div 
@@ -275,10 +280,13 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
                 <CardTitle className="text-xl font-black mb-2">{feature.title}</CardTitle>
                 <p className="opacity-80 font-medium leading-tight">{feature.desc}</p>
               </div>
-              <button className={`w-full py-4 px-6 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all flex items-center justify-center gap-2`}>
+              <Link 
+                href={feature.href}
+                className={`w-full py-4 px-6 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all flex items-center justify-center gap-2`}
+              >
                 {feature.cta}
                 <ArrowUpRight className="size-4" />
-              </button>
+              </Link>
             </motion.div>
           ))}
         </div>
