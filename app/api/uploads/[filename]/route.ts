@@ -27,8 +27,8 @@ export async function GET(
   }
 
   const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
-  const uploadsRoot = path.resolve(process.cwd(), UPLOAD_DIR);
-  const filePath = path.resolve(uploadsRoot, filename);
+  const uploadsRoot = UPLOAD_DIR.startsWith("/") ? UPLOAD_DIR : path.resolve(process.cwd(), UPLOAD_DIR);
+  const filePath = path.join(uploadsRoot, filename);
 
   if (!filePath.startsWith(uploadsRoot + path.sep) && filePath !== uploadsRoot) {
     return new NextResponse("Acesso negado", { status: 403 });
