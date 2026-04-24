@@ -168,7 +168,7 @@ export default function FuncoesPage() {
                       <FormLabel>Setor</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -194,7 +194,13 @@ export default function FuncoesPage() {
                     <FormItem>
                       <FormLabel>Salário Base (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -6,14 +6,9 @@ import {
   User, 
   FileText, 
   ShieldAlert, 
-  Gift, 
-  Shirt, 
   CheckCircle2, 
   ArrowLeft,
-  Calendar,
   Building,
-  Mail,
-  Phone,
   Briefcase,
   AlertTriangle,
   Download,
@@ -21,7 +16,6 @@ import {
   Clock
 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +32,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { getColaboradores } from "@/actions/colaborador-actions"; // I'll use a better fetch in reality
+import { getColaboradorById } from "@/actions/colaborador-actions";
 import { aprovarContratacao, iniciarDesligamento } from "@/actions/processo-actions";
 
 export default function ColaboradorDetalhesPage() {
@@ -50,8 +44,7 @@ export default function ColaboradorDetalhesPage() {
 
   useEffect(() => {
     async function loadData() {
-      const all = await getColaboradores();
-      const found = all.find(c => c.id === id);
+      const found = await getColaboradorById(id as string);
       setColab(found);
       setIsLoading(false);
     }
@@ -61,15 +54,17 @@ export default function ColaboradorDetalhesPage() {
   if (isLoading) return <div className="p-8"><Skeleton className="h-40 w-full" /></div>;
   if (!colab) return <div className="p-8">Colaborador não encontrado.</div>;
 
-  const integrationProgress = 65; // Simulated
+  const integrationProgress = colab.status === "ATIVO" ? 100 : 65;
 
   async function handleAprovar() {
     setIsProcessing(true);
     const res = await aprovarContratacao(colab.id);
     if (res.success) {
       toast.success("Colaborador aprovado com sucesso!");
-      router.refresh();
-      window.location.reload();
+      const found = await getColaboradorById(id as string);
+      setColab(found);
+    } else {
+      toast.error(res.error as string);
     }
     setIsProcessing(false);
   }
@@ -91,22 +86,22 @@ export default function ColaboradorDetalhesPage() {
           <CardHeader className="flex flex-col items-center">
              <div className="h-32 w-32 rounded-full border-4 border-muted overflow-hidden bg-muted flex items-center justify-center">
                 {colab.fotoPerfilPath ? (
-                  <img src={colab.fotoPerfilPath} alt="" className="object-cover h-full w-full" />
+                   <img src={colab.fotoPerfilPath} alt="" className="object-cover h-full w-full" />
                 ) : (
                   <User className="h-16 w-16 text-muted-foreground opacity-20" />
                 )}
              </div>
              <CardTitle className="mt-4 text-center">{colab.nomeCompleto}</CardTitle>
-             <CardDescription>{colab.funcao.nome}</CardDescription>
+             <CardDescription>{colab.funcao?.nome || "Sem Função"}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2 text-sm">
                <Building className="h-4 w-4 text-muted-foreground" />
-               <span>{colab.loja.nome}</span>
+               <span>{colab.loja?.nome || "Sede"}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
                <Briefcase className="h-4 w-4 text-muted-foreground" />
-               <span>{colab.setor.nome}</span>
+               <span>{colab.setor?.nome || "Geral"}</span>
             </div>
             <Separator />
             <div className="space-y-2">
@@ -162,23 +157,34 @@ export default function ColaboradorDetalhesPage() {
               </TabsList>
               
               <TabsContent value="docs" className="pt-4 space-y-4">
-                 {[
-                   { name: "RG / CPF", status: "VALIDADO" },
-                   { name: "PIS", status: "VALIDADO" },
-                   { name: "CTPS", status: "VALIDADO" },
-                   { name: "Contrato", status: "PENDENTE" },
-                 ].map(doc => (
-                   <div key={doc.name} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">{doc.name}</span>
+                  {colab.documentos && colab.documentos.length > 0 ? (
+                    colab.documentos.map((doc: any) => (
+                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{doc.nome}</span>
+                            <span className="text-[10px] text-muted-foreground">Enviado em {format(new Date(doc.createdAt), "dd/MM/yyyy")}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Badge variant={doc.status === "VALIDADO" ? "default" : "secondary"}>
+                            {doc.status}
+                          </Badge>
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={doc.path} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant={doc.status === "VALIDADO" ? "default" : "outline"}>{doc.status}</Badge>
-                        <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
-                      </div>
-                   </div>
-                 ))}
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                      <FileText className="h-10 w-10 text-muted-foreground opacity-20 mb-2" />
+                      <p className="text-sm text-muted-foreground">Nenhum documento anexado.</p>
+                    </div>
+                  )}
               </TabsContent>
 
               <TabsContent value="penalidades" className="pt-4">

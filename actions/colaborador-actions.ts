@@ -219,3 +219,15 @@ export async function getColaboradores() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function getColaboradorById(id: string) {
+  return await prisma.colaborador.findUnique({
+    where: { id },
+    include: {
+      funcao: true,
+      loja: true,
+      setor: true,
+      documentos: true,
+    },
+  });
+}
