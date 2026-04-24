@@ -209,7 +209,7 @@ export function AppSidebar() {
                   </div>
                 </div>
                 <DropdownMenuItem
-                  render={<Link href="/dashboard" />}
+                  render={<Link href="/perfil" />}
                   className="rounded-lg h-10 cursor-pointer flex items-center gap-2"
                 >
                   <Settings className="size-4 opacity-70" />
