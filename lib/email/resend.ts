@@ -1,20 +1,18 @@
-import { Resend } from "resend";
+import { Resend } from 'resend'
 
-export const FROM_ADDRESS = "PontoCerto <noreply@pontoce.rto>";
-export const FROM_ADDRESS_SYSTEM = "PontoCerto Sistema <sistema@pontoce.rto>";
-export const REPLY_TO = "suporte@pontoce.rto";
+let resendClient: Resend | null = null
 
-let _client: Resend | null = null;
-
-/**
- * Returns the Resend client, initializing it on first call.
- * Throws at runtime (not at build time) if RESEND_API_KEY is missing.
- */
 export function getResend(): Resend {
-  if (!_client) {
-    const key = process.env.RESEND_API_KEY;
-    if (!key) throw new Error("RESEND_API_KEY não configurada.");
-    _client = new Resend(key);
+  if (!process.env.RESEND_API_KEY) {
+    // We throw error in prod, but return null or dummy in dev if key is missing
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('RESEND_API_KEY não configurada')
+    }
+    console.warn('AVISO: RESEND_API_KEY não configurada. E-mails não serão enviados.')
   }
-  return _client;
+  
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY || 'dummy_key')
+  }
+  return resendClient
 }

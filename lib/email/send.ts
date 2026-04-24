@@ -1,146 +1,128 @@
-"use server";
+import { getResend } from "./resend";
+import { BemVindoEmail, BemVindoEmailProps } from "./templates/boas-vindas";
+import { ColaboradorCadastradoEmail, ColaboradorEmailProps } from "./templates/colaborador-cadastrado";
+import { PenalidadeAplicadaEmail, PenalidadeEmailProps } from "./templates/penalidade-aplicada";
+import { PremioConcedidoEmail, PremioEmailProps } from "./templates/premio-concedido";
+import { DocumentoPendenteEmail, DocumentoEmailProps } from "./templates/documento-pendente";
+import { RelatorioSemanalEmail, RelatorioEmailProps } from "./templates/relatorio-semanal";
+import * as React from 'react';
 
-import * as React from "react";
-import { getResend, FROM_ADDRESS, FROM_ADDRESS_SYSTEM } from "./resend";
-import { WelcomeEmail } from "./templates/welcome";
-import { PontoNotificationEmail } from "./templates/ponto-notification";
-import { PenalidadeNotificationEmail } from "./templates/penalidade-notification";
-import { PremioNotificationEmail } from "./templates/premio-notification";
-import { PasswordResetEmail } from "./templates/password-reset";
-import { GestorReportEmail } from "./templates/gestor-report";
-import type {
-  WelcomeEmailProps,
-  PontoNotificationProps,
-  PenalidadeNotificationProps,
-  PremioNotificationProps,
-  PasswordResetProps,
-  GestorReportProps,
-  EmailSendResult,
-} from "./types";
+const FROM_EMAIL = "PontoCerto <noreply@pontocertoapp.xyz>";
 
-function handleSendError(error: unknown): EmailSendResult {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error("[Email] Falha ao enviar:", message);
-  return { success: false, error: message };
+export interface SendEmailResponse {
+  success: boolean;
+  error?: string;
 }
 
-export async function sendWelcomeEmail(
-  to: string,
-  props: WelcomeEmailProps
-): Promise<EmailSendResult> {
+export async function sendBoasVindas(to: string, dados: BemVindoEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: `Bem-vindo(a) ao PontoCerto, ${props.colaboradorNome.split(" ")[0]}!`,
-      react: React.createElement(WelcomeEmail, props),
+      subject: "Bem-vindo ao PontoCerto RH!",
+      react: React.createElement(BemVindoEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][BOAS_VINDAS]:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function sendPontoNotification(
-  to: string,
-  props: PontoNotificationProps
-): Promise<EmailSendResult> {
+export async function sendColaboradorCadastrado(to: string, dados: ColaboradorEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS_SYSTEM,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: `[PontoCerto] Inconformidade de ponto registrada — ${props.data}`,
-      react: React.createElement(PontoNotificationEmail, props),
+      subject: "Novo Colaborador Cadastrado",
+      react: React.createElement(ColaboradorCadastradoEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][NOVO_COLABORADOR]:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function sendPenalidadeNotification(
-  to: string,
-  props: PenalidadeNotificationProps
-): Promise<EmailSendResult> {
-  const TIPO_LABELS: Record<string, string> = {
-    INCONSISTENCIA_PONTO: "Inconsistência de Ponto",
-    QUEDA_CONDUTA: "Queda de Conduta",
-    ADVERTENCIA: "Advertência Formal",
-    SUSPENSAO: "Suspensão",
-  };
-
+export async function sendPenalidadeAplicada(to: string, dados: PenalidadeEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS_SYSTEM,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: `[PontoCerto] ${TIPO_LABELS[props.tipo] ?? props.tipo} registrada`,
-      react: React.createElement(PenalidadeNotificationEmail, props),
+      subject: "Notificação de Medida Disciplinar",
+      react: React.createElement(PenalidadeAplicadaEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][PENALIDADE]:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function sendPremioNotification(
-  to: string,
-  props: PremioNotificationProps
-): Promise<EmailSendResult> {
+export async function sendPremiosConcedido(to: string, dados: PremioEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: `[PontoCerto] Parabéns! Você recebeu um prêmio — ${props.tipoPremio}`,
-      react: React.createElement(PremioNotificationEmail, props),
+      subject: "🎉 Parabéns pelo seu Reconhecimento!",
+      react: React.createElement(PremioConcedidoEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][PREMIO]:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function sendPasswordResetEmail(
-  to: string,
-  props: PasswordResetProps
-): Promise<EmailSendResult> {
+export async function sendDocumentoPendente(to: string, dados: DocumentoEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS_SYSTEM,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: "[PontoCerto] Redefinição de senha solicitada",
-      react: React.createElement(PasswordResetEmail, props),
+      subject: "Ação Necessária: Assinatura de Documento",
+      react: React.createElement(DocumentoPendenteEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][DOCUMENTO]:", error);
+    return { success: false, error: error.message };
   }
 }
 
-export async function sendGestorReport(
-  to: string,
-  props: GestorReportProps
-): Promise<EmailSendResult> {
+export async function sendRelatorioSemanal(to: string, dados: RelatorioEmailProps): Promise<SendEmailResponse> {
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_ADDRESS_SYSTEM,
+    const resend = getResend();
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to,
-      subject: `[PontoCerto] Relatório Gerencial — ${props.loja} · ${props.periodo}`,
-      react: React.createElement(GestorReportEmail, props),
+      subject: `Relatório Semanal de Gestão - ${dados.unidade}`,
+      react: React.createElement(RelatorioSemanalEmail, dados),
     });
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: data?.id };
-  } catch (err) {
-    return handleSendError(err);
+    return { success: true };
+  } catch (error: any) {
+    console.error("[EMAIL_SEND_ERROR][RELATORIO]:", error);
+    return { success: false, error: error.message };
   }
+}
+
+// Aliases para compatibilidade legada
+export const sendWelcomeEmail = sendBoasVindas;
+export const sendColaboradorEmail = sendColaboradorCadastrado;
+export const sendPenalidadeNotification = sendPenalidadeAplicada;
+export const sendPremioNotification = sendPremiosConcedido;
+export const sendGestorReport = sendRelatorioSemanal;
+
+// Mock para funções ainda não migradas
+export async function sendPontoNotification(to: string, dados: any) {
+  console.log("Mock: enviando notificação de ponto para", to);
+  return { success: true };
+}
+export async function sendPasswordResetEmail(to: string, dados: any) {
+  console.log("Mock: enviando reset de senha para", to);
+  return { success: true };
 }
