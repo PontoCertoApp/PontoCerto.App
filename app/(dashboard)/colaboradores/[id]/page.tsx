@@ -11,6 +11,7 @@ import {
   Building,
   Briefcase,
   AlertTriangle,
+  Eye, 
   Download,
   Loader2,
   Clock
@@ -31,6 +32,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { getColaboradorById } from "@/actions/colaborador-actions";
 import { aprovarContratacao, iniciarDesligamento } from "@/actions/processo-actions";
@@ -159,25 +168,66 @@ export default function ColaboradorDetalhesPage() {
               <TabsContent value="docs" className="pt-4 space-y-4">
                   {colab.documentos && colab.documentos.length > 0 ? (
                     colab.documentos.map((doc: any) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{doc.nome}</span>
-                            <span className="text-[10px] text-muted-foreground">Enviado em {format(new Date(doc.createdAt), "dd/MM/yyyy")}</span>
+                      <Dialog key={doc.id}>
+                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/5 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{doc.nome}</span>
+                              <span className="text-[10px] text-muted-foreground">Enviado em {format(new Date(doc.createdAt), "dd/MM/yyyy")}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <Badge variant={doc.status === "VALIDADO" ? "default" : "secondary"}>
+                              {doc.status}
+                            </Badge>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <Button variant="ghost" size="icon" asChild>
+                              <a href={doc.path} download={doc.nome}>
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <Badge variant={doc.status === "VALIDADO" ? "default" : "secondary"}>
-                            {doc.status}
-                          </Badge>
-                          <Button variant="ghost" size="icon" asChild>
-                            <a href={doc.path} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        </div>
-                      </div>
+                        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background">
+                            <DialogHeader className="p-6 border-b shrink-0">
+                               <div className="flex items-center justify-between">
+                                  <div>
+                                     <DialogTitle>{doc.nome}</DialogTitle>
+                                     <DialogDescription>Visualizando documento enviado por {colab.nomeCompleto}</DialogDescription>
+                                  </div>
+                               </div>
+                            </DialogHeader>
+                            <div className="flex-1 bg-muted/20 relative overflow-hidden flex items-center justify-center p-4">
+                               {doc.path.toLowerCase().endsWith('.pdf') ? (
+                                 <iframe 
+                                   src={doc.path} 
+                                   className="w-full h-full rounded-md border shadow-sm"
+                                   title={doc.nome}
+                                 />
+                               ) : (
+                                 <div className="relative w-full h-full flex items-center justify-center overflow-auto">
+                                   <img 
+                                     src={doc.path} 
+                                     alt={doc.nome}
+                                     className="max-w-full max-h-full object-contain rounded-md shadow-lg"
+                                   />
+                                 </div>
+                               )}
+                            </div>
+                            <div className="p-4 border-t flex justify-end gap-2 shrink-0 bg-background/50 backdrop-blur-sm">
+                               <a href={doc.path} download={doc.nome} target="_blank" rel="noopener noreferrer">
+                                 <Button variant="outline">
+                                   <Download className="mr-2 h-4 w-4" /> Baixar Documento
+                                 </Button>
+                               </a>
+                            </div>
+                        </DialogContent>
+                      </Dialog>
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/20">

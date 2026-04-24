@@ -26,8 +26,11 @@ export async function GET(
     return new NextResponse("Tipo de arquivo não permitido", { status: 400 });
   }
 
-  const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
-  const uploadsRoot = UPLOAD_DIR.startsWith("/") ? UPLOAD_DIR : path.resolve(process.cwd(), UPLOAD_DIR);
+  const UPLOAD_DIR = process.env.UPLOAD_DIR 
+    ? (process.env.UPLOAD_DIR.startsWith("/") ? process.env.UPLOAD_DIR : path.join(process.cwd(), process.env.UPLOAD_DIR))
+    : path.join(process.cwd(), "public", "uploads");
+
+  const uploadsRoot = UPLOAD_DIR;
   const filePath = path.join(uploadsRoot, filename);
 
   if (!filePath.startsWith(uploadsRoot + path.sep) && filePath !== uploadsRoot) {
@@ -45,6 +48,8 @@ export async function GET(
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": contentType,
+        "Content-Disposition": "inline",
+        "Cache-Control": "public, max-age=3600",
       },
     });
   } catch (error) {

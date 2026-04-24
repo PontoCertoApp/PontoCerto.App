@@ -245,10 +245,20 @@ export default function DocumentosPage() {
                                  </a>
                              </div>
 
-                             <div className="h-[200px] border-2 border-dashed rounded-lg bg-muted/30 flex items-center justify-center p-4">
-                                <p className="text-muted-foreground text-sm flex items-center gap-2">
-                                  <Clock className="h-4 w-4" /> Preview Indisponível (Use botão baixar)
-                                </p>
+                             <div className="h-[400px] border rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
+                                {selectedDoc?.path.toLowerCase().endsWith('.pdf') ? (
+                                  <iframe 
+                                    src={selectedDoc.path} 
+                                    className="w-full h-full"
+                                    title={selectedDoc.nome}
+                                  />
+                                ) : (
+                                  <img 
+                                    src={selectedDoc?.path} 
+                                    alt="" 
+                                    className="max-w-full max-h-full object-contain" 
+                                  />
+                                )}
                              </div>
 
                              <div className="space-y-2">
