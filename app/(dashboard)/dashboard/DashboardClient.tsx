@@ -20,8 +20,7 @@ import {
   ShieldAlert,
   Calendar,
   Sparkles,
-  ArrowRight,
-  Link
+  ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
