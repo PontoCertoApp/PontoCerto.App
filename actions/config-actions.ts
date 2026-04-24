@@ -7,7 +7,7 @@ import { createAction } from "@/lib/safe-action";
 
 // --- LOJAS ---
 
-export const lojaSchema = z.object({
+const lojaSchema = z.object({
   id: z.string().min(2, "ID muito curto").optional(),
   nome: z.string().min(3, "Nome muito curto"),
   cidade: z.string().min(2),
@@ -29,7 +29,7 @@ export const upsertLoja = createAction(
 
 // --- SETORES ---
 
-export const setorSchema = z.object({
+const setorSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(3),
 });
@@ -50,7 +50,7 @@ export const upsertSetor = createAction(
 
 // --- FUNCOES ---
 
-export const funcaoSchema = z.object({
+const funcaoSchema = z.object({
   id: z.string().optional(),
   nome: z.string().min(3),
   setorId: z.string(),

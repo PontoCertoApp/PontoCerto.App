@@ -8,7 +8,7 @@ import { ColaboradorStatus } from "@/lib/enums";
 import { sendWelcomeEmail } from "@/lib/email/send";
 import { auth } from "@/auth";
 
-export const colaboradorSchema = z.object({
+const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
   cpf: z.string().length(11, "CPF deve ter 11 dígitos"),
   rg: z.string().min(5),
