@@ -108,7 +108,7 @@ export function AppSidebar() {
     <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
       <SidebarHeader className="h-20 flex justify-center px-6 group-data-[collapsible=icon]:px-0 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent opacity-50" />
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center relative z-10">
+        <Link href="/dashboard" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center relative z-10 hover:opacity-80 transition-opacity">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <span className="font-black text-lg italic">PC</span>
           </div>
@@ -116,7 +116,7 @@ export function AppSidebar() {
             <span className="font-black text-xl tracking-tighter text-foreground">PontoCerto</span>
             <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">RH Integrado</span>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-2">
