@@ -145,27 +145,29 @@ export function AppSidebar() {
                       <SidebarMenuSub className="border-l-2 ml-6 border-primary/10">
                         {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton
-                              render={<Link href={subItem.url} />}
-                              isActive={pathname === subItem.url}
-                              className={`h-8 text-xs font-medium ${pathname === subItem.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                            >
-                              {subItem.title}
-                            </SidebarMenuSubButton>
+                            <Link href={subItem.url} className="contents">
+                              <SidebarMenuSubButton
+                                isActive={pathname === subItem.url}
+                                className={`h-8 text-xs font-medium ${pathname === subItem.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                              >
+                                {subItem.title}
+                              </SidebarMenuSubButton>
+                            </Link>
                           </SidebarMenuSubItem>
                         ))}
                       </SidebarMenuSub>
                     </>
                   ) : (
-                    <SidebarMenuButton
-                      render={<Link href={item.url} />}
-                      tooltip={item.title}
-                      isActive={isActive}
-                      className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted"}`}
-                    >
-                      <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
+                    <Link href={item.url} className="contents">
+                      <SidebarMenuButton
+                        tooltip={item.title}
+                        isActive={isActive}
+                        className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary shadow-sm" : "hover:bg-muted"}`}
+                      >
+                        <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </Link>
                   )}
                 </SidebarMenuItem>
               );
@@ -178,7 +180,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl transition-all hover:bg-muted active:scale-95" />}>
+              <DropdownMenuTrigger className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-xl p-2 text-left text-sm transition-all hover:bg-muted active:scale-95 outline-none data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                 <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
                   <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? undefined} />
                   <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
@@ -209,11 +211,12 @@ export function AppSidebar() {
                   </div>
                 </div>
                 <DropdownMenuItem
-                  render={<Link href="/perfil" />}
-                  className="rounded-lg h-10 cursor-pointer flex items-center gap-2"
+                  className="rounded-lg h-10 cursor-pointer flex items-center gap-2 p-0"
                 >
-                  <Settings className="size-4 opacity-70" />
-                  <span>Configurações da Conta</span>
+                  <Link href="/perfil" className="flex items-center gap-2 w-full h-full px-2">
+                    <Settings className="size-4 opacity-70" />
+                    <span>Configurações da Conta</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"

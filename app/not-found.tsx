@@ -15,9 +15,11 @@ export default function NotFound() {
           A página que você está buscando não existe ou foi removida.
         </p>
       </div>
-      <Button render={<Link href="/dashboard" />}>
-        Voltar ao Dashboard
-      </Button>
+      <Link href="/dashboard" className="inline-flex">
+        <Button>
+          Voltar ao Dashboard
+        </Button>
+      </Link>
     </div>
   );
 }
