@@ -7,9 +7,16 @@ import { auth } from "@/auth";
 import { sendDocumentoPendente } from "@/lib/email/send";
 
 export async function getDocumentosPendentes() {
+  const session = await auth();
+  if (!session?.user) return [];
+
+  const isRH = session.user.role === "RH";
+  const filter = isRH ? {} : { colaborador: { lojaId: session.user.lojaId } };
+
   return await prisma.documento.findMany({
     where: { 
-      status: { in: [DocumentStatus.PENDENTE, DocumentStatus.ENVIADO] } 
+      status: { in: [DocumentStatus.PENDENTE, DocumentStatus.ENVIADO] },
+      ...filter
     },
     include: {
       colaborador: {

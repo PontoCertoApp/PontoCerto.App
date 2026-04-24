@@ -3,17 +3,27 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
-async function getLojaIdFromSession() {
+async function getReportFilter() {
   const session = await auth();
-  return session?.user?.lojaId ?? null;
+  if (!session?.user) return null;
+  
+  const isRH = session.user.role === "RH";
+  const lojaId = session.user.lojaId;
+  
+  if (isRH) return {};
+  if (!lojaId) return { id: "none" }; // Manager sem lojaId não vê nada
+  
+  return { lojaId };
 }
 
 export async function getRelatorioColaboradoresExperiencia() {
-  const lojaId = await getLojaIdFromSession();
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
   return prisma.colaborador.findMany({
     where: {
       status: "EM_EXPERIENCIA",
-      ...(lojaId ? { lojaId } : {}),
+      ...filter,
     },
     include: { funcao: true, setor: true, loja: true },
     orderBy: { createdAt: "asc" },
@@ -21,11 +31,15 @@ export async function getRelatorioColaboradoresExperiencia() {
 }
 
 export async function getRelatorioDocumentacaoPendente() {
-  const lojaId = await getLojaIdFromSession();
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
+  const colabFilter = filter.lojaId ? { colaborador: { lojaId: filter.lojaId } } : {};
+
   return prisma.documento.findMany({
     where: {
       status: "PENDENTE",
-      ...(lojaId ? { colaborador: { lojaId } } : {}),
+      ...colabFilter,
     },
     include: { colaborador: { include: { loja: true } } },
     orderBy: { createdAt: "asc" },
@@ -33,11 +47,15 @@ export async function getRelatorioDocumentacaoPendente() {
 }
 
 export async function getRelatorioHistoricoPenalidades(startDate: Date, endDate: Date) {
-  const lojaId = await getLojaIdFromSession();
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
+  const colabFilter = filter.lojaId ? { colaborador: { lojaId: filter.lojaId } } : {};
+
   return prisma.penalidade.findMany({
     where: {
       dataOcorrencia: { gte: startDate, lte: endDate },
-      ...(lojaId ? { colaborador: { lojaId } } : {}),
+      ...colabFilter,
     },
     include: { colaborador: { include: { loja: true } } },
     orderBy: { dataOcorrencia: "desc" },
@@ -45,11 +63,15 @@ export async function getRelatorioHistoricoPenalidades(startDate: Date, endDate:
 }
 
 export async function getRelatorioFolhaPremios(startDate: Date, endDate: Date) {
-  const lojaId = await getLojaIdFromSession();
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
+  const colabFilter = filter.lojaId ? { colaborador: { lojaId: filter.lojaId } } : {};
+
   return prisma.premio.findMany({
     where: {
       dataReferencia: { gte: startDate, lte: endDate },
-      ...(lojaId ? { colaborador: { lojaId } } : {}),
+      ...colabFilter,
     },
     include: { colaborador: { include: { loja: true } } },
     orderBy: { dataReferencia: "desc" },
@@ -57,17 +79,43 @@ export async function getRelatorioFolhaPremios(startDate: Date, endDate: Date) {
 }
 
 export async function getRelatorioControleUniformes() {
-  const lojaId = await getLojaIdFromSession();
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
+  const colabFilter = filter.lojaId ? { colaborador: { lojaId: filter.lojaId } } : {};
+
   return prisma.controleUniforme.findMany({
-    where: lojaId ? { colaborador: { lojaId } } : {},
+    where: colabFilter,
     include: { colaborador: { include: { loja: true } } },
     orderBy: { dataRecebimento: "desc" },
   });
 }
 
+export async function getRelatorioPGF(startDate: Date, endDate: Date) {
+  const filter = await getReportFilter();
+  if (!filter) return [];
+
+  const colabFilter = filter.lojaId ? { colaborador: { lojaId: filter.lojaId } } : {};
+
+  return prisma.registroPonto.findMany({
+    where: {
+      data: { gte: startDate, lte: endDate },
+      ...colabFilter,
+    },
+    include: { colaborador: { include: { loja: true } } },
+    orderBy: [{ colaboradorId: "asc" }, { data: "asc" }],
+  });
+}
+
 export async function getRelatorioVidaFuncional(colaboradorId: string) {
+  // Vida funcional é sempre específica de um colaborador, mas podemos validar se o usuário tem acesso
+  const filter = await getReportFilter();
+  if (!filter) return null;
+
+  const colabFilter = filter.lojaId ? { id: colaboradorId, lojaId: filter.lojaId } : { id: colaboradorId };
+
   return prisma.colaborador.findUnique({
-    where: { id: colaboradorId },
+    where: colabFilter,
     include: {
       funcao: true,
       setor: true,
@@ -78,17 +126,5 @@ export async function getRelatorioVidaFuncional(colaboradorId: string) {
       registrosPonto: { orderBy: { data: "desc" }, take: 30 },
       uniformes: true,
     },
-  });
-}
-
-export async function getRelatorioPGF(startDate: Date, endDate: Date) {
-  const lojaId = await getLojaIdFromSession();
-  return prisma.registroPonto.findMany({
-    where: {
-      data: { gte: startDate, lte: endDate },
-      ...(lojaId ? { colaborador: { lojaId } } : {}),
-    },
-    include: { colaborador: { include: { loja: true } } },
-    orderBy: [{ colaboradorId: "asc" }, { data: "asc" }],
   });
 }

@@ -7,42 +7,39 @@ import { ptBR } from "date-fns/locale";
 export default async function DashboardPage() {
   const session = await auth();
   const userName = session?.user?.name || "Usuário";
+  const role = session?.user?.role;
   const lojaId = session?.user?.lojaId;
 
-  if (!lojaId) {
-    return <DashboardClient 
-      userName={userName} 
-      stats={{ totalColaboradores: 0, pendenciasPonto: 0, rapsAtivos: 0, documentosPendentes: 0 }} 
-      activities={[]} 
-      chartData={[]}
-    />;
-  }
+  // Se for RH, não filtra por lojaId (vê tudo)
+  // Se for GERENTE, filtra por lojaId
+  const isRH = role === "RH";
+  const filter = isRH ? {} : { lojaId };
 
   // 1. Fetch Stats
   const [totalColaboradores, pendenciasPonto, rapsAtivos, documentosPendentes] = await Promise.all([
-    prisma.colaborador.count({ where: { lojaId } }),
-    prisma.registroPonto.count({ where: { lojaId, status: "PENDENTE" } }),
-    prisma.penalidade.count({ where: { colaborador: { lojaId }, status: "ATIVA" } }),
-    prisma.documento.count({ where: { colaborador: { lojaId }, status: "PENDENTE" } }),
+    prisma.colaborador.count({ where: filter }),
+    prisma.registroPonto.count({ where: { ...filter, status: "PENDENTE" } }),
+    prisma.penalidade.count({ where: { colaborador: filter, status: "ATIVA" } }),
+    prisma.documento.count({ where: { colaborador: filter, status: "PENDENTE" } }),
   ]);
 
   // 2. Fetch Recent Activities
   const [recentDocs, recentColabs, recentPenalties] = await Promise.all([
     prisma.documento.findMany({
-      where: { colaborador: { lojaId } },
+      where: { colaborador: filter },
       orderBy: { createdAt: 'desc' },
-      take: 3,
+      take: 5,
       include: { colaborador: true }
     }),
     prisma.colaborador.findMany({
-      where: { lojaId },
+      where: filter,
       orderBy: { createdAt: 'desc' },
-      take: 3
+      take: 5
     }),
     prisma.penalidade.findMany({
-      where: { colaborador: { lojaId } },
+      where: { colaborador: filter },
       orderBy: { createdAt: 'desc' },
-      take: 3,
+      take: 5,
       include: { colaborador: true }
     })
   ]);
@@ -52,37 +49,42 @@ export default async function DashboardPage() {
       id: d.id,
       type: "DOC" as const,
       title: `Documento ${d.status === 'VALIDADO' ? 'validado' : 'recebido'}`,
-      target: d.colaborador.nomeCompleto,
+      target: d.colaborador?.nomeCompleto || "Colaborador Removido",
       time: formatDistanceToNow(new Date(d.createdAt), { addSuffix: true, locale: ptBR }),
+      createdAt: new Date(d.createdAt)
     })),
     ...recentColabs.map(c => ({
       id: c.id,
       type: "CONTRATO" as const,
       title: "Admissão iniciada",
-      target: c.nomeCompleto,
+      target: c.nomeCompleto || "N/A",
       time: formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: ptBR }),
+      createdAt: new Date(c.createdAt)
     })),
     ...recentPenalties.map(p => ({
       id: p.id,
       type: "PENALIDADE" as const,
       title: "RAP Gerado",
-      target: p.colaborador.nomeCompleto,
+      target: p.colaborador?.nomeCompleto || "Colaborador Removido",
       time: formatDistanceToNow(new Date(p.createdAt), { addSuffix: true, locale: ptBR }),
+      createdAt: new Date(p.createdAt)
     }))
-  ].slice(0, 5);
+  ]
+  .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  .slice(0, 5);
 
   // 3. Fetch Chart Data (Last 6 months)
   const chartData = await Promise.all(
     Array.from({ length: 6 }).map(async (_, i) => {
-      const date = endOfMonth(subMonths(new Date(), 5 - i));
+      const dateLimit = endOfMonth(subMonths(new Date(), 5 - i));
       const count = await prisma.colaborador.count({
         where: {
-          lojaId,
-          createdAt: { lte: date }
+          ...filter,
+          createdAt: { lte: dateLimit }
         }
       });
       return {
-        name: format(date, "MMM", { locale: ptBR }),
+        name: format(dateLimit, "MMM", { locale: ptBR }),
         total: count
       };
     })
