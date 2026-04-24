@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loginUser } from "@/actions/auth-actions";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -39,18 +39,19 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const result = await loginUser(data);
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
 
-      if (result && !result.success) {
-        setErrorMessage(result.error || "E-mail ou senha incorretos.");
-        return;
+      if (result?.error) {
+        setErrorMessage("E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.");
+      } else {
+        router.push("/dashboard");
+        router.refresh();
       }
-
-      if (result && result.success) {
-        window.location.href = "/dashboard";
-      }
-    } catch (error: any) {
-      if (error?.message === "NEXT_REDIRECT") return;
+    } catch {
       setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setIsLoading(false);
@@ -67,7 +68,6 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
         className="relative w-full max-w-sm"
       >
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 mb-4">
             <span className="font-black text-2xl italic">PC</span>
@@ -76,14 +76,12 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground mt-1">Sistema de RH Integrado</p>
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-2xl p-8">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-foreground">Bem-vindo de volta</h2>
             <p className="text-sm text-muted-foreground mt-1">Entre com sua conta para continuar</p>
           </div>
 
-          {/* Mensagem de erro global */}
           {errorMessage && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
@@ -104,7 +102,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="seu@email.com"
                   {...register("email")}
-                  className={`pl-9 h-11 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`pl-9 h-11 ${errors.email ? "border-destructive" : ""}`}
                   disabled={isLoading}
                   autoComplete="email"
                 />
@@ -115,9 +113,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
-              </div>
+              <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -125,7 +121,7 @@ export default function LoginPage() {
                   type="password"
                   placeholder="••••••••"
                   {...register("password")}
-                  className={`pl-9 h-11 ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`pl-9 h-11 ${errors.password ? "border-destructive" : ""}`}
                   disabled={isLoading}
                   autoComplete="current-password"
                 />

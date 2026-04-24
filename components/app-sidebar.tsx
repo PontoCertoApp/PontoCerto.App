@@ -36,8 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
-import { logout } from "@/actions/logout";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -216,18 +215,12 @@ export function AppSidebar() {
                   <Settings className="size-4 opacity-70" />
                   <span>Configurações da Conta</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <button
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      await logout();
-                      window.location.replace("/login");
-                    }}
-                    className="text-destructive w-full focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2 px-2"
-                  >
-                    <LogOut className="size-4" />
-                    <span>Sair do PontoCerto</span>
-                  </button>
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
+                  onClick={() => signOut({ callbackUrl: "/login", redirect: true })}
+                >
+                  <LogOut className="size-4" />
+                  <span>Sair do PontoCerto</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
