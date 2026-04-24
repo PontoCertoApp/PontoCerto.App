@@ -90,6 +90,7 @@ export default function ColaboradoresPage() {
 
   const [data, setData] = useState<PagedResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [colabToDelete, setColabToDelete] = useState<ColaboradorItem | null>(null);
   
   // Params from URL or defaults
   const query = searchParams.get("q") || "";
@@ -143,11 +144,13 @@ export default function ColaboradoresPage() {
     router.push(`?${params.toString()}`);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!colabToDelete) return;
     try {
-      const result = await deleteColaborador(id);
+      const result = await deleteColaborador(colabToDelete.id);
       if (result.success) {
         toast.success("Colaborador excluído com sucesso.");
+        setColabToDelete(null);
         loadData();
       }
     } catch (error: any) {
@@ -291,34 +294,12 @@ export default function ColaboradoresPage() {
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem 
-                              variant="destructive" 
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o colaborador
-                                <strong> {c.nomeCompleto} </strong> e removerá todos os dados relacionados (documentos, penalidades, ponto).
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDelete(c.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Sim, Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <DropdownMenuItem 
+                          variant="destructive" 
+                          onClick={() => setColabToDelete(c)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -329,6 +310,30 @@ export default function ColaboradoresPage() {
         </Table>
       </div>
       
+      <AlertDialog open={!!colabToDelete} onOpenChange={(open) => !open && setColabToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" /> Confirmar Exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. Você está prestes a excluir o colaborador 
+              <span className="font-bold text-foreground"> {colabToDelete?.nomeCompleto} </span> 
+              e todos os seus registros históricos (documentos, ponto e penalidades).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar e Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {!isLoading && data && data.metadata.totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
            <p className="text-sm text-muted-foreground">
