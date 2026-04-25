@@ -208,18 +208,30 @@ export default function PontoPage() {
     setSelectedColab(null);
   }
 
-  const InconformidadeBadge = (tipo: TipoInconformidade) => {
-    const labels: Record<TipoInconformidade, { label: string; color: string }> = {
-      FALTA_INJUSTIFICADA: { label: "Falta Injustificada", color: "bg-red-500" },
-      ATRASO: { label: "Atraso", color: "bg-amber-500" },
-      SAIDA_ANTECIPADA: { label: "Saída Antecipada", color: "bg-orange-500" },
-      PONTO_NAO_REGISTRADO: { label: "Ponto Não Registrado", color: "bg-blue-500" },
-      PRESENCA_MANUAL: { label: "Presença Manual", color: "bg-green-600" },
-      FALTA_JUSTIFICADA: { label: "Falta Justificada", color: "bg-indigo-500" },
-      ATESTADO_MEDICO: { label: "Atestado Médico", color: "bg-purple-600" },
+  const formatTipo = (t: TipoInconformidade) => {
+    const labels: Record<string, string> = {
+      FALTA_INJUSTIFICADA: "Falta Injustificada",
+      ATRASO: "Atraso",
+      SAIDA_ANTECIPADA: "Saída Antecipada",
+      PONTO_NAO_REGISTRADO: "Ponto Não Registrado",
+      PRESENCA_MANUAL: "Presença Manual (Ajuste)",
+      FALTA_JUSTIFICADA: "Falta Justificada",
+      ATESTADO_MEDICO: "Atestado Médico",
     };
-    const item = labels[tipo] ?? { label: tipo, color: "bg-gray-500" };
-    return <Badge className={item.color}>{item.label}</Badge>;
+    return labels[t] || t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+  };
+
+  const InconformidadeBadge = (tipo: TipoInconformidade) => {
+    const colors: Record<string, string> = {
+      FALTA_INJUSTIFICADA: "bg-red-500",
+      ATRASO: "bg-amber-500",
+      SAIDA_ANTECIPADA: "bg-orange-500",
+      PONTO_NAO_REGISTRADO: "bg-blue-500",
+      PRESENCA_MANUAL: "bg-green-600",
+      FALTA_JUSTIFICADA: "bg-indigo-500",
+      ATESTADO_MEDICO: "bg-purple-600",
+    };
+    return <Badge className={colors[tipo] || "bg-gray-500"}>{formatTipo(tipo)}</Badge>;
   };
 
   return (
@@ -299,7 +311,7 @@ export default function PontoPage() {
                   <Label>Tipo de Lançamento</Label>
                   <Select value={tipo} onValueChange={(val) => setTipo(val as TipoInconformidade)}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>{formatTipo(tipo)}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>
