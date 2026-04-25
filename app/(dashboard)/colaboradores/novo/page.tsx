@@ -472,9 +472,9 @@ export default function NovoColaboradorPage() {
                   <Button 
                     type="button" 
                     className="ml-auto" 
-                    onClick={async () => {
-                      // Se estiver na etapa 3, valida se os documentos básicos foram selecionados
-                      // mas não bloqueia se for opcional
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       await nextStep();
                     }}
                   >
@@ -483,13 +483,16 @@ export default function NovoColaboradorPage() {
                   </Button>
                 ) : (
                   <Button 
-                    type="submit" 
+                    type="button" 
                     className="ml-auto bg-green-600 hover:bg-green-700 px-8" 
                     disabled={isSubmitting}
-                    onClick={() => {
-                      const errors = form.formState.errors;
-                      if (Object.keys(errors).length > 0) {
-                        toast.error("Por favor, preencha os campos obrigatórios.");
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      const isValid = await form.trigger();
+                      if (isValid) {
+                        form.handleSubmit(onSubmit)();
+                      } else {
+                        toast.error("Por favor, preencha todos os campos obrigatórios.");
                       }
                     }}
                   >
