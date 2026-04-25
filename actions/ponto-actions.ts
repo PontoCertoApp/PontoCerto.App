@@ -81,82 +81,101 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
 }
 
 export async function getInconformidadesDoDia(data: Date) {
-  const session = await auth();
-  if (!session?.user) return [];
+  try {
+    const session = await auth();
+    if (!session?.user) return [];
 
-  const isRH = session.user.role === "RH";
-  const userLojaId = session.user.lojaId;
+    const isRH = session.user.role === "RH";
+    const targetLojaId = session.user.lojaId;
 
-  const startOfDay = new Date(data);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(data);
-  endOfDay.setHours(23, 59, 59, 999);
+    const inicioDia = startOfDay(data);
+    const fimDia = endOfDay(data);
 
-  return await prisma.registroPonto.findMany({
-    where: {
-      data: {
-        gte: startOfDay,
-        lte: endOfDay,
+    return await prisma.registroPonto.findMany({
+      where: {
+        data: { gte: inicioDia, lte: fimDia },
+        ...(isRH ? {} : { colaborador: { lojaId: targetLojaId } })
       },
-      ...(isRH ? {} : { lojaId: userLojaId }),
-    },
-    include: {
-      colaborador: {
-        include: {
-          loja: true,
-          funcao: true,
+      include: {
+        colaborador: {
+          include: {
+            loja: true,
+            funcao: true,
+          },
         },
+        penalidade: true,
       },
-      penalidade: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("[GET_INCONFORMIDADES_ERROR]:", error);
+    return [];
+  }
 }
 
 export async function getColaboradoresSemPontoNoDia(data: Date) {
-  // This is a complex query: all active colaboradores minus those who have a point record for the day
-  // For this demo/POC, I'll return a subset or empty list to be filled
-  const startOfDay = new Date(data);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(data);
-  endOfDay.setHours(23, 59, 59, 999);
+  try {
+    const session = await auth();
+    if (!session?.user) return [];
 
-  const registrados = await prisma.registroPonto.findMany({
-    where: { data: { gte: startOfDay, lte: endOfDay } },
-    select: { colaboradorId: true },
-  });
+    const isRH = session.user.role === "RH";
+    const targetLojaId = session.user.lojaId;
 
-  const idsRegistrados = registrados.map((r) => r.colaboradorId);
+    const inicioDia = startOfDay(data);
+    const fimDia = endOfDay(data);
 
-  return await prisma.colaborador.findMany({
-    where: {
-      status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
-      id: { notIn: idsRegistrados },
-    },
-    include: {
-      loja: true,
-      funcao: true,
-    },
-  });
-}
-export async function getTotalAtivos() {
-  const session = await auth();
-  if (!session?.user) return 0;
-  
-  const isRH = session.user.role === "RH";
-  
-  if (isRH) {
-    return await prisma.colaborador.count({
-      where: { status: "ATIVO" },
+    const registrosNoDia = await prisma.registroPonto.findMany({
+      where: {
+        data: { gte: inicioDia, lte: fimDia },
+        ...(isRH ? {} : { colaborador: { lojaId: targetLojaId } })
+      },
+      select: { colaboradorId: true },
     });
-  }
 
-  if (!session.user.lojaId) return 0;
-  
-  return await prisma.colaborador.count({
-    where: {
-      lojaId: session.user.lojaId,
-      status: "ATIVO",
-    },
-  });
+    const idsRegistrados = registrosNoDia.map((r) => r.colaboradorId);
+
+    return await prisma.colaborador.findMany({
+      where: {
+        status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
+        id: { notIn: idsRegistrados },
+        ...(isRH ? {} : { lojaId: targetLojaId })
+      },
+      include: {
+        loja: true,
+        funcao: true,
+      },
+      orderBy: { nomeCompleto: "asc" },
+    });
+  } catch (error) {
+    console.error("[GET_COLABS_SEM_PONTO_ERROR]:", error);
+    return [];
+  }
+}
+
+export async function getTotalAtivos() {
+  try {
+    const session = await auth();
+    if (!session?.user) return 0;
+    
+    const isRH = session.user.role === "RH";
+    
+    if (isRH) {
+      return await prisma.colaborador.count({
+        where: { status: { in: ["ATIVO", "EM_EXPERIENCIA"] } },
+      });
+    }
+
+    const lojaId = session.user.lojaId;
+    if (!lojaId) return 0;
+    
+    return await prisma.colaborador.count({
+      where: {
+        lojaId,
+        status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
+      },
+    });
+  } catch (error) {
+    console.error("[GET_TOTAL_ATIVOS_ERROR]:", error);
+    return 0;
+  }
 }
