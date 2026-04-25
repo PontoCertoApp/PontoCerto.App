@@ -282,32 +282,49 @@ export default function PontoPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label>Colaborador</Label>
-                    <Select 
-                      value={selectedColab?.id} 
-                      onValueChange={(val) => {
-                        const colab = allColabs.find(c => c.id === val);
-                        console.log("[PONTO] Selecionado:", colab?.nomeCompleto);
-                        setSelectedColab(colab);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o colaborador" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allColabs && allColabs.length > 0 ? (
-                          allColabs.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nomeCompleto} ({c.loja?.nome || "Geral"})
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
-                            Nenhum colaborador encontrado. <br/>
-                            <Button variant="link" size="sm" onClick={() => loadData()}>Tentar carregar novamente</Button>
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Input
+                        placeholder="Pesquisar por nome..."
+                        className="pr-10"
+                        onChange={(e) => {
+                          const term = e.target.value.toLowerCase();
+                          if (term.length > 2) {
+                            const found = allColabs.find(c => c.nomeCompleto.toLowerCase().includes(term));
+                            if (found) setSelectedColab(found);
+                          }
+                        }}
+                      />
+                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="mt-2">
+                      <Select 
+                        value={selectedColab?.id} 
+                        onValueChange={(val) => {
+                          const colab = allColabs.find(c => c.id === val);
+                          setSelectedColab(colab);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={selectedColab?.nomeCompleto || "Selecione na lista ou busque acima"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allColabs && allColabs.length > 0 ? (
+                            allColabs.map(c => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.nomeCompleto} ({c.loja?.nome || "Geral"})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              Nenhum colaborador encontrado.
+                              <Button variant="link" size="sm" className="block mx-auto" onClick={() => loadData()}>
+                                Atualizar Lista
+                              </Button>
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo de Lançamento</Label>
