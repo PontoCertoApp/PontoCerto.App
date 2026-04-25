@@ -125,15 +125,21 @@ export default function PontoPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [p, t, total] = await Promise.all([
-      getColaboradoresSemPontoNoDia(date),
-      getInconformidadesDoDia(date),
-      getTotalAtivos()
-    ]);
-    setPendentes(p as unknown as ColaboradorSemPonto[]);
-    setTratados(t as unknown as RegistroPonto[]);
-    setTotalColaboradores(total);
-    setIsLoading(false);
+    try {
+      const [p, t, total] = await Promise.all([
+        getColaboradoresSemPontoNoDia(date).catch(() => []),
+        getInconformidadesDoDia(date).catch(() => []),
+        getTotalAtivos().catch(() => 0)
+      ]);
+      setPendentes(p as unknown as ColaboradorSemPonto[]);
+      setTratados(t as unknown as RegistroPonto[]);
+      setTotalColaboradores(total);
+    } catch (error) {
+      console.error("[PONTO_LOAD_ERROR]:", error);
+      toast.error("Erro ao carregar dados de ponto.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
