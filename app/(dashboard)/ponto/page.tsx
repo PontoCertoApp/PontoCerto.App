@@ -269,19 +269,31 @@ export default function PontoPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label>Colaborador</Label>
-                  <Select value={selectedColab?.id || ""} onValueChange={(val) => {
-                    const colab = allColabs.find(c => c.id === val);
-                    setSelectedColab(colab);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o colaborador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allColabs.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nomeCompleto} ({c.loja.nome})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Select 
+                      value={selectedColab?.id} 
+                      onValueChange={(val) => {
+                        const colab = allColabs.find(c => c.id === val);
+                        console.log("[PONTO] Selecionado:", colab?.nomeCompleto);
+                        setSelectedColab(colab);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o colaborador" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allColabs.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground italic text-center">
+                            Nenhum colaborador encontrado
+                          </div>
+                        ) : (
+                          allColabs.map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nomeCompleto} ({c.loja?.nome || "Sem Loja"})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo de Lançamento</Label>
@@ -294,6 +306,8 @@ export default function PontoPage() {
                       <SelectItem value="FALTA_JUSTIFICADA">Falta Justificada</SelectItem>
                       <SelectItem value="ATESTADO_MEDICO">Atestado Médico</SelectItem>
                       <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada</SelectItem>
+                      <SelectItem value="ATRASO">Atraso</SelectItem>
+                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
