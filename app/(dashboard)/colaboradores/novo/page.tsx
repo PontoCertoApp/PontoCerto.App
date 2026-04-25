@@ -65,7 +65,8 @@ const formSchema = z.object({
   lojaId: z.string().optional(),
   setorNome: z.string().min(1, "Obrigatório"),
   funcaoNome: z.string().min(1, "Obrigatório"),
-  contaBancoBrasil: z.string().min(1, "Obrigatório"),
+  agenciaBB: z.string().min(4, "Agência inválida"),
+  contaBB: z.string().min(5, "Conta inválida"),
   possuiFilhosMenores14: z.boolean().default(false),
   
   // File paths (simulated as strings after upload)
@@ -101,7 +102,8 @@ export default function NovoColaboradorPage() {
       lojaId: "",
       setorNome: "",
       funcaoNome: "",
-      contaBancoBrasil: "",
+      agenciaBB: "",
+      contaBB: "",
       possuiFilhosMenores14: false,
     },
   });
@@ -128,7 +130,7 @@ export default function NovoColaboradorPage() {
     if (currentStep === 1) {
       fieldsToValidate = ["nomeCompleto", "cpf", "rg", "dataNascimento", "telefonePrincipal"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["setorNome", "funcaoNome", "contaBancoBrasil", "lojaId"];
+      fieldsToValidate = ["setorNome", "funcaoNome", "agenciaBB", "contaBB", "lojaId"];
     }
 
     const isValid = await form.trigger(fieldsToValidate as any);
@@ -149,7 +151,10 @@ export default function NovoColaboradorPage() {
     }
 
     setIsSubmitting(true);
-    const result = await createColaborador(values);
+    const result = await createColaborador({
+      ...values,
+      contaBancoBrasil: `Ag: ${values.agenciaBB} | Cc: ${values.contaBB}`,
+    } as any);
     if (result.success) {
       toast.success("Colaborador cadastrado com sucesso!");
       router.push("/colaboradores");
@@ -341,19 +346,34 @@ export default function NovoColaboradorPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="contaBancoBrasil"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Conta Banco do Brasil</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Agência e Conta" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="agenciaBB"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agência BB</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: 1234-5" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="contaBB"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Conta Corrente BB</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: 12345-6" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
                       name="possuiFilhosMenores14"
