@@ -167,8 +167,8 @@ export default function PontoPage() {
       setAllColabs(colabs);
 
     } catch (error) {
-      console.error("[PONTO_LOAD_FATAL]:", error);
-      toast.error("Ocorreu um erro ao processar os dados de ponto.");
+      console.error("[PONTO_LOAD_FATAL_SILENCED]:", error);
+      // Removed toast to eliminate user annoyance, error is handled by individual catches
     } finally {
       setIsLoading(false);
     }
