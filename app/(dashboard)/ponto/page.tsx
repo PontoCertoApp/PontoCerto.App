@@ -135,23 +135,40 @@ export default function PontoPage() {
 
   async function loadData() {
     setIsLoading(true);
+    console.log("[PONTO] Carregando dados para data:", date);
+    
     try {
-      const [p, t, total, colabs] = await Promise.all([
-        getColaboradoresSemPontoNoDia(date).catch(() => []),
-        getInconformidadesDoDia(date).catch(() => []),
-        getTotalAtivos().catch(() => 0),
-        getColaboradores().catch((err) => {
-          console.error("Erro getColabs:", err);
-          return [];
-        })
-      ]);
+      // Carregar pendentes
+      const p = await getColaboradoresSemPontoNoDia(date).catch((err) => {
+        console.error("Erro ao buscar pendentes:", err);
+        return [];
+      });
       setPendentes(p as unknown as ColaboradorSemPonto[]);
+
+      // Carregar tratados
+      const t = await getInconformidadesDoDia(date).catch((err) => {
+        console.error("Erro ao buscar tratados:", err);
+        return [];
+      });
       setTratados(t as unknown as RegistroPonto[]);
+
+      // Carregar total ativos
+      const total = await getTotalAtivos().catch((err) => {
+        console.error("Erro ao buscar total ativos:", err);
+        return 0;
+      });
       setTotalColaboradores(total);
+
+      // Carregar todos para o seletor manual
+      const colabs = await getColaboradores().catch((err) => {
+        console.error("Erro ao buscar lista completa:", err);
+        return [];
+      });
       setAllColabs(colabs);
+
     } catch (error) {
-      console.error("[PONTO_LOAD_ERROR]:", error);
-      toast.error("Erro ao carregar dados de ponto.");
+      console.error("[PONTO_LOAD_FATAL]:", error);
+      toast.error("Ocorreu um erro ao processar os dados de ponto.");
     } finally {
       setIsLoading(false);
     }
