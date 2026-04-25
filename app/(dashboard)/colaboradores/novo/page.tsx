@@ -108,7 +108,8 @@ export default function NovoColaboradorPage() {
 
   useEffect(() => {
     async function loadData() {
-      // No longer need to load setores and funcoes for select
+      const data = await getLojas();
+      setLojas(data);
     }
     loadData();
   }, []);
@@ -123,7 +124,7 @@ export default function NovoColaboradorPage() {
     if (currentStep === 1) {
       fieldsToValidate = ["nomeCompleto", "cpf", "rg", "dataNascimento", "telefonePrincipal"];
     } else if (currentStep === 2) {
-      fieldsToValidate = ["setorNome", "funcaoNome", "contaBancoBrasil"];
+      fieldsToValidate = ["setorNome", "funcaoNome", "contaBancoBrasil", "lojaId"];
     }
 
     const isValid = await form.trigger(fieldsToValidate as any);
@@ -310,6 +311,31 @@ export default function NovoColaboradorPage() {
                     exit={{ opacity: 0, x: -20 }}
                     className="grid grid-cols-1 md:grid-cols-2 gap-6"
                   >
+                    <FormField
+                      control={form.control}
+                      name="lojaId"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Unidade (Loja)</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a unidade de destino" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {lojas.map((loja) => (
+                                <SelectItem key={loja.id} value={loja.id}>
+                                  {loja.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Selecione onde o colaborador irá atuar.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="setorNome"
