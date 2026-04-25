@@ -294,16 +294,17 @@ export default function PontoPage() {
                         <SelectValue placeholder="Selecione o colaborador" />
                       </SelectTrigger>
                       <SelectContent>
-                        {allColabs.length === 0 ? (
-                          <div className="p-2 text-sm text-muted-foreground italic text-center">
-                            Nenhum colaborador encontrado
-                          </div>
-                        ) : (
+                        {allColabs && allColabs.length > 0 ? (
                           allColabs.map(c => (
                             <SelectItem key={c.id} value={c.id}>
-                              {c.nomeCompleto} ({c.loja?.nome || "Sem Loja"})
+                              {c.nomeCompleto} ({c.loja?.nome || "Geral"})
                             </SelectItem>
                           ))
+                        ) : (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Nenhum colaborador encontrado. <br/>
+                            <Button variant="link" size="sm" onClick={() => loadData()}>Tentar carregar novamente</Button>
+                          </div>
                         )}
                       </SelectContent>
                     </Select>
@@ -312,7 +313,14 @@ export default function PontoPage() {
                   <Label>Tipo de Lançamento</Label>
                   <Select value={tipo} onValueChange={(val) => setTipo(val as TipoInconformidade)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
+                      <SelectValue>
+                        {tipo === "FALTA_INJUSTIFICADA" ? "Falta Injustificada" : 
+                         tipo === "PRESENCA_MANUAL" ? "Presença Manual (Ajuste)" :
+                         tipo === "FALTA_JUSTIFICADA" ? "Falta Justificada" :
+                         tipo === "ATESTADO_MEDICO" ? "Atestado Médico" :
+                         tipo === "ATRASO" ? "Atraso" :
+                         tipo === "SAIDA_ANTECIPADA" ? "Saída Antecipada" : "Selecione o tipo"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>
