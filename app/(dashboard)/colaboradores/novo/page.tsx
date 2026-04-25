@@ -383,39 +383,41 @@ export default function NovoColaboradorPage() {
                       { label: "Foto do PIS", name: "pisFotoPath" },
                       { label: "Histórico Escolar / Certificado", name: "historicoEscolarPath" },
                       { label: "CTPS Digital", name: "ctpsDigitalPath" },
-                    ].map((doc) => (
-                      <div key={doc.name} className="flex flex-col gap-2 p-4 border rounded-lg bg-muted/50">
-                        <span className="text-sm font-medium">{doc.label}</span>
-                        <div className="flex gap-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            className="bg-background w-full"
-                            onClick={() => handleFileUpload(doc.name as any)}
-                          >
-                            <Upload className="mr-2 h-4 w-4" />
-                            {form.getValues(doc.name as any) ? "Arquivo Enviado" : "Selecionar Arquivo"}
-                          </Button>
-                          {form.getValues(doc.name as any) && (
-                            <div className="flex items-center text-green-600">
-                               <Check className="h-5 w-5" />
-                            </div>
-                          )}
+                    ].map((doc) => {
+                      const isUploaded = !!form.watch(doc.name as any);
+                      return (
+                        <div key={doc.name} className="flex flex-col gap-2 p-4 border rounded-lg bg-muted/50 transition-all duration-300">
+                          <span className="text-sm font-medium">{doc.label}</span>
+                          <div className="flex gap-2">
+                            <Button 
+                              type="button" 
+                              variant={isUploaded ? "default" : "outline"}
+                              className={`w-full transition-all duration-500 ${isUploaded ? "bg-green-600 hover:bg-green-700 border-green-600" : "bg-background"}`}
+                              onClick={() => handleFileUpload(doc.name as any)}
+                            >
+                              {isUploaded ? (
+                                <Check className="mr-2 h-4 w-4 animate-in zoom-in" />
+                              ) : (
+                                <Upload className="mr-2 h-4 w-4" />
+                              )}
+                              {isUploaded ? "Arquivo Enviado" : "Selecionar Arquivo"}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     
                     {form.watch("possuiFilhosMenores14") && (
                        <div className="flex flex-col gap-2 p-4 border border-amber-200 rounded-lg bg-amber-50 dark:bg-amber-900/10 md:col-span-2">
                         <span className="text-sm font-medium">Certidão de Nascimento (Filhos)</span>
                         <Button 
                           type="button" 
-                          variant="outline" 
-                          className="bg-background w-full"
+                          variant={form.watch("certidaoFilhosPath") ? "default" : "outline"}
+                          className={`w-full transition-all ${form.watch("certidaoFilhosPath") ? "bg-green-600 hover:bg-green-700" : "bg-background"}`}
                           onClick={() => handleFileUpload("certidaoFilhosPath")}
                         >
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Certidão
+                          {form.watch("certidaoFilhosPath") ? <Check className="mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
+                          {form.watch("certidaoFilhosPath") ? "Certidão Enviada" : "Upload Certidão"}
                         </Button>
                       </div>
                     )}
@@ -429,38 +431,42 @@ export default function NovoColaboradorPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="flex flex-col items-center justify-center text-center space-y-6 py-8"
                   >
-                    <div className="h-40 w-40 rounded-full border-4 border-dashed flex items-center justify-center text-muted-foreground bg-muted/30">
+                    <div className={`h-40 w-40 rounded-full border-4 border-dashed flex items-center justify-center transition-all duration-500 ${
+                      form.watch("fotoPerfilPath") ? "border-green-500 bg-green-50 dark:bg-green-900/20" : "border-muted-foreground bg-muted/30"
+                    }`}>
                        {form.watch("fotoPerfilPath") ? (
-                         <div className="text-green-600">
-                           <Check className="h-10 w-10" />
-                           <span className="text-xs">Foto OK</span>
+                         <div className="text-green-600 flex flex-col items-center animate-in fade-in zoom-in">
+                           <Check className="h-12 w-12 mb-1" />
+                           <span className="text-xs font-bold">FOTO OK</span>
                          </div>
                        ) : (
-                         <LucideImage className="h-12 w-12" />
+                         <LucideImage className="h-12 w-12 text-muted-foreground" />
                        )}
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">Foto de Perfil e Contrato</h3>
-                      <p className="text-sm text-muted-foreground font-max-w-md mx-auto">
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
                         Finalize o cadastro enviando a foto de perfil do colaborador e o contrato assinado digitalmente.
                       </p>
                     </div>
-                    <div className="flex gap-4 w-full">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full">
                        <Button 
                         type="button" 
-                        variant="secondary" 
-                        className="flex-1"
+                        variant={form.watch("fotoPerfilPath") ? "default" : "secondary"}
+                        className={`flex-1 transition-all h-12 ${form.watch("fotoPerfilPath") ? "bg-green-600 hover:bg-green-700" : ""}`}
                         onClick={() => handleFileUpload("fotoPerfilPath")}
                        >
-                         Foto de Perfil
+                         {form.watch("fotoPerfilPath") ? <Check className="mr-2 h-5 w-5" /> : <LucideImage className="mr-2 h-5 w-5" />}
+                         {form.watch("fotoPerfilPath") ? "Foto Carregada" : "Foto de Perfil"}
                        </Button>
                        <Button 
                         type="button" 
-                        variant="secondary" 
-                        className="flex-1"
+                        variant={form.watch("contratoAssinadoPath") ? "default" : "secondary"}
+                        className={`flex-1 transition-all h-12 ${form.watch("contratoAssinadoPath") ? "bg-green-600 hover:bg-green-700" : ""}`}
                         onClick={() => handleFileUpload("contratoAssinadoPath")}
                        >
-                         Contrato Assinado
+                         {form.watch("contratoAssinadoPath") ? <Check className="mr-2 h-5 w-5" /> : <FileText className="mr-2 h-5 w-5" />}
+                         {form.watch("contratoAssinadoPath") ? "Contrato Carregado" : "Contrato Assinado"}
                        </Button>
                     </div>
                   </motion.div>
