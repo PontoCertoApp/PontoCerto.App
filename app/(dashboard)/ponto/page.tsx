@@ -209,6 +209,7 @@ export default function PontoPage() {
   }
 
   const formatTipo = (t: TipoInconformidade) => {
+    if (!t) return "";
     const labels: Record<string, string> = {
       FALTA_INJUSTIFICADA: "Falta Injustificada",
       ATRASO: "Atraso",
@@ -218,7 +219,7 @@ export default function PontoPage() {
       FALTA_JUSTIFICADA: "Falta Justificada",
       ATESTADO_MEDICO: "Atestado Médico",
     };
-    return labels[t] || t.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    return labels[t] || String(t).replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
   };
 
   const InconformidadeBadge = (tipo: TipoInconformidade) => {
@@ -311,7 +312,7 @@ export default function PontoPage() {
                   <Label>Tipo de Lançamento</Label>
                   <Select value={tipo} onValueChange={(val) => setTipo(val as TipoInconformidade)}>
                     <SelectTrigger>
-                      <SelectValue>{formatTipo(tipo)}</SelectValue>
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>

@@ -148,12 +148,13 @@ export default function PenalidadesPage() {
   };
 
   const getTipoBadge = (tipo: string) => {
+    const label = (tipo || "").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
     switch (tipo) {
       case "INCONSISTENCIA_PONTO": return <Badge variant="outline" className="border-amber-500 text-amber-600">Ponto</Badge>;
       case "QUEDA_CONDUTA": return <Badge variant="outline" className="border-purple-500 text-purple-600">Conduta</Badge>;
       case "ADVERTENCIA": return <Badge variant="outline" className="border-destructive text-destructive">Advertência</Badge>;
       case "SUSPENSAO": return <Badge className="bg-black text-white">Suspensão</Badge>;
-      default: return <Badge variant="outline">{tipo}</Badge>;
+      default: return <Badge variant="outline">{label}</Badge>;
     }
   };
 
@@ -239,13 +240,13 @@ export default function PenalidadesPage() {
                     <Label>Tipo de Penalidade</Label>
                     <Select value={selectedTipo} onValueChange={(val) => setSelectedTipo(val as PenalidadeTipo)}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={PenalidadeTipo.ADVERTENCIA}>Advertência</SelectItem>
                         <SelectItem value={PenalidadeTipo.SUSPENSAO}>Suspensão</SelectItem>
-                        <SelectItem value={PenalidadeTipo.INCONSISTENCIA_PONTO}>Inconsistência</SelectItem>
-                        <SelectItem value={PenalidadeTipo.QUEDA_CONDUTA}>Conduta</SelectItem>
+                        <SelectItem value={PenalidadeTipo.INCONSISTENCIA_PONTO}>Inconsistência de Ponto</SelectItem>
+                        <SelectItem value={PenalidadeTipo.QUEDA_CONDUTA}>Queda de Conduta</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
