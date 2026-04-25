@@ -140,7 +140,10 @@ export default function PontoPage() {
         getColaboradoresSemPontoNoDia(date).catch(() => []),
         getInconformidadesDoDia(date).catch(() => []),
         getTotalAtivos().catch(() => 0),
-        getColaboradores().catch(() => [])
+        getColaboradores().catch((err) => {
+          console.error("Erro getColabs:", err);
+          return [];
+        })
       ]);
       setPendentes(p as unknown as ColaboradorSemPonto[]);
       setTratados(t as unknown as RegistroPonto[]);
@@ -232,7 +235,10 @@ export default function PontoPage() {
           
           <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary shadow-md" onClick={() => resetForm()}>
+              <Button className="bg-primary shadow-md" onClick={() => {
+                resetForm();
+                loadData(); // Force refresh list
+              }}>
                 <Plus className="h-4 w-4 mr-2" /> Lançar Ponto Manual
               </Button>
             </DialogTrigger>
