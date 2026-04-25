@@ -11,7 +11,9 @@ import {
   Calendar as CalendarIcon,
   UserX,
   ShieldAlert,
-  FileText
+  FileText,
+  Plus,
+  UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,15 +65,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import {
-  getInconformidadesDoDia,
-  getColaboradoresSemPontoNoDia,
   registrarInconformidade,
-  getTotalAtivos
+  getTotalAtivos,
 } from "@/actions/ponto-actions";
+import { getColaboradores } from "@/actions/colaborador-actions";
 
 import { exportToExcel } from "@/lib/utils/export";
 
-type TipoInconformidade = "FALTA_INJUSTIFICADA" | "ATRASO" | "SAIDA_ANTECIPADA" | "PONTO_NAO_REGISTRADO";
+type TipoInconformidade = 
+  | "FALTA_INJUSTIFICADA" 
+  | "ATRASO" 
+  | "SAIDA_ANTECIPADA" 
+  | "PONTO_NAO_REGISTRADO"
+  | "PRESENCA_MANUAL"
+  | "FALTA_JUSTIFICADA"
+  | "ATESTADO_MEDICO";
 
 interface ColaboradorSemPonto {
   id: string;
@@ -96,7 +104,9 @@ export default function PontoPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
+  const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
+  const [selectedColab, setSelectedColab] = useState<any | null>(null);
+  const [allColabs, setAllColabs] = useState<any[]>([]);
 
   const [tipo, setTipo] = useState<TipoInconformidade>("FALTA_INJUSTIFICADA");
   const [justificativa, setJustificativa] = useState("");
@@ -126,14 +136,16 @@ export default function PontoPage() {
   async function loadData() {
     setIsLoading(true);
     try {
-      const [p, t, total] = await Promise.all([
+      const [p, t, total, colabs] = await Promise.all([
         getColaboradoresSemPontoNoDia(date).catch(() => []),
         getInconformidadesDoDia(date).catch(() => []),
-        getTotalAtivos().catch(() => 0)
+        getTotalAtivos().catch(() => 0),
+        getColaboradores().catch(() => [])
       ]);
       setPendentes(p as unknown as ColaboradorSemPonto[]);
       setTratados(t as unknown as RegistroPonto[]);
       setTotalColaboradores(total);
+      setAllColabs(colabs);
     } catch (error) {
       console.error("[PONTO_LOAD_ERROR]:", error);
       toast.error("Erro ao carregar dados de ponto.");
@@ -182,6 +194,9 @@ export default function PontoPage() {
       ATRASO: { label: "Atraso", color: "bg-amber-500" },
       SAIDA_ANTECIPADA: { label: "Saída Antecipada", color: "bg-orange-500" },
       PONTO_NAO_REGISTRADO: { label: "Ponto Não Registrado", color: "bg-blue-500" },
+      PRESENCA_MANUAL: { label: "Presença Manual", color: "bg-green-600" },
+      FALTA_JUSTIFICADA: { label: "Falta Justificada", color: "bg-indigo-500" },
+      ATESTADO_MEDICO: { label: "Atestado Médico", color: "bg-purple-600" },
     };
     const item = labels[tipo] ?? { label: tipo, color: "bg-gray-500" };
     return <Badge className={item.color}>{item.label}</Badge>;
@@ -214,6 +229,90 @@ export default function PontoPage() {
           <Button variant="outline" size="icon" onClick={() => loadData()}>
             <ArrowRight className="h-4 w-4 rotate-90" />
           </Button>
+          
+          <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary shadow-md" onClick={() => resetForm()}>
+                <Plus className="h-4 w-4 mr-2" /> Lançar Ponto Manual
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Lançamento de Ponto Manual</DialogTitle>
+                <DialogDescription>
+                  Ajuste de presença ou registro de abonos/atestados.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Colaborador</Label>
+                  <Select value={selectedColab?.id || ""} onValueChange={(val) => {
+                    const colab = allColabs.find(c => c.id === val);
+                    setSelectedColab(colab);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allColabs.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nomeCompleto} ({c.loja.nome})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Lançamento</Label>
+                  <Select value={tipo} onValueChange={(val) => setTipo(val as TipoInconformidade)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>
+                      <SelectItem value="FALTA_JUSTIFICADA">Falta Justificada</SelectItem>
+                      <SelectItem value="ATESTADO_MEDICO">Atestado Médico</SelectItem>
+                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Justificativa / Motivo</Label>
+                  <Textarea 
+                    placeholder="Ex: Esqueceu o crachá / Atestado de 2 dias..." 
+                    value={justificativa}
+                    onChange={(e) => setJustificativa(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsManualDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={async () => {
+                  if (!selectedColab) {
+                    toast.error("Selecione um colaborador");
+                    return;
+                  }
+                  setIsSubmitting(true);
+                  const result = await registrarInconformidade({
+                    colaboradorId: selectedColab.id,
+                    data: date,
+                    tipo,
+                    justificativa,
+                    gerarRap: false, // Lançamento manual geralmente não gera RAP automático
+                  });
+                  if (result.success) {
+                    toast.success("Lançamento realizado!");
+                    setIsManualDialogOpen(false);
+                    loadData();
+                  } else {
+                    toast.error(result.error as string);
+                  }
+                  setIsSubmitting(false);
+                }} disabled={isSubmitting}>
+                  {isSubmitting ? "Gravando..." : "Confirmar Lançamento"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Button variant="outline" onClick={handleExport} disabled={isExporting || tratados.length === 0}>
             {isExporting ? <Clock className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
             Exportar Dia

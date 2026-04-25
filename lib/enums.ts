@@ -48,5 +48,8 @@ export const PontoInconformidade = {
   ATRASO: "ATRASO",
   SAIDA_ANTECIPADA: "SAIDA_ANTECIPADA",
   PONTO_NAO_REGISTRADO: "PONTO_NAO_REGISTRADO",
+  PRESENCA_MANUAL: "PRESENCA_MANUAL",
+  FALTA_JUSTIFICADA: "FALTA_JUSTIFICADA",
+  ATESTADO_MEDICO: "ATESTADO_MEDICO",
 } as const;
 export type PontoInconformidade = (typeof PontoInconformidade)[keyof typeof PontoInconformidade];
