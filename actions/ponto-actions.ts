@@ -10,6 +10,7 @@ import { startOfDay, endOfDay } from "date-fns";
 
 const registroPontoSchema = z.object({
   colaboradorId: z.string(),
+  manualName: z.string().optional(),
   data: z.date(),
   tipo: z.nativeEnum(PontoInconformidade),
   justificativa: z.string().optional(),
@@ -22,21 +23,27 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   const userId = session.user.id!;
 
   try {
-    const colaborador = await prisma.colaborador.findUnique({
-      where: { id: data.colaboradorId },
-      select: { nomeCompleto: true, email: true, lojaId: true },
-    });
+    const isManual = data.colaboradorId === "MANUAL";
+    let colaborador = null;
+    let lojaId = null;
 
-    if (!colaborador) throw new Error("Colaborador não encontrado");
+    if (!isManual) {
+      colaborador = await prisma.colaborador.findUnique({
+        where: { id: data.colaboradorId },
+        select: { nomeCompleto: true, email: true, lojaId: true },
+      });
+      if (!colaborador) throw new Error("Colaborador não encontrado");
+      lojaId = colaborador.lojaId;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const registro = await tx.registroPonto.create({
         data: {
-          colaboradorId: data.colaboradorId,
-          lojaId: colaborador.lojaId,
+          colaboradorId: isManual ? userId : data.colaboradorId, // Link to creator if manual
+          lojaId: lojaId,
           data: data.data,
           tipo: data.tipo,
-          justificativa: data.justificativa,
+          justificativa: isManual ? `[MANUAL: ${data.manualName}] ${data.justificativa || ""}` : data.justificativa,
           status: PontoStatus.INCONSISTENTE,
           rapGerado: data.gerarRap,
           criadoPorId: userId,

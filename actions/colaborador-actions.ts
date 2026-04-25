@@ -187,7 +187,8 @@ export async function getColaboradores() {
   const session = await auth();
   if (!session?.user) return [];
   
-  const isRH = session.user.role === "RH";
+  const role = session.user.role?.toUpperCase();
+  const isRH = role === "RH" || role === "ADMIN";
   const where = isRH ? {} : { lojaId: session.user.lojaId };
 
   return await prisma.colaborador.findMany({
