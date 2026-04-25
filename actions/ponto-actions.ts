@@ -6,6 +6,7 @@ import { z } from "zod";
 import { PontoStatus, PontoInconformidade, PenalidadeTipo, PenalidadeStatus } from "@/lib/enums";
 import { auth } from "@/auth";
 import { sendPontoNotification } from "@/lib/email/send";
+import { startOfDay, endOfDay } from "date-fns";
 
 const registroPontoSchema = z.object({
   colaboradorId: z.string(),
