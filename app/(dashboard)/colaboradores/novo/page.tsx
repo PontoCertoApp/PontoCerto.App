@@ -482,12 +482,32 @@ export default function NovoColaboradorPage() {
                 )}
                 
                 {currentStep < steps.length ? (
-                  <Button type="button" className="ml-auto" onClick={nextStep}>
+                  <Button 
+                    type="button" 
+                    className="ml-auto" 
+                    onClick={async () => {
+                      // Se estiver na etapa 3, valida se os documentos básicos foram selecionados
+                      // mas não bloqueia se for opcional
+                      await nextStep();
+                    }}
+                  >
                     Próximo
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button type="submit" className="ml-auto" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    className="ml-auto bg-blue-600 hover:bg-blue-700" 
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      // Debug de validação: mostra erro se o form estiver inválido
+                      const errors = form.formState.errors;
+                      if (Object.keys(errors).length > 0) {
+                        console.log("Validation Errors:", errors);
+                        toast.error("Por favor, verifique se todos os campos obrigatórios foram preenchidos corretamente.");
+                      }
+                    }}
+                  >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Finalizar Cadastro
                   </Button>
