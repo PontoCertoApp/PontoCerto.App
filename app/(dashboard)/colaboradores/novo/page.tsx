@@ -202,11 +202,24 @@ export default function NovoColaboradorPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Novo Colaborador</h1>
-        <p className="text-muted-foreground">
-          Siga as etapas para realizar o cadastro completo.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-0 h-auto hover:bg-transparent text-primary" 
+              onClick={() => router.push("/colaboradores")}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Voltar para lista
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">Novo Colaborador</h1>
+          <p className="text-muted-foreground">
+            Siga as etapas para realizar o cadastro completo.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">
