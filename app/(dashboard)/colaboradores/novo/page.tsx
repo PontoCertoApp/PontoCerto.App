@@ -110,6 +110,10 @@ export default function NovoColaboradorPage() {
     async function loadData() {
       const data = await getLojas();
       setLojas(data);
+      // Auto-select first loja if available
+      if (data.length > 0) {
+        form.setValue("lojaId", data[0].id);
+      }
     }
     loadData();
   }, []);
@@ -313,31 +317,6 @@ export default function NovoColaboradorPage() {
                   >
                     <FormField
                       control={form.control}
-                      name="lojaId"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>Unidade (Loja)</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione a unidade de destino" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {lojas.map((loja) => (
-                                <SelectItem key={loja.id} value={loja.id}>
-                                  {loja.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>Selecione onde o colaborador irá atuar.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
                       name="setorNome"
                       render={({ field }) => (
                         <FormItem>
@@ -416,7 +395,6 @@ export default function NovoColaboradorPage() {
                       { label: "Foto do PIS", name: "pisFotoPath" },
                       { label: "Histórico Escolar / Certificado", name: "historicoEscolarPath" },
                       { label: "CTPS Digital", name: "ctpsDigitalPath" },
-                      { label: "Foto de Perfil", name: "fotoPerfilPath" },
                       { label: "Contrato Assinado", name: "contratoAssinadoPath" },
                     ].map((doc) => {
                       const isUploaded = !!form.watch(doc.name as any);
