@@ -116,6 +116,8 @@ export default function NovoColaboradorPage() {
   const progress = (currentStep / steps.length) * 100;
 
   async function nextStep() {
+    if (currentStep >= steps.length) return;
+
     // Validate current step fields before proceeding
     let fieldsToValidate: any[] = [];
     if (currentStep === 1) {
@@ -126,7 +128,7 @@ export default function NovoColaboradorPage() {
 
     const isValid = await form.trigger(fieldsToValidate as any);
     if (isValid) {
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length));
     }
   }
 
