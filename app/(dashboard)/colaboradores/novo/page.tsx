@@ -137,6 +137,12 @@ export default function NovoColaboradorPage() {
   }
 
   async function onSubmit(values: FormValues) {
+    // Trava de segurança: só permite enviar se estiver na última etapa
+    if (currentStep < steps.length) {
+      console.log("[PREMATURE_SUBMIT_PREVENTED]: User not in last step.");
+      return;
+    }
+
     setIsSubmitting(true);
     const result = await createColaborador(values);
     if (result.success) {
