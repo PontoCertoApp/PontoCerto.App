@@ -50,8 +50,7 @@ import { createColaborador } from "@/actions/colaborador-actions";
 const steps = [
   { id: 1, title: "Dados Pessoais", icon: User },
   { id: 2, title: "Empresa", icon: Building2 },
-  { id: 3, title: "Documentação", icon: FileText },
-  { id: 4, title: "Finalização", icon: Check },
+  { id: 3, title: "Documentação & Finalização", icon: FileText },
 ];
 
 const formSchema = z.object({
@@ -374,7 +373,7 @@ export default function NovoColaboradorPage() {
                     className="grid grid-cols-1 md:grid-cols-2 gap-6"
                   >
                     <div className="space-y-4 md:col-span-2">
-                       <h3 className="text-lg font-medium">Upload de Documentos</h3>
+                       <h3 className="text-lg font-medium">Upload de Documentos, Foto e Contrato</h3>
                        <p className="text-sm text-muted-foreground">Formatos aceitos: PDF e Imagens (PNG/JPG)</p>
                     </div>
                     
@@ -383,6 +382,8 @@ export default function NovoColaboradorPage() {
                       { label: "Foto do PIS", name: "pisFotoPath" },
                       { label: "Histórico Escolar / Certificado", name: "historicoEscolarPath" },
                       { label: "CTPS Digital", name: "ctpsDigitalPath" },
+                      { label: "Foto de Perfil", name: "fotoPerfilPath" },
+                      { label: "Contrato Assinado", name: "contratoAssinadoPath" },
                     ].map((doc) => {
                       const isUploaded = !!form.watch(doc.name as any);
                       return (
@@ -423,54 +424,6 @@ export default function NovoColaboradorPage() {
                     )}
                   </motion.div>
                 )}
-
-                {currentStep === 4 && (
-                  <motion.div
-                    key="step4"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center text-center space-y-6 py-8"
-                  >
-                    <div className={`h-40 w-40 rounded-full border-4 border-dashed flex items-center justify-center transition-all duration-500 ${
-                      form.watch("fotoPerfilPath") ? "border-green-500 bg-green-50 dark:bg-green-900/20" : "border-muted-foreground bg-muted/30"
-                    }`}>
-                       {form.watch("fotoPerfilPath") ? (
-                         <div className="text-green-600 flex flex-col items-center animate-in fade-in zoom-in">
-                           <Check className="h-12 w-12 mb-1" />
-                           <span className="text-xs font-bold">FOTO OK</span>
-                         </div>
-                       ) : (
-                         <LucideImage className="h-12 w-12 text-muted-foreground" />
-                       )}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold">Foto de Perfil e Contrato</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Finalize o cadastro enviando a foto de perfil do colaborador e o contrato assinado digitalmente.
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4 w-full">
-                       <Button 
-                        type="button" 
-                        variant={form.watch("fotoPerfilPath") ? "default" : "secondary"}
-                        className={`flex-1 transition-all h-12 ${form.watch("fotoPerfilPath") ? "bg-green-600 hover:bg-green-700" : ""}`}
-                        onClick={() => handleFileUpload("fotoPerfilPath")}
-                       >
-                         {form.watch("fotoPerfilPath") ? <Check className="mr-2 h-5 w-5" /> : <LucideImage className="mr-2 h-5 w-5" />}
-                         {form.watch("fotoPerfilPath") ? "Foto Carregada" : "Foto de Perfil"}
-                       </Button>
-                       <Button 
-                        type="button" 
-                        variant={form.watch("contratoAssinadoPath") ? "default" : "secondary"}
-                        className={`flex-1 transition-all h-12 ${form.watch("contratoAssinadoPath") ? "bg-green-600 hover:bg-green-700" : ""}`}
-                        onClick={() => handleFileUpload("contratoAssinadoPath")}
-                       >
-                         {form.watch("contratoAssinadoPath") ? <Check className="mr-2 h-5 w-5" /> : <FileText className="mr-2 h-5 w-5" />}
-                         {form.watch("contratoAssinadoPath") ? "Contrato Carregado" : "Contrato Assinado"}
-                       </Button>
-                    </div>
-                  </motion.div>
-                )}
               </AnimatePresence>
 
               <div className="flex justify-between pt-6 border-t">
@@ -497,19 +450,21 @@ export default function NovoColaboradorPage() {
                 ) : (
                   <Button 
                     type="submit" 
-                    className="ml-auto bg-blue-600 hover:bg-blue-700" 
+                    className="ml-auto bg-green-600 hover:bg-green-700 px-8" 
                     disabled={isSubmitting}
                     onClick={() => {
-                      // Debug de validação: mostra erro se o form estiver inválido
                       const errors = form.formState.errors;
                       if (Object.keys(errors).length > 0) {
-                        console.log("Validation Errors:", errors);
-                        toast.error("Por favor, verifique se todos os campos obrigatórios foram preenchidos corretamente.");
+                        toast.error("Por favor, preencha os campos obrigatórios.");
                       }
                     }}
                   >
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Finalizar Cadastro
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    Concluir
                   </Button>
                 )}
               </div>
