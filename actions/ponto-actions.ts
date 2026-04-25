@@ -130,7 +130,7 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
 
   return await prisma.colaborador.findMany({
     where: {
-      status: "ATIVO",
+      status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
       id: { notIn: idsRegistrados },
     },
     include: {

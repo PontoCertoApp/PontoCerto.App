@@ -152,9 +152,12 @@ export default function ColaboradoresPage() {
         toast.success("Colaborador excluído com sucesso.");
         setColabToDelete(null);
         loadData();
+      } else {
+        toast.error(result.error || "Não foi possível excluir o colaborador.");
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir colaborador.");
+      console.error("[DELETE_UI_ERROR]:", error);
+      toast.error("Ocorreu um erro inesperado ao tentar excluir.");
     }
   };
 
