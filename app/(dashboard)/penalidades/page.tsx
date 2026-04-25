@@ -11,7 +11,8 @@ import {
   History,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,9 +43,29 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getPenalidades,
-  updatePenalidadeStatus
+  updatePenalidadeStatus,
+  createPenalidade
 } from "@/actions/penalidade-actions";
 import { getTotalAtivos } from "@/actions/ponto-actions";
+import { getColaboradores } from "@/actions/colaborador-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
 
 import { exportToExcel } from "@/lib/utils/export";
@@ -64,6 +85,15 @@ export default function PenalidadesPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [totalAtivos, setTotalAtivos] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form states
+  const [selectedColabId, setSelectedColabId] = useState("");
+  const [selectedTipo, setSelectedTipo] = useState<PenalidadeTipo>(PenalidadeTipo.ADVERTENCIA);
+  const [motivo, setMotivo] = useState("");
+  const [dataOcorrencia, setDataOcorrencia] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -88,12 +118,14 @@ export default function PenalidadesPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [data, total] = await Promise.all([
+    const [data, total, colabs] = await Promise.all([
       getPenalidades(),
-      getTotalAtivos()
+      getTotalAtivos(),
+      getColaboradores()
     ]);
     setPenalidades(data as unknown as Penalidade[]);
     setTotalAtivos(total);
+    setColaboradores(colabs);
     setIsLoading(false);
   }
 
@@ -131,6 +163,38 @@ export default function PenalidadesPage() {
     loadData();
   }
 
+  async function handleSubmit() {
+    if (!selectedColabId || !motivo) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await createPenalidade({
+      colaboradorId: selectedColabId,
+      tipo: selectedTipo,
+      motivo,
+      dataOcorrencia: new Date(dataOcorrencia),
+    });
+
+    if (result.success) {
+      toast.success("Penalidade aplicada com sucesso!");
+      setIsDialogOpen(false);
+      resetForm();
+      loadData();
+    } else {
+      toast.error(result.error || "Erro ao aplicar penalidade.");
+    }
+    setIsSubmitting(false);
+  }
+
+  function resetForm() {
+    setSelectedColabId("");
+    setSelectedTipo(PenalidadeTipo.ADVERTENCIA);
+    setMotivo("");
+    setDataOcorrencia(format(new Date(), "yyyy-MM-dd"));
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -140,18 +204,92 @@ export default function PenalidadesPage() {
             Monitoramento de conduta e histórico disciplinar.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleExport} 
-          disabled={isExporting || filtered.length === 0}
-        >
-          {isExporting ? (
-            <Clock className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <FileDown className="mr-2 h-4 w-4" />
-          )}
-          Exportar Relatório
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-destructive hover:bg-destructive/90 shadow-lg">
+                <Plus className="mr-2 h-4 w-4" /> Aplicar Penalidade
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Aplicar Nova Penalidade (RAP)</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados da ocorrência para o histórico disciplinar.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Colaborador</Label>
+                  <Select value={selectedColabId} onValueChange={setSelectedColabId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colaboradores.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nomeCompleto} ({c.loja.nome})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Penalidade</Label>
+                    <Select value={selectedTipo} onValueChange={(val) => setSelectedTipo(val as PenalidadeTipo)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={PenalidadeTipo.ADVERTENCIA}>Advertência</SelectItem>
+                        <SelectItem value={PenalidadeTipo.SUSPENSAO}>Suspensão</SelectItem>
+                        <SelectItem value={PenalidadeTipo.INCONSISTENCIA_PONTO}>Inconsistência</SelectItem>
+                        <SelectItem value={PenalidadeTipo.QUEDA_CONDUTA}>Conduta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data da Ocorrência</Label>
+                    <Input 
+                      type="date" 
+                      value={dataOcorrencia} 
+                      onChange={(e) => setDataOcorrencia(e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Descrição do Motivo</Label>
+                  <Textarea 
+                    placeholder="Descreva detalhadamente o ocorrido..." 
+                    className="h-32"
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button variant="destructive" onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? "Aplicando..." : "Confirmar Aplicação"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            disabled={isExporting || filtered.length === 0}
+          >
+            {isExporting ? (
+              <Clock className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="mr-2 h-4 w-4" />
+            )}
+            Exportar Relatório
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
