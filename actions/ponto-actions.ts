@@ -23,13 +23,16 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   try {
     const colaborador = await prisma.colaborador.findUnique({
       where: { id: data.colaboradorId },
-      select: { nomeCompleto: true, email: true },
+      select: { nomeCompleto: true, email: true, lojaId: true },
     });
+
+    if (!colaborador) throw new Error("Colaborador não encontrado");
 
     const result = await prisma.$transaction(async (tx) => {
       const registro = await tx.registroPonto.create({
         data: {
           colaboradorId: data.colaboradorId,
+          lojaId: colaborador.lojaId,
           data: data.data,
           tipo: data.tipo,
           justificativa: data.justificativa,
@@ -78,6 +81,12 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
 }
 
 export async function getInconformidadesDoDia(data: Date) {
+  const session = await auth();
+  if (!session?.user) return [];
+
+  const isRH = session.user.role === "RH";
+  const userLojaId = session.user.lojaId;
+
   const startOfDay = new Date(data);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(data);
@@ -89,6 +98,7 @@ export async function getInconformidadesDoDia(data: Date) {
         gte: startOfDay,
         lte: endOfDay,
       },
+      ...(isRH ? {} : { lojaId: userLojaId }),
     },
     include: {
       colaborador: {

@@ -36,62 +36,52 @@ const colaboradorSchema = z.object({
  */
 export const createColaborador = createAction(
   colaboradorSchema,
-  ["RH"],
+  ["RH", "GERENTE"],
   async (data, session) => {
     console.log("[CREATE_COLABORADOR] Iniciando processo para:", data.nomeCompleto);
     try {
-      console.log("[CREATE_COLABORADOR] Sessão recebida do wrapper:", session?.user?.email);
+      const sessionLojaId = session?.user?.lojaId;
       
-      const lojaId = session?.user?.lojaId;
-      if (!lojaId) {
-        console.error("[CREATE_COLABORADOR] Erro: Usuário sem lojaId");
-        throw new Error("Usuário sem loja vinculada.");
+      // Prioridade: lojaId vindo do form (especialmente para RH)
+      // Se não vier no form, tenta pegar da sessão (para Gerente)
+      const targetLojaId = data.lojaId || sessionLojaId;
+
+      if (!targetLojaId) {
+        console.error("[CREATE_COLABORADOR] Erro: Nenhuma loja vinculada.");
+        throw new Error("É necessário selecionar uma loja para cadastrar o colaborador.");
       }
 
       // Check for existing CPF or Email
-      console.log("[CREATE_COLABORADOR] Verificando duplicidade (CPF:", data.cpf, ")");
       const existing = await prisma.colaborador.findFirst({
         where: {
           OR: [
             { cpf: data.cpf },
-            { email: data.email && data.email !== "" ? data.email : undefined }
-          ].filter(Boolean) as any
+            ...(data.email && data.email !== "" ? [{ email: data.email }] : [])
+          ]
         }
       });
 
       if (existing) {
-        const msg = existing.cpf === data.cpf 
-          ? "Já existe um colaborador com este CPF." 
-          : "Já existe um colaborador com este E-mail.";
-        console.warn("[CREATE_COLABORADOR] Duplicidade encontrada:", msg);
-        throw new Error(msg);
+        throw new Error(existing.cpf === data.cpf ? "CPF já cadastrado." : "E-mail já cadastrado.");
       }
 
-      console.log("[CREATE_COLABORADOR] Iniciando transação de banco...");
       const result = await prisma.$transaction(async (tx) => {
-        // 1. Get or Create Setor
         let setor = await tx.setor.findFirst({ where: { nome: data.setorNome } });
-        if (!setor) {
-          console.log("[CREATE_COLABORADOR] Criando novo setor:", data.setorNome);
-          setor = await tx.setor.create({ data: { nome: data.setorNome } });
-        }
+        if (!setor) setor = await tx.setor.create({ data: { nome: data.setorNome } });
 
-        // 2. Get or Create Funcao
         let funcao = await tx.funcao.findFirst({ where: { nome: data.funcaoNome, setorId: setor.id } });
         if (!funcao) {
-          console.log("[CREATE_COLABORADOR] Criando nova função:", data.funcaoNome);
           funcao = await tx.funcao.create({
             data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 }
           });
         }
 
-        const { setorNome, funcaoNome, lojaId: _, ...rest } = data;
+        const { setorNome: _s, funcaoNome: _f, lojaId: _l, ...rest } = data;
 
-        console.log("[CREATE_COLABORADOR] Criando registro do Colaborador...");
         const colaborador = await tx.colaborador.create({
           data: {
             ...rest,
-            lojaId,
+            lojaId: targetLojaId,
             setorId: setor.id,
             funcaoId: funcao.id,
             dataNascimento: new Date(data.dataNascimento),
@@ -100,7 +90,6 @@ export const createColaborador = createAction(
           },
         });
 
-        // 4. Create separate Documento records
         const docsToCreate = [
           { nome: "Comprovante de Endereço", path: data.enderecoComprovantePath },
           { nome: "Foto do PIS", path: data.pisFotoPath },
@@ -112,7 +101,6 @@ export const createColaborador = createAction(
         ].filter(d => d.path);
 
         if (docsToCreate.length > 0) {
-          console.log("[CREATE_COLABORADOR] Salvando", docsToCreate.length, "documentos no banco...");
           await tx.documento.createMany({
             data: docsToCreate.map(d => ({
               colaboradorId: colaborador.id,
@@ -126,39 +114,21 @@ export const createColaborador = createAction(
         return { colaborador, funcao, setor };
       });
 
-      console.log("[CREATE_COLABORADOR] Cadastro concluído com sucesso id:", result.colaborador.id);
-
-      const { colaborador, funcao } = result;
+      const { colaborador } = result;
 
       if (colaborador.email) {
-        const loja = await prisma.loja.findUnique({ where: { id: lojaId }, select: { nome: true } });
-        
-        // 1. Send Welcome to Colaborador
+        const loja = await prisma.loja.findUnique({ where: { id: targetLojaId }, select: { nome: true } });
         sendBoasVindas(colaborador.email, {
           nomeUsuario: colaborador.nomeCompleto,
           empresa: loja?.nome ?? "PontoCerto",
           loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
-        }).catch((err) => console.error("[email/welcome] Falha:", err));
-
-        // 2. Send Notification to RH (session user)
-        if (session?.user?.email) {
-          sendColaboradorCadastrado(session.user.email, {
-            rhNome: session.user.name || "RH",
-            colaboradorNome: colaborador.nomeCompleto,
-            cargo: funcao?.nome ?? "Colaborador",
-            setor: setor?.nome ?? "Geral",
-            dataAdmissao: new Date().toLocaleDateString("pt-BR"),
-          }).catch((err) => console.error("[email/rh-notification] Falha:", err));
-        }
+        }).catch(() => {});
       }
 
       revalidatePath("/colaboradores");
       return colaborador;
     } catch (error: any) {
-      console.error("[CREATE_COLABORADOR_FATAL]:", error);
-      if (error.code === 'P2002') {
-        throw new Error("Conflito de dados: CPF ou E-mail já cadastrado.");
-      }
+      console.error("[CREATE_COLABORADOR_ERROR]:", error);
       throw error;
     }
   }
@@ -170,7 +140,7 @@ export const createColaborador = createAction(
 export async function getColaboradoresPaged({
   query = "",
   status,
-  lojaId,
+  lojaId: filterLojaId,
   page = 1,
   limit = 10,
 }: {
@@ -180,20 +150,22 @@ export async function getColaboradoresPaged({
   page?: number;
   limit?: number;
 }) {
-  const skip = (page - 1) * limit;
+  const session = await auth();
+  if (!session?.user) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
 
+  const isRH = session.user.role === "RH";
+  const userLojaId = session.user.lojaId;
+
+  // Se for Gerente, obrigatoriamente filtra pela loja dele
+  // Se for RH, filtra pela loja passada no argumento ou vê tudo
+  const targetLojaId = isRH ? filterLojaId : userLojaId;
+
+  const skip = (page - 1) * limit;
   const where: any = {
     AND: [
-      query
-        ? {
-            OR: [
-              { nomeCompleto: { contains: query } },
-              { cpf: { contains: query } },
-            ],
-          }
-        : {},
+      query ? { OR: [{ nomeCompleto: { contains: query } }, { cpf: { contains: query } }] } : {},
       status ? { status } : {},
-      lojaId ? { lojaId } : {},
+      targetLojaId ? { lojaId: targetLojaId } : {},
     ],
   };
 
@@ -201,31 +173,25 @@ export async function getColaboradoresPaged({
     prisma.colaborador.count({ where }),
     prisma.colaborador.findMany({
       where,
-      include: {
-        funcao: true,
-        loja: true,
-        setor: true,
-      },
+      include: { funcao: true, loja: true, setor: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
   ]);
 
-  return {
-    items,
-    metadata: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+  return { items, metadata: { total, page, limit, totalPages: Math.ceil(total / limit) } };
 }
 
-// Legacy helper for simple lists
 export async function getColaboradores() {
+  const session = await auth();
+  if (!session?.user) return [];
+  
+  const isRH = session.user.role === "RH";
+  const where = isRH ? {} : { lojaId: session.user.lojaId };
+
   return await prisma.colaborador.findMany({
+    where,
     include: { funcao: true, loja: true, setor: true },
     orderBy: { createdAt: "desc" },
   });
