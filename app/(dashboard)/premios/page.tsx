@@ -10,7 +10,6 @@ import {
   TrendingUp, 
   Zap,
   Info,
-  Gift
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
