@@ -25,6 +25,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import {
@@ -56,6 +58,14 @@ function getMonthOptions() {
 }
 
 export default function RelatoriosPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-screen w-full" />}>
+      <RelatoriosContent />
+    </Suspense>
+  );
+}
+
+function RelatoriosContent() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -152,10 +162,10 @@ export default function RelatoriosPage() {
     { key: "uniformes", name: "Controle de Suprimentos", group: "Financeiro", icon: Shirt, color: "text-slate-500", bg: "bg-slate-500/10" },
   ];
 
-  const filteredReports = reports.filter(r => 
+  const filteredReports = useMemo(() => reports.filter(r => 
     r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     r.group.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [searchTerm]);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-4 animate-in fade-in duration-500">
