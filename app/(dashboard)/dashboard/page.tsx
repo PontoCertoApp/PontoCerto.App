@@ -8,12 +8,11 @@ export default async function DashboardPage() {
   try {
     const session = await auth();
     const userName = session?.user?.name || "Usuário";
-    const role = session?.user?.role;
+    const role = session?.user?.role?.toUpperCase();
     const lojaId = session?.user?.lojaId;
 
     // Se for RH, não filtra por lojaId (vê tudo)
     // Se for GERENTE, filtra por lojaId
-    const role = session?.user?.role?.toUpperCase();
     const isRH = role === "RH" || role === "ADMIN";
     const filter = isRH ? {} : (lojaId ? { lojaId } : { id: 'none' });
 
