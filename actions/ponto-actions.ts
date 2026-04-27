@@ -25,8 +25,9 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   console.log("[PONTO_REG] User:", session.user.email, "Role:", session.user.role, "LojaId:", session.user.lojaId);
 
   try {
-    // Normaliza a data para o início do dia para evitar problemas de fuso horário na consulta posterior
-    const dataPonto = startOfDay(data.data);
+    // Normalização robusta via string para evitar shifts de fuso horário
+    const dataISO = (typeof data.data === 'string' ? data.data : data.data.toISOString()).split('T')[0];
+    const dataPonto = new Date(`${dataISO}T00:00:00.000Z`);
     const isManual = data.colaboradorId === "MANUAL";
     let colaborador = null;
     let lojaId = session.user.lojaId || null;
@@ -119,11 +120,10 @@ export async function getInconformidadesDoDia(data: Date) {
     const isRH = role === "RH" || role === "ADMIN";
     const targetLojaId = session.user.lojaId;
 
-    // Normalização rigorosa para o dia UTC
-    const inicioDia = new Date(data);
-    inicioDia.setUTCHours(0, 0, 0, 0);
-    const fimDia = new Date(data);
-    fimDia.setUTCHours(23, 59, 59, 999);
+    // Normalização robusta via string para evitar shifts de fuso horário
+    const dataISO = (typeof data === 'string' ? data : data.toISOString()).split('T')[0];
+    const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
+    const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
 
     const where: any = {
       data: { gte: inicioDia, lte: fimDia }

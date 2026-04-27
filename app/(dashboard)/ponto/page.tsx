@@ -100,6 +100,7 @@ interface RegistroPonto {
 }
 
 export default function PontoPage() {
+  const [activeTab, setActiveTab] = useState("pendentes");
   const [date, setDate] = useState<Date>(new Date());
   const [pendentes, setPendentes] = useState<ColaboradorSemPonto[]>([]);
   const [tratados, setTratados] = useState<RegistroPonto[]>([]);
@@ -234,10 +235,11 @@ export default function PontoPage() {
     });
 
     if (result.success) {
-      toast.success("Tratamento registrado com sucesso!");
+      toast.success("Pontuação registrada com sucesso!");
       setIsManualDialogOpen(false);
       resetForm();
-      loadData();
+      setActiveTab("tratados"); // Switch to history tab
+      setTimeout(() => loadData(), 500); // Give DB a moment and refresh
     } else {
       toast.error(result.error as string);
     }
@@ -487,20 +489,13 @@ export default function PontoPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="pendentes" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="pendentes" className="relative">
-            Inconsistências
-            {pendentes.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-                {pendentes.length}
-              </span>
-            )}
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-fit grid-cols-2">
+          <TabsTrigger value="pendentes">Inconsistências</TabsTrigger>
           <TabsTrigger value="tratados">Histórico do Dia</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pendentes">
+        <TabsContent value="pendentes" className="space-y-4">
           <Card>
             <CardContent className="p-0">
               <Table>
