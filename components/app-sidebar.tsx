@@ -59,7 +59,7 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Tratamento de Ponto",
+    title: "Pontuação de Equipe",
     url: "/ponto",
     icon: Clock,
     role: ["RH", "GERENTE"],

@@ -255,13 +255,16 @@ export default function PontoPage() {
   const formatTipo = (t: TipoInconformidade) => {
     if (!t) return "Tipo não definido";
     const labels: Record<string, string> = {
-      FALTA_INJUSTIFICADA: "Falta Injustificada",
-      ATRASO: "Atraso",
-      SAIDA_ANTECIPADA: "Saída Antecipada",
+      FALTA_INJUSTIFICADA: "Falta Injustificada (-)",
+      ATRASO: "Atraso (-)",
+      SAIDA_ANTECIPADA: "Saída Antecipada (-)",
       PONTO_NAO_REGISTRADO: "Ponto Não Registrado",
-      PRESENCA_MANUAL: "Presença Manual (Ajuste)",
+      PRESENCA_MANUAL: "Presença / OK (+)",
       FALTA_JUSTIFICADA: "Falta Justificada",
       ATESTADO_MEDICO: "Atestado Médico",
+      PONTO_POSITIVO: "Ponto Positivo (+)",
+      META_BATIDA: "Meta Batida (++)",
+      ELOGIO: "Elogio (+++)",
     };
     return labels[t] || String(t).replace(/_/g, " ");
   };
@@ -273,9 +276,12 @@ export default function PontoPage() {
       ATRASO: "bg-amber-500",
       SAIDA_ANTECIPADA: "bg-orange-500",
       PONTO_NAO_REGISTRADO: "bg-blue-500",
-      PRESENCA_MANUAL: "bg-green-600",
+      PRESENCA_MANUAL: "bg-emerald-600",
       FALTA_JUSTIFICADA: "bg-indigo-500",
       ATESTADO_MEDICO: "bg-purple-600",
+      PONTO_POSITIVO: "bg-cyan-500",
+      META_BATIDA: "bg-green-600",
+      ELOGIO: "bg-pink-500",
     };
     return <Badge className={colors[t] || "bg-gray-500"}>{formatTipo(t)}</Badge>;
   };
@@ -284,9 +290,9 @@ export default function PontoPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tratamento de Ponto</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pontuação de Equipe</h1>
           <p className="text-muted-foreground">
-            Gestão diária de inconsistências e registros.
+            Gestão de pontos, méritos e benefícios.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -314,14 +320,14 @@ export default function PontoPage() {
                 resetForm();
                 loadData(); // Force refresh list
               }}>
-                <Plus className="h-4 w-4 mr-2" /> Lançar Ponto Manual
+                <Plus className="h-4 w-4 mr-2" /> Lançar Pontuação
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Lançamento de Ponto Manual</DialogTitle>
+                <DialogTitle>Lançamento de Pontuação</DialogTitle>
                 <DialogDescription>
-                  Ajuste de presença ou registro de abonos/atestados.
+                  Atribua pontos, prêmios ou registre faltas/abonos.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -541,10 +547,13 @@ export default function PontoPage() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada</SelectItem>
-                                      <SelectItem value="ATRASO">Atraso</SelectItem>
-                                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada</SelectItem>
-                                      <SelectItem value="PONTO_NAO_REGISTRADO">Ponto Não Registrado</SelectItem>
+                                      <SelectItem value="PONTO_POSITIVO">Ponto Positivo (+)</SelectItem>
+                                      <SelectItem value="META_BATIDA">Meta Batida (++)</SelectItem>
+                                      <SelectItem value="ELOGIO">Elogio Cliente/Equipe</SelectItem>
+                                      <SelectItem value="PRESENCA_MANUAL">Presença / OK</SelectItem>
+                                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada (-)</SelectItem>
+                                      <SelectItem value="ATRASO">Atraso (-)</SelectItem>
+                                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada (-)</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
