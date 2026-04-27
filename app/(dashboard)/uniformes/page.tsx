@@ -8,7 +8,10 @@ import {
   RotateCcw, 
   AlertCircle, 
   History,
-  Store 
+  Store,
+  CheckCircle2,
+  Package,
+  ChevronRight
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,6 +59,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { 
   getHistoricoUniformes, 
@@ -86,6 +90,20 @@ interface ColaboradorOption {
   nomeCompleto: string;
 }
 
+const itemOptions = [
+  "Camiseta Polo",
+  "Calça Brim",
+  "Avental",
+  "Boné",
+  "Bota de Segurança",
+  "Luvas Térmicas",
+  "Outro (Especificar...)"
+];
+
+const tamanhoOptions = [
+  "PP", "P", "M", "G", "GG", "XG", "G1", "G2", "G3", "36", "38", "40", "42", "44", "46", "Outro"
+];
+
 export default function UniformesPage() {
   const [historico, setHistorico] = useState<ControleUniforme[]>([]);
   const [estoque, setEstoque] = useState<EstoqueUniforme[]>([]);
@@ -95,7 +113,8 @@ export default function UniformesPage() {
 
   // Form State
   const [selectedColabId, setSelectedColabId] = useState("");
-  const [item, setItem] = useState("");
+  const [selectedItem, setSelectedItem] = useState("");
+  const [customItem, setCustomItem] = useState("");
   const [tamanho, setTamanho] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -117,20 +136,22 @@ export default function UniformesPage() {
   }, []);
 
   async function handleSubmit() {
-    if (!selectedColabId || !item || !tamanho) {
-      toast.error("Preencha todos os campos.");
+    const finalItem = selectedItem === "Outro (Especificar...)" ? customItem : selectedItem;
+
+    if (!selectedColabId || !finalItem || !tamanho) {
+      toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
 
     setIsSubmitting(true);
     const result = await registrarEntregaUniforme({
       colaboradorId: selectedColabId,
-      item,
+      item: finalItem,
       tamanho,
     });
 
     if (result.success) {
-      toast.success("Entrega registrada!");
+      toast.success("Entrega de uniforme registrada com sucesso!");
       setIsDialogOpen(false);
       resetForm();
       loadData();
@@ -142,121 +163,155 @@ export default function UniformesPage() {
 
   function resetForm() {
     setSelectedColabId("");
-    setItem("");
+    setSelectedItem("");
+    setCustomItem("");
     setTamanho("");
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Controle de Uniformes</h1>
-          <p className="text-muted-foreground">
-            Gestão de estoque e histórico de entregas.
-          </p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
+              <Shirt className="h-5 w-5 text-primary" />
+            </div>
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-black">Módulo de EPI & Uniforme</Badge>
+          </div>
+          <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Controle de <span className="text-primary">Uniformes</span></h1>
+          <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Gestão de estoque e histórico de entregas por unidade</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
-            <Plus className="mr-2 h-4 w-4" />
-            Entregar Uniforme
+
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 font-black uppercase text-xs tracking-widest gap-2">
+              <Plus className="h-5 w-5" />
+              Entregar Uniforme
+            </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md rounded-3xl border-primary/20 p-8">
             <DialogHeader>
-              <DialogTitle>Registrar Entrega</DialogTitle>
-              <DialogDescription>
-                Selecione o item e o colaborador.
+              <div className="p-3 w-fit bg-primary/10 rounded-2xl mb-2">
+                <Shirt className="h-8 w-8 text-primary" />
+              </div>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Registrar Entrega</DialogTitle>
+              <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                O sistema calculará automaticamente a data da próxima troca.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="space-y-6 py-4">
                <div className="space-y-2">
-                 <Label>Colaborador</Label>
-                 <Select value={selectedColabId} onValueChange={(val) => setSelectedColabId(val ?? "")}>
-                   <SelectTrigger>
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Colaborador</Label>
+                 <Select value={selectedColabId} onValueChange={setSelectedColabId}>
+                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
                      <SelectValue placeholder="Selecione o colaborador" />
                    </SelectTrigger>
-                   <SelectContent>
+                   <SelectContent className="rounded-2xl border-primary/10">
                       {colaboradores.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nomeCompleto}</SelectItem>
+                        <SelectItem key={c.id} value={c.id} className="rounded-lg">{c.nomeCompleto}</SelectItem>
                       ))}
                    </SelectContent>
                  </Select>
                </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                   <Label>Item</Label>
-                   <Select value={item} onValueChange={(val) => setItem(val ?? "")}>
-                     <SelectTrigger>
-                       <SelectValue placeholder="Selecione" />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="Camiseta Polo">Camiseta Polo</SelectItem>
-                        <SelectItem value="Calça Brim">Calça Brim</SelectItem>
-                        <SelectItem value="Avental">Avental</SelectItem>
-                        <SelectItem value="Boné">Boné</SelectItem>
-                     </SelectContent>
-                   </Select>
+
+               <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Item do Uniforme</Label>
+                 <Select value={selectedItem} onValueChange={setSelectedItem}>
+                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
+                     <SelectValue placeholder="O que está sendo entregue?" />
+                   </SelectTrigger>
+                   <SelectContent className="rounded-2xl border-primary/10">
+                      {itemOptions.map(opt => (
+                        <SelectItem key={opt} value={opt} className="rounded-lg">{opt}</SelectItem>
+                      ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+
+               {selectedItem === "Outro (Especificar...)" && (
+                 <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                   <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Especifique o Item</Label>
+                   <Input 
+                     placeholder="Ex: Colete Refletivo, Touca..." 
+                     className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus-visible:ring-primary/20 font-bold uppercase text-xs"
+                     value={customItem}
+                     onChange={(e) => setCustomItem(e.target.value)}
+                   />
                  </div>
-                 <div className="space-y-2">
-                   <Label>Tamanho</Label>
-                   <Select value={tamanho} onValueChange={(val) => setTamanho(val ?? "")}>
-                     <SelectTrigger>
-                       <SelectValue placeholder="Selecione" />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value="P">P</SelectItem>
-                        <SelectItem value="M">M</SelectItem>
-                        <SelectItem value="G">G</SelectItem>
-                        <SelectItem value="GG">GG</SelectItem>
-                        <SelectItem value="XG">XG</SelectItem>
-                     </SelectContent>
-                   </Select>
-                 </div>
+               )}
+
+               <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Tamanho / Numeração</Label>
+                 <Select value={tamanho} onValueChange={setTamanho}>
+                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
+                     <SelectValue placeholder="Selecione o tamanho" />
+                   </SelectTrigger>
+                   <SelectContent className="rounded-2xl border-primary/10 max-h-[200px]">
+                      {tamanhoOptions.map(opt => (
+                        <SelectItem key={opt} value={opt} className="rounded-lg">{opt}</SelectItem>
+                      ))}
+                   </SelectContent>
+                 </Select>
                </div>
             </div>
-            <DialogFooter>
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Registrando..." : "Confirmar Entrega"}
+            <DialogFooter className="pt-4">
+              <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest">
+                {isSubmitting ? "Processando..." : "Confirmar Entrega"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Tabs defaultValue="historico" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="historico" className="flex items-center gap-2">
-            <History className="h-4 w-4" /> Histórico de Entregas
+      <Tabs defaultValue="historico" className="space-y-6">
+        <TabsList className="bg-card/50 p-1 rounded-2xl border border-primary/5 h-14 backdrop-blur-sm">
+          <TabsTrigger value="historico" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+            <History className="mr-2 h-4 w-4" /> Histórico de Entregas
           </TabsTrigger>
-          <TabsTrigger value="estoque" className="flex items-center gap-2">
-            <Store className="h-4 w-4" /> Estoque por Unidade
+          <TabsTrigger value="estoque" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+            <Store className="mr-2 h-4 w-4" /> Estoque por Unidade
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="historico">
-           <Card>
+        <TabsContent value="historico" className="animate-in slide-in-from-bottom-4 duration-500">
+           <Card className="rounded-3xl border-primary/5 shadow-2xl overflow-hidden bg-card/50 backdrop-blur-sm">
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Item / Tamanho</TableHead>
-                    <TableHead>Entrega</TableHead>
-                    <TableHead>Troca Prevista</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-transparent border-primary/5">
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest px-6 py-5 text-primary">Colaborador</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary">Item / Tamanho</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary">Entrega</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary">Troca Prevista</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary">Status</TableHead>
+                    <TableHead className="w-[100px] font-black text-[10px] uppercase tracking-widest text-right px-6 text-primary">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell>
+                      <TableRow key={i} className="border-primary/5">
+                        <TableCell className="px-6 py-4"><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                        <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                        <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                        <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                        <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                        <TableCell className="px-6"><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
                       </TableRow>
                     ))
                   ) : historico.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        Nenhuma entrega registrada.
+                      <TableCell colSpan={6} className="h-64 text-center">
+                        <div className="flex flex-col items-center justify-center gap-4 opacity-40">
+                          <Package className="h-16 w-16" />
+                          <div className="space-y-1">
+                            <p className="font-black uppercase tracking-tighter text-xl">Sem entregas</p>
+                            <p className="text-xs uppercase font-bold tracking-widest">Nenhum uniforme entregue até o momento.</p>
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -266,36 +321,44 @@ export default function UniformesPage() {
                         : null;
                       
                       return (
-                        <TableRow key={h.id}>
-                          <TableCell>
-                             <div className="flex flex-col text-sm">
-                               <span className="font-medium">{h.colaborador?.nomeCompleto || "N/A"}</span>
-                               <span className="text-xs text-muted-foreground">{h.colaborador?.loja?.nome || "Sem Loja"}</span>
+                        <TableRow key={h.id} className="group hover:bg-primary/5 transition-colors border-primary/5">
+                          <TableCell className="px-6 py-4">
+                             <div className="flex flex-col">
+                               <span className="font-black uppercase tracking-tighter text-sm group-hover:text-primary transition-colors">{h.colaborador?.nomeCompleto}</span>
+                               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">{h.colaborador?.loja?.nome}</span>
                              </div>
                           </TableCell>
                           <TableCell>
-                             <div className="flex items-center gap-2">
-                               <Shirt className="h-4 w-4 text-muted-foreground" />
-                               {h.item} ({h.tamanho})
+                             <div className="flex items-center gap-3">
+                               <div className="p-2 bg-muted rounded-xl group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                  <Shirt className="h-4 w-4" />
+                               </div>
+                               <span className="text-xs font-bold uppercase tracking-tight">{h.item} <span className="opacity-50 ml-1">({h.tamanho})</span></span>
                              </div>
                           </TableCell>
-                          <TableCell className="text-sm">
-                             {format(new Date(h.dataRecebimento), "dd/MM/yyyy")}
+                          <TableCell>
+                             <span className="text-[11px] font-medium text-muted-foreground">
+                               {format(new Date(h.dataRecebimento), "dd/MM/yyyy", { locale: ptBR })}
+                             </span>
                           </TableCell>
-                          <TableCell className="text-sm">
-                             {h.dataTrocaPrevista ? format(new Date(h.dataTrocaPrevista), "dd/MM/yyyy") : "N/A"}
+                          <TableCell>
+                             <span className="text-[11px] font-medium text-muted-foreground">
+                               {h.dataTrocaPrevista ? format(new Date(h.dataTrocaPrevista), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}
+                             </span>
                           </TableCell>
                           <TableCell>
                              {daysUntilExchange !== null && daysUntilExchange < 15 ? (
-                               <Badge className="bg-amber-500 flex items-center gap-1">
+                               <Badge className="bg-amber-500 hover:bg-amber-600 px-2 py-0.5 text-[10px] uppercase font-black tracking-widest gap-1">
                                  <AlertCircle className="h-3 w-3" /> Troca Próxima
                                </Badge>
                              ) : (
-                               <Badge variant="outline" className="text-green-600 border-green-200">Em dia</Badge>
+                               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-500/5 px-2 py-0.5 text-[10px] uppercase font-black tracking-widest gap-1">
+                                 <CheckCircle2 className="h-3 w-3" /> Em dia
+                               </Badge>
                              )}
                           </TableCell>
-                          <TableCell>
-                             <Button variant="ghost" size="icon" onClick={() => toast.info("Funcionalidade de devolução em breve")}>
+                          <TableCell className="px-6 py-4 text-right">
+                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all active:scale-90" onClick={() => toast.info("Devolução será habilitada em breve.")}>
                                <RotateCcw className="h-4 w-4" />
                              </Button>
                           </TableCell>
@@ -309,24 +372,34 @@ export default function UniformesPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="estoque">
-           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent value="estoque" className="animate-in slide-in-from-bottom-4 duration-500">
+           <div className="grid gap-6 md:grid-cols-3">
               {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
+                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-3xl" />)
               ) : estoque.length === 0 ? (
-                <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed rounded-lg">
-                  Estoque não alimentado. Favor cadastrar itens.
+                <div className="col-span-full h-64 flex flex-col items-center justify-center gap-4 opacity-40 border-2 border-dashed border-primary/20 rounded-[2.5rem]">
+                  <Store className="h-16 w-16" />
+                  <div className="text-center">
+                    <p className="font-black uppercase tracking-tighter text-xl">Estoque Vazio</p>
+                    <p className="text-xs uppercase font-bold tracking-widest">Favor alimentar o estoque por unidade.</p>
+                  </div>
                 </div>
               ) : (
                 estoque.map((e) => (
-                  <Card key={e.id}>
+                  <Card key={e.id} className="rounded-[2.5rem] border-primary/5 shadow-xl group hover:border-primary/20 transition-all">
                     <CardHeader className="pb-2">
-                       <CardTitle className="text-sm font-bold">{e.loja?.nome || "Sem Unidade"}</CardTitle>
-                       <CardDescription>{e.item}</CardDescription>
+                       <div className="flex items-center justify-between">
+                         <div className="p-2 bg-primary/10 rounded-xl">
+                            <Store className="h-4 w-4 text-primary" />
+                         </div>
+                         <Badge className="bg-muted text-foreground hover:bg-muted font-black uppercase text-[9px] tracking-widest px-3 py-1">Tam: {e.tamanho}</Badge>
+                       </div>
+                       <CardTitle className="text-sm font-black uppercase tracking-widest mt-4">{e.loja?.nome}</CardTitle>
+                       <CardDescription className="text-xs font-bold uppercase text-primary/70">{e.item}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center justify-between">
-                       <Badge variant="secondary" className="text-lg px-3 py-1">Tam: {e.tamanho}</Badge>
-                       <div className="text-3xl font-bold">{e.quantidade}</div>
+                    <CardContent className="pt-4 flex items-end justify-between">
+                       <div className="text-5xl font-black tracking-tighter group-hover:scale-110 transition-transform">{e.quantidade}</div>
+                       <div className="text-[10px] font-black uppercase tracking-widest opacity-40">Unidades Disponíveis</div>
                     </CardContent>
                   </Card>
                 ))
