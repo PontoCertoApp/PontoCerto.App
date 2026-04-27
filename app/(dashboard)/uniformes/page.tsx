@@ -207,7 +207,9 @@ export default function UniformesPage() {
                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Colaborador</Label>
                  <Select value={selectedColabId} onValueChange={setSelectedColabId}>
                    <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
-                     <SelectValue placeholder="Selecione o colaborador" />
+                     <SelectValue placeholder="Selecione o colaborador">
+                        {colaboradores.find(c => c.id === selectedColabId)?.nomeCompleto}
+                     </SelectValue>
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-primary/10">
                       {colaboradores.map(c => (
@@ -244,17 +246,13 @@ export default function UniformesPage() {
                )}
 
                <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Tamanho / Numeração</Label>
-                 <Select value={tamanho} onValueChange={setTamanho}>
-                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
-                     <SelectValue placeholder="Selecione o tamanho" />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-2xl border-primary/10 max-h-[200px]">
-                      {tamanhoOptions.map(opt => (
-                        <SelectItem key={opt} value={opt} className="rounded-lg">{opt}</SelectItem>
-                      ))}
-                   </SelectContent>
-                 </Select>
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Tamanho / Numeração (Liberdade Total)</Label>
+                 <Input 
+                   placeholder="Ex: M, GG, 42, Único..." 
+                   className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus-visible:ring-primary/20 font-bold uppercase text-xs"
+                   value={tamanho}
+                   onChange={(e) => setTamanho(e.target.value)}
+                 />
                </div>
             </div>
             <DialogFooter className="pt-4">
