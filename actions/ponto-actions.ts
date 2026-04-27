@@ -259,3 +259,39 @@ export async function getLeaderboard() {
     return [];
   }
 }
+
+export async function excluirInconformidade(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Não autorizado" };
+
+    await prisma.registroPonto.delete({ where: { id } });
+    revalidatePath("/ponto");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao excluir:", error);
+    return { success: false, error: "Erro ao excluir" };
+  }
+}
+
+export async function atualizarInconformidade(id: string, data: { tipo: string; justificativa?: string; gerarRap?: boolean }) {
+  try {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Não autorizado" };
+
+    await prisma.registroPonto.update({
+      where: { id },
+      data: {
+        tipo: data.tipo,
+        justificativa: data.justificativa,
+        rapGerado: data.gerarRap
+      }
+    });
+    
+    revalidatePath("/ponto");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar:", error);
+    return { success: false, error: "Erro ao atualizar" };
+  }
+}
