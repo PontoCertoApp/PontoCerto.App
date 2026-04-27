@@ -288,7 +288,6 @@ export default function PontoPage() {
     };
     return <Badge className={cn("px-2 py-0.5 whitespace-nowrap", colors[t] || "bg-gray-500")}>{formatTipo(t)}</Badge>;
   };
-  };
 
   return (
     <div className="space-y-6">
