@@ -119,7 +119,7 @@ export default function PontoPage() {
 
   const [tipo, setTipo] = useState<TipoInconformidade>("FALTA_INJUSTIFICADA");
   const [justificativa, setJustificativa] = useState("");
-  const [gerarRap, setGerarRap] = useState(true);
+  const [gerarRap, setGerarRap] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleExport = async () => {
@@ -407,24 +407,38 @@ export default function PontoPage() {
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>
-                      <SelectItem value="FALTA_JUSTIFICADA">Falta Justificada</SelectItem>
-                      <SelectItem value="ATESTADO_MEDICO">Atestado Médico</SelectItem>
-                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada</SelectItem>
-                      <SelectItem value="ATRASO">Atraso</SelectItem>
-                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada</SelectItem>
+                      <SelectItem value="PONTO_POSITIVO">Ponto Positivo (+)</SelectItem>
+                      <SelectItem value="META_BATIDA">Meta Batida (++)</SelectItem>
+                      <SelectItem value="ELOGIO">Elogio Cliente/Equipe (+++)</SelectItem>
+                      <SelectItem value="PRESENCA_MANUAL">Presença / OK (+)</SelectItem>
+                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada (-)</SelectItem>
+                      <SelectItem value="ATRASO">Atraso (-)</SelectItem>
+                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada (-)</SelectItem>
+                      <SelectItem value="ATESTADO_MEDICO">Atestado Médico (Justificado)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Justificativa / Motivo</Label>
-                  <Textarea 
-                    placeholder="Ex: Esqueceu o crachá / Atestado de 2 dias..." 
-                    value={justificativa}
-                    onChange={(e) => setJustificativa(e.target.value)}
-                  />
+                  <div className="space-y-2">
+                    <Label>Justificativa / Motivo</Label>
+                    <Textarea 
+                      placeholder="Ex: Meta batida / Feedback positivo / Atestado..." 
+                      value={justificativa}
+                      onChange={(e) => setJustificativa(e.target.value)}
+                    />
+                  </div>
+                  {["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"].includes(tipo) && (
+                    <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
+                      <div className="space-y-0.5">
+                        <Label className="flex items-center gap-2">
+                          <ShieldAlert className="h-4 w-4 text-destructive" />
+                          Gerar RAP Automático?
+                        </Label>
+                        <p className="text-xs text-muted-foreground">Cria uma advertência no perfil.</p>
+                      </div>
+                      <Switch checked={gerarRap} onCheckedChange={setGerarRap} />
+                    </div>
+                  )}
                 </div>
-              </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsManualDialogOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSubmit} disabled={isSubmitting}>
@@ -565,21 +579,23 @@ export default function PontoPage() {
                                     onChange={(e) => setJustificativa(e.target.value)}
                                   />
                                 </div>
-                                <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
-                                  <div className="space-y-0.5">
-                                    <Label className="flex items-center gap-2">
-                                      <ShieldAlert className="h-4 w-4 text-destructive" />
-                                      Gerar RAP Automático?
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                      Cria uma advertência no perfil do colaborador.
-                                    </p>
+                                {["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"].includes(tipo) && (
+                                  <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
+                                    <div className="space-y-0.5">
+                                      <Label className="flex items-center gap-2">
+                                        <ShieldAlert className="h-4 w-4 text-destructive" />
+                                        Gerar RAP Automático?
+                                      </Label>
+                                      <p className="text-xs text-muted-foreground">
+                                        Cria uma advertência no perfil do colaborador.
+                                      </p>
+                                    </div>
+                                    <Switch 
+                                      checked={gerarRap}
+                                      onCheckedChange={setGerarRap}
+                                    />
                                   </div>
-                                  <Switch 
-                                    checked={gerarRap}
-                                    onCheckedChange={setGerarRap}
-                                  />
-                                </div>
+                                )}
                               </div>
                               <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

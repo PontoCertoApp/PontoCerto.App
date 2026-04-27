@@ -67,13 +67,17 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
         },
       });
 
-      if (data.gerarRap) {
+      // SÓ gera RAP se for um tipo negativo e o usuário explicitamente marcou
+      const tiposNegativos = ["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"];
+      const deveGerarRap = data.gerarRap && tiposNegativos.includes(data.tipo);
+
+      if (deveGerarRap) {
         await tx.penalidade.create({
           data: {
-            colaboradorId: data.colaboradorId,
+            colaboradorId: finalColabId,
             tipo: PenalidadeTipo.INCONSISTENCIA_PONTO,
-            descricao: `Penalidade gerada por inconformidade de ponto: ${data.tipo}. Data: ${data.data.toLocaleDateString()}`,
-            dataOcorrencia: data.data,
+            descricao: `Penalidade gerada por inconformidade de ponto: ${data.tipo}. Data: ${dataPonto.toLocaleDateString()}`,
+            dataOcorrencia: dataPonto,
             validadeAte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             status: PenalidadeStatus.ATIVA,
             geradoPorId: userId,
