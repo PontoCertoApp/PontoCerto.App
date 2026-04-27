@@ -27,6 +27,26 @@ export async function getDocumentosPendentes() {
   });
 }
 
+export async function getAllDocumentos() {
+  const session = await auth();
+  if (!session?.user) return [];
+
+  const isRH = session.user.role === "RH";
+  const filter = isRH ? {} : { colaborador: { lojaId: session.user.lojaId } };
+
+  return await prisma.documento.findMany({
+    where: { 
+      ...filter
+    },
+    include: {
+      colaborador: {
+        include: { loja: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function validarDocumento(id: string, status: DocumentStatus, observacao?: string) {
   const session = await auth();
   if (!session?.user) return { success: false, error: "Não autorizado" };
