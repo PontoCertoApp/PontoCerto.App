@@ -284,11 +284,15 @@ export default function PontoPage() {
             <Card 
               key={player.id} 
               className={cn(
-                "relative overflow-hidden border transition-all hover:border-primary/40 cursor-default",
+                "relative overflow-hidden border transition-all hover:border-primary/60 hover:scale-[1.03] cursor-pointer shadow-sm hover:shadow-xl active:scale-[0.98]",
                 idx === 0 ? "border-yellow-500/30 bg-yellow-500/5" : 
                 idx === 1 ? "border-slate-400/30 bg-slate-400/5" : 
                 "border-orange-600/30 bg-orange-600/5"
               )}
+              onClick={() => {
+                setSelectedColab({ id: player.id, nomeCompleto: player.nome, loja: { nome: player.loja } });
+                setIsManualDialogOpen(true);
+              }}
             >
               <CardContent className="pt-4 pb-4 flex items-center gap-4">
                  <div className="relative">
@@ -395,7 +399,11 @@ export default function PontoPage() {
                 ))
               ) : tratados.length > 0 ? (
                 tratados.map((r) => (
-                  <TableRow key={r.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors group">
+                  <TableRow 
+                    key={r.id} 
+                    className="border-b last:border-0 hover:bg-primary/5 transition-colors group cursor-pointer active:bg-primary/10"
+                    onClick={() => handleEdit(r)}
+                  >
                     <TableCell className="py-3 pl-6">
                       <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-full bg-primary/5 flex items-center justify-center font-bold text-[10px] text-primary border border-primary/10">
@@ -414,7 +422,7 @@ export default function PontoPage() {
                     <TableCell className="text-[10px] max-w-[180px] truncate italic font-medium opacity-60">
                       {r.justificativa ? `"${r.justificativa}"` : "---"}
                     </TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(r)} className="h-7 w-7 rounded-full hover:text-primary">
                           <Pencil className="h-3 w-3" />
