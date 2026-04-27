@@ -21,7 +21,11 @@ const colaboradorSchema = z.object({
   funcaoNome: z.string().min(1, "Obrigatório"),
   setorNome: z.string().min(1, "Obrigatório"),
   lojaId: z.string().optional(),
-  
+
+  // Form-only fields: used to compose contaBancoBrasil, stripped before Prisma
+  agenciaBB: z.string().optional(),
+  contaBB: z.string().optional(),
+
   enderecoComprovantePath: z.string().optional(),
   pisFotoPath: z.string().optional(),
   historicoEscolarPath: z.string().optional(),
@@ -76,7 +80,7 @@ export const createColaborador = createAction(
           });
         }
 
-        const { setorNome: _s, funcaoNome: _f, lojaId: _l, ...rest } = data;
+        const { setorNome: _s, funcaoNome: _f, lojaId: _l, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
 
         const colaborador = await tx.colaborador.create({
           data: {
