@@ -149,30 +149,26 @@ export default function PontoPage() {
     console.log("[PONTO] Carregando dados para data:", date);
     
     try {
-      // Carregar pendentes
-      const p = await getColaboradoresSemPontoNoDia(date).catch((err) => {
-        console.error("Erro ao buscar pendentes:", err);
-        return [];
-      });
-      setPendentes(p as unknown as ColaboradorSemPonto[]);
+      // Usar string YYYY-MM-DD para evitar shifts de timezone
+      const dateStr = date.toISOString().split('T')[0];
 
       // Carregar tratados
-      const t = await getInconformidadesDoDia(date).catch((err) => {
+      const t = await getInconformidadesDoDia(dateStr).catch((err) => {
         console.error("Erro ao buscar tratados:", err);
         return [];
       });
       setTratados(t as unknown as RegistroPonto[]);
 
-      // Carregar total ativos
-      const total = await getTotalAtivos().catch((err) => {
-        console.error("Erro ao buscar total ativos:", err);
-        return 0;
+      // Carregar pendentes
+      const p = await getColaboradoresSemPontoNoDia(dateStr).catch((err) => {
+        console.error("Erro ao buscar pendentes:", err);
+        return [];
       });
-      setTotalColaboradores(total);
+      setPendentes(p as any);
 
-      // Colaboradores são buscados on-demand via /api/colaboradores/search
-      // quando o usuário digita no modal — sem pré-carregamento aqui.
-
+      // Total de colaboradores ativos
+      const count = await getTotalAtivos().catch(() => 0);
+      setTotalColaboradores(count);
     } catch (error) {
       console.error("[PONTO_LOAD_FATAL_SILENCED]:", error);
       // Removed toast to eliminate user annoyance, error is handled by individual catches
@@ -218,18 +214,16 @@ export default function PontoPage() {
 
   async function handleSubmit() {
     // If we have a selectedColab, use it. Otherwise, it's a manual entry using the searchTerm.
-    const finalColab = selectedColab;
-    
-    if (!finalColab && !searchTerm.trim()) {
+    if (!selectedColab && !searchTerm.trim()) {
       toast.error("Escreva o nome do colaborador.");
       return;
     }
     
     setIsSubmitting(true);
     const result = await registrarInconformidade({
-      colaboradorId: finalColab ? finalColab.id : "MANUAL",
-      manualName: finalColab ? undefined : searchTerm,
-      data: date,
+      colaboradorId: selectedColab?.id || "MANUAL",
+      nomeManual: searchTerm,
+      data: date.toISOString().split('T')[0],
       tipo,
       justificativa,
       gerarRap,
@@ -630,13 +624,13 @@ export default function PontoPage() {
                             <DialogFooter>
                               <Button onClick={async () => {
                                 setIsSubmitting(true);
-                                const res = await registrarInconformidade({
-                                  colaboradorId: colab.id,
-                                  data: date,
-                                  tipo,
-                                  justificativa,
-                                  gerarRap,
-                                });
+                                  const res = await registrarInconformidade({
+                                    colaboradorId: colab.id,
+                                    data: date.toISOString().split('T')[0],
+                                    tipo,
+                                    justificativa,
+                                    gerarRap,
+                                  });
                                 if (res.success) {
                                   toast.success("Pontuação registrada!");
                                   resetForm();

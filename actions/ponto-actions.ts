@@ -25,10 +25,9 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   console.log("[PONTO_REG] User:", session.user.email, "Role:", session.user.role, "LojaId:", session.user.lojaId);
 
   try {
-    // Normalização ultra-robusta via componentes locais para ignorar UTC shifts
-    const d = new Date(data.data);
-    const dataISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const dataPonto = new Date(`${dataISO}T00:00:00.000Z`);
+    // A data vem como string YYYY-MM-DD do frontend agora
+    const dataISO = typeof data.data === 'string' ? data.data.split('T')[0] : data.data.toISOString().split('T')[0];
+    const dataPonto = new Date(`${dataISO}T12:00:00.000Z`); // Meio-dia UTC para evitar problemas de borda
     const isManual = data.colaboradorId === "MANUAL";
     let colaborador = null;
     let lojaId = session.user.lojaId || null;
@@ -121,9 +120,8 @@ export async function getInconformidadesDoDia(data: Date) {
     const isRH = role === "RH" || role === "ADMIN";
     const targetLojaId = session.user.lojaId;
 
-    // Normalização ultra-robusta via componentes locais para ignorar UTC shifts
-    const d = new Date(data);
-    const dataISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    // A data vem como string YYYY-MM-DD
+    const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
     const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
     const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
 
@@ -174,9 +172,8 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     const isRH = role === "RH" || role === "ADMIN";
     const targetLojaId = session.user.lojaId;
 
-    // Normalização ultra-robusta via componentes locais para ignorar UTC shifts
-    const d = new Date(data);
-    const dataISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    // A data vem como string YYYY-MM-DD
+    const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
     const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
     const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
 
@@ -201,9 +198,9 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
 
     return await prisma.colaborador.findMany({
       where: {
-        // Removido filtro de status para garantir que todos apareçam
         id: { notIn: idsRegistrados },
-        ...(isRH ? {} : { lojaId: targetLojaId })
+        // Se for RH, não filtra por loja. Se for Gerente, filtra pela loja dele.
+        ...(isRH ? {} : (targetLojaId ? { lojaId: targetLojaId } : {}))
       },
       include: {
         loja: true,
