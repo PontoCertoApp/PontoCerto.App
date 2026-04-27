@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -244,7 +244,7 @@ export default function PontoPage() {
     
     return (
       <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter", colors[t])}>
-        {t.replaceAll("_", " ")} {sign}{val}
+        {formatLabel(t)} {sign}{val}
       </Badge>
     );
   };
@@ -281,7 +281,7 @@ export default function PontoPage() {
         </div>
       </div>
 
-      {/* Podium Compacto */}
+      {/* Podium Compacto e Estável */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {isLoading ? (
           Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)
@@ -300,8 +300,9 @@ export default function PontoPage() {
                 setIsManualDialogOpen(true);
               }}
             >
-              <CardContent className="pt-4 pb-4 flex items-center gap-4">
-                 <div className="relative">
+              <CardContent className="pt-4 pb-4 flex flex-col gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
                     <div className={cn(
                       "h-12 w-12 rounded-full flex items-center justify-center text-lg font-black shadow-lg",
                       idx === 0 ? "bg-yellow-500 text-black" : 
@@ -313,30 +314,31 @@ export default function PontoPage() {
                     <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 border shadow-sm">
                        {idx === 0 ? <Award className="h-4 w-4 text-yellow-500" /> : <Star className="h-4 w-4 text-muted-foreground" />}
                     </div>
-                 </div>
-                 <div className="flex-1 min-w-0">
+                  </div>
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-black text-sm tracking-tight uppercase truncate">{player.nome}</h3>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase">{player.loja}</p>
-                    <div className="bg-background/80 backdrop-blur px-4 py-1 rounded-full border shadow-sm flex items-center gap-2 mt-1 w-fit">
-                      <span className="font-black text-primary">{player.pontos} pts</span>
-                      <span className="text-[10px] uppercase font-bold opacity-50">{player.vitorias} méritos</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-black text-xs text-primary">{player.pontos} pts</span>
+                      <span className="text-[9px] font-bold opacity-40 uppercase">{player.vitorias} méritos</span>
                     </div>
                   </div>
+                </div>
 
-                 {player.pontos >= 100 && (
-                   <Button 
+                {player.pontos >= 100 && (
+                  <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full mt-2 rounded-xl bg-primary/5 border-primary/20 hover:bg-primary hover:text-white transition-all font-black text-[10px] uppercase group"
+                    className="w-full rounded-xl bg-primary/5 border-primary/20 hover:bg-primary hover:text-white transition-all font-black text-[10px] uppercase group h-8"
                     onClick={(e) => {
                       e.stopPropagation();
                       window.location.href = `/premios?colabId=${player.id}&tipo=RESGATE_PONTOS`;
                     }}
-                   >
-                     <Gift className="h-3 w-3 mr-1 group-hover:animate-bounce" />
-                     Resgatar Prêmio
-                   </Button>
-                 )}
+                  >
+                    <Gift className="h-3 w-3 mr-1 group-hover:animate-bounce" />
+                    Resgatar Prêmio
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))
