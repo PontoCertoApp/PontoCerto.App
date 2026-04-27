@@ -1,21 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { 
-  Gift, 
   Plus, 
   Search, 
-  Filter, 
-  DollarSign, 
-  TrendingUp, 
-  Zap,
-  Info,
+  Gift, 
+  Calendar, 
+  CheckCircle2, 
+  TrendingUp,
+  DollarSign,
+  UserCheck,
+  ChevronRight,
+  Filter,
+  Package,
+  Award
 } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,8 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -51,9 +55,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPremios, createPremio, getPremiosStats } from "@/actions/premio-actions";
+import { cn } from "@/lib/utils";
+
+import { getPremios, createPremio } from "@/actions/premio-actions";
 import { getColaboradores } from "@/actions/colaborador-actions";
 
 interface Premio {
@@ -108,25 +113,32 @@ function PremiosContent() {
 
   async function loadData() {
     setIsLoading(true);
-    const [p, c, s] = await Promise.all([getPremios(), getColaboradores(), getPremiosStats()]);
+    const [p, c] = await Promise.all([
+      getPremios(),
+      getColaboradores(),
+    ]);
     setPremios(p);
     setColaboradores(c);
-    setStats(s);
+
+    // Calc simple stats
+    const total = p.reduce((acc, curr) => acc + curr.valorFinal, 0);
+    setStats({
+      totalPremiado: total,
+      pctComPremio: c.length > 0 ? (p.length / c.length) * 100 : 0
+    });
+    
     setIsLoading(false);
   }
 
   useEffect(() => {
     loadData();
+  }, []);
 
-    // Lógica de Integração: Se vier com params, abre o modal
-    const colabId = searchParams.get("colabId");
-    const tipo = searchParams.get("tipo");
+  useEffect(() => {
+    const colabId = searchParams.get("colaboradorId");
     if (colabId) {
       setSelectedColabId(colabId);
-      if (tipo === "RESGATE_PONTOS") {
-        setSelectedType("Resgate de Pontos (Meritocracia)");
-        setObs("Resgate automático originado do Clube de Performance.");
-      }
+      setSelectedType("Resgate de Pontos (Meritocracia)");
       setIsDialogOpen(true);
     }
   }, [searchParams]);
@@ -137,14 +149,14 @@ function PremiosContent() {
   );
 
   async function handleSubmit() {
-    if (!selectedColabId || !selectedType || !valor) {
+    const finalType = selectedType === "Outro (Especificar...)" ? customType : selectedType;
+
+    if (!selectedColabId || !finalType || !valor) {
       toast.error("Preencha os campos obrigatórios.");
       return;
     }
 
     setIsSubmitting(true);
-    const finalType = selectedType === "Outro (Especificar...)" ? customType : selectedType;
-
     const result = await createPremio({
       colaboradorId: selectedColabId,
       tipo: finalType,
@@ -174,53 +186,65 @@ function PremiosContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Prêmios e Benefícios</h1>
-          <p className="text-muted-foreground">
-            Gestão de bônus, metas e incentivos financeiros.
-          </p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
+              <Award className="h-5 w-5 text-primary" />
+            </div>
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-black">Módulo de Recompensa</Badge>
+          </div>
+          <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Prêmios & <span className="text-primary">Benefícios</span></h1>
+          <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Gestão de bônus, metas e incentivos financeiros</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
-            <Plus className="mr-2 h-4 w-4" />
-            Conceder Prêmio
+
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 font-black uppercase text-xs tracking-widest gap-2">
+              <Plus className="h-5 w-5" />
+              Conceder Prêmio
+            </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md rounded-3xl border-primary/20 p-8">
             <DialogHeader>
-              <DialogTitle>Novo Lançamento de Prêmio</DialogTitle>
-              <DialogDescription>
-                Selecione o colaborador e o tipo de incentivo.
+              <div className="p-3 w-fit bg-primary/10 rounded-2xl mb-2">
+                <Gift className="h-8 w-8 text-primary" />
+              </div>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Novo Lançamento</DialogTitle>
+              <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                O bônus será refletido na próxima folha de pagamento.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="space-y-6 py-4">
                <div className="space-y-2">
-                 <Label>Colaborador Elegível</Label>
-                 <Select value={selectedColabId} onValueChange={(val) => setSelectedColabId(val ?? "")}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o colaborador">
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Colaborador Elegível</Label>
+                 <Select value={selectedColabId} onValueChange={setSelectedColabId}>
+                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
+                     <SelectValue placeholder="Quem receberá o prêmio?">
                         {colaboradores.find(c => c.id === selectedColabId)?.nomeCompleto}
-                      </SelectValue>
-                    </SelectTrigger>
-                   <SelectContent>
-                       {colaboradores.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nomeCompleto}
-                        </SelectItem>
+                     </SelectValue>
+                   </SelectTrigger>
+                   <SelectContent className="rounded-2xl border-primary/10">
+                      {colaboradores.map(c => (
+                        <SelectItem key={c.id} value={c.id} className="rounded-lg">{c.nomeCompleto}</SelectItem>
                       ))}
                    </SelectContent>
                  </Select>
                </div>
+
                <div className="space-y-2">
-                 <Label>Tipo de Prêmio</Label>
-                 <Select value={selectedType} onValueChange={(val) => setSelectedType(val ?? "")}>
-                   <SelectTrigger>
-                     <SelectValue placeholder="Selecione o tipo" />
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Tipo de Incentivo</Label>
+                 <Select value={selectedType} onValueChange={setSelectedType}>
+                   <SelectTrigger className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus:ring-primary/20">
+                     <SelectValue placeholder="Selecione o tipo de prêmio" />
                    </SelectTrigger>
-                   <SelectContent>
+                   <SelectContent className="rounded-2xl border-primary/10">
                       {prizeTypes.map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                        <SelectItem key={t} value={t} className="rounded-lg">{t}</SelectItem>
                       ))}
                    </SelectContent>
                  </Select>
@@ -228,150 +252,167 @@ function PremiosContent() {
 
                {selectedType === "Outro (Especificar...)" && (
                  <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                   <Label>Especifique o Tipo</Label>
+                   <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Especifique o Tipo</Label>
                    <Input 
-                     placeholder="Ex: Prêmio Produtividade Extra" 
+                     placeholder="Ex: Prêmio Produtividade Extra..." 
+                     className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus-visible:ring-primary/20 font-bold uppercase text-xs"
                      value={customType}
                      onChange={(e) => setCustomType(e.target.value)}
                    />
                  </div>
                )}
 
-               <div className="space-y-2">
-                 <Label>Valor do Bônus (R$)</Label>
-                 <Input 
-                   type="number" 
-                   value={valor} 
-                   onChange={(e) => setValor(e.target.value)} 
-                 />
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Valor (R$)</Label>
+                   <div className="relative">
+                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold opacity-40">R$</span>
+                     <Input 
+                       type="number" 
+                       className="h-12 pl-10 rounded-2xl bg-muted/20 border-primary/10 focus-visible:ring-primary/20 font-black text-sm"
+                       value={valor} 
+                       onChange={(e) => setValor(e.target.value)} 
+                     />
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Competência</Label>
+                   <Input 
+                     type="text" 
+                     disabled
+                     className="h-12 rounded-2xl bg-muted/20 border-primary/10 font-bold text-xs"
+                     value={format(new Date(), "MMMM / yyyy", { locale: ptBR })}
+                   />
+                 </div>
                </div>
+
                <div className="space-y-2">
-                 <Label>Observação Interna</Label>
+                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Observação Interna</Label>
                  <Input 
-                   placeholder="Ex: Meta batida com 110% de aproveitamento" 
-                   value={obs}
-                   onChange={(e) => setObs(e.target.value)}
+                   placeholder="Detalhes adicionais..." 
+                   className="h-12 rounded-2xl bg-muted/20 border-primary/10 focus-visible:ring-primary/20 text-xs font-medium"
+                   value={obs} 
+                   onChange={(e) => setObs(e.target.value)} 
                  />
                </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Processando..." : "Confirmar Prêmio"}
+            <DialogFooter className="pt-4">
+              <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest">
+                {isSubmitting ? "Lançando..." : "Confirmar Lançamento"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-         <Card className="bg-gradient-to-br from-indigo-500/10 to-transparent">
-           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-medium flex items-center gap-2">
-               <DollarSign className="h-4 w-4" /> Total Premiado (Mês)
-             </CardTitle>
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">
-               {isLoading ? "—" : `R$ ${stats.totalPremiado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
-             </div>
-             <p className="text-xs text-muted-foreground">Total de prêmios ativos no mês atual</p>
-           </CardContent>
-         </Card>
-         <Card className="bg-gradient-to-br from-green-500/10 to-transparent">
-           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-medium flex items-center gap-2">
-               <TrendingUp className="h-4 w-4" /> Colaboradores Premiados
-             </CardTitle>
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-green-600">
-               {isLoading ? "—" : `${stats.pctComPremio}%`}
-             </div>
-             <p className="text-xs text-muted-foreground">Colaboradores ativos com prêmio este mês</p>
-           </CardContent>
-         </Card>
-         <Card className="bg-gradient-to-br from-amber-500/10 to-transparent">
-           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-medium flex items-center gap-2">
-               <Zap className="h-4 w-4" /> Regra "Respeito"
-             </CardTitle>
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold text-amber-600">Ativa</div>
-             <p className="text-xs text-muted-foreground">Bloqueio automático de excedente de prêmios</p>
-           </CardContent>
-         </Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="rounded-[2rem] border-primary/5 shadow-xl bg-primary text-primary-foreground relative overflow-hidden group">
+          <div className="absolute right-[-20px] top-[-20px] opacity-10 group-hover:scale-125 transition-transform duration-700">
+            <DollarSign size={150} />
+          </div>
+          <CardHeader>
+            <CardDescription className="text-primary-foreground/60 font-black uppercase text-[10px] tracking-widest">Total Premiado (Mês)</CardDescription>
+            <CardTitle className="text-4xl font-black tracking-tighter">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalPremiado)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card className="rounded-[2rem] border-primary/5 shadow-xl bg-card/50 backdrop-blur-sm group hover:border-primary/20 transition-all">
+          <CardHeader>
+            <CardDescription className="font-black uppercase text-[10px] tracking-widest opacity-40">Engajamento de Metas</CardDescription>
+            <CardTitle className="text-4xl font-black tracking-tighter flex items-end gap-2 text-primary">
+              {stats.pctComPremio.toFixed(1)}%
+              <span className="text-xs font-bold text-muted-foreground uppercase pb-1.5 opacity-60 tracking-widest font-sans">da equipe</span>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card className="rounded-[2rem] border-primary/5 shadow-xl bg-card/50 backdrop-blur-sm flex items-center justify-center p-6 border-dashed">
+          <div className="text-center space-y-2 opacity-40">
+             <TrendingUp className="h-10 w-10 mx-auto" />
+             <p className="text-[10px] font-black uppercase tracking-widest">Filtros Avançados em Breve</p>
+          </div>
+        </Card>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar lançamentos..." 
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <Card className="rounded-[2.5rem] border-primary/5 shadow-2xl overflow-hidden bg-card/50 backdrop-blur-sm">
+        <div className="p-6 border-b border-primary/5 flex items-center justify-between bg-muted/30">
+           <div className="flex items-center gap-3">
+             <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Search className="h-5 w-5 text-primary" />
+             </div>
+             <Input 
+                placeholder="BUSCAR POR COLABORADOR OU TIPO..." 
+                className="border-none bg-transparent font-black uppercase text-xs tracking-widest focus-visible:ring-0 w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+             />
+           </div>
         </div>
-        <Button variant="outline">
-          <Filter className="mr-2 h-4 w-4" /> Filtros
-        </Button>
-      </div>
-
-      <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Colaborador</TableHead>
-                <TableHead>Tipo de Prêmio</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Referência</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
+            <TableHeader className="bg-muted/20">
+              <TableRow className="hover:bg-transparent border-primary/5">
+                <TableHead className="font-black text-[10px] uppercase tracking-widest px-8 py-5 text-primary">Colaborador</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary">Incentivo</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary text-center">Data</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary text-right">Valor</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary text-right px-8">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell>
+                  <TableRow key={i} className="border-primary/5">
+                    <TableCell className="px-8 py-4"><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
+                    <TableCell className="px-8"><Skeleton className="h-10 w-full rounded-xl" /></TableCell>
                   </TableRow>
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    Nenhum prêmio registrado.
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center gap-4 opacity-40">
+                      <Package className="h-16 w-16" />
+                      <div className="space-y-1">
+                        <p className="font-black uppercase tracking-tighter text-xl">Sem registros</p>
+                        <p className="text-xs uppercase font-bold tracking-widest">Nenhum prêmio lançado com esses critérios.</p>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
+                  <TableRow key={p.id} className="group hover:bg-primary/5 transition-colors border-primary/5">
+                    <TableCell className="px-8 py-5">
                        <div className="flex flex-col">
-                         <span className="font-medium">{p.colaborador?.nomeCompleto || "N/A"}</span>
-                         <span className="text-xs text-muted-foreground">{p.colaborador?.loja?.nome || "Sem Loja"}</span>
+                         <span className="font-black uppercase tracking-tighter text-sm group-hover:text-primary transition-colors">{p.colaborador?.nomeCompleto}</span>
+                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">{p.colaborador?.loja?.nome}</span>
                        </div>
                     </TableCell>
                     <TableCell>
-                       <Badge variant="outline">{p.tipo}</Badge>
+                       <div className="flex items-center gap-3">
+                          <div className="p-2 bg-muted rounded-xl group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            <Gift className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs font-bold uppercase tracking-tight">{p.tipo}</span>
+                       </div>
                     </TableCell>
-                    <TableCell className="font-bold text-green-600">
-                       R$ {p.valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-center">
+                       <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                         {format(new Date(p.dataReferencia), "dd MMM yyyy", { locale: ptBR })}
+                       </span>
                     </TableCell>
-                    <TableCell className="text-sm">
-                       {format(new Date(p.dataReferencia), "MMMM/yyyy", { locale: ptBR })}
+                    <TableCell className="text-right font-black text-sm">
+                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valorFinal)}
                     </TableCell>
-                    <TableCell>
-                       <Badge className={p.status === "ATIVO" ? "bg-blue-500" : "bg-green-500"}>
-                         {p.status}
+                    <TableCell className="px-8 py-5 text-right">
+                       <Badge variant="outline" className="text-green-600 border-green-200 bg-green-500/5 px-3 py-1 text-[10px] uppercase font-black tracking-widest gap-1">
+                         <CheckCircle2 className="h-3 w-3" /> {p.status}
                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <Button variant="ghost" size="icon">
-                         <Info className="h-4 w-4" />
-                       </Button>
                     </TableCell>
                   </TableRow>
                 ))
