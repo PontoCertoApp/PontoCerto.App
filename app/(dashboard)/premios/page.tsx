@@ -195,13 +195,15 @@ function PremiosContent() {
                <div className="space-y-2">
                  <Label>Colaborador Elegível</Label>
                  <Select value={selectedColabId} onValueChange={(val) => setSelectedColabId(val ?? "")}>
-                   <SelectTrigger>
-                     <SelectValue placeholder="Selecione o colaborador" />
-                   </SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o colaborador">
+                        {colaboradores.find(c => c.id === selectedColabId)?.nomeCompleto}
+                      </SelectValue>
+                    </SelectTrigger>
                    <SelectContent>
-                      {colaboradores.map(c => (
+                       {colaboradores.map(c => (
                         <SelectItem key={c.id} value={c.id}>
-                          {c.nomeCompleto} ({c.loja.nome})
+                          {c.nomeCompleto}
                         </SelectItem>
                       ))}
                    </SelectContent>
