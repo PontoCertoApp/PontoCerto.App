@@ -206,6 +206,45 @@ export async function getColaboradores() {
   });
 }
 
+/**
+ * Dedicated action for the Ponto Manual modal.
+ * Uses SELECT instead of INCLUDE to avoid failures on orphaned FK relations.
+ * No role-based filtering — returns all collaborators for RH use.
+ */
+export async function getColaboradoresParaPonto(search?: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      console.error("[PONTO_COLABS] Sem sessão ativa.");
+      return { success: false, data: [], error: "Sem sessão" };
+    }
+
+    const where: any = {};
+
+    if (search && search.trim().length > 0) {
+      where.nomeCompleto = { contains: search.trim(), mode: "insensitive" };
+    }
+
+    const data = await prisma.colaborador.findMany({
+      where,
+      select: {
+        id: true,
+        nomeCompleto: true,
+        loja: { select: { nome: true } },
+        funcao: { select: { nome: true } },
+      },
+      orderBy: { nomeCompleto: "asc" },
+      take: 50,
+    });
+
+    console.log(`[PONTO_COLABS] Retornando ${data.length} colaboradores.`);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("[PONTO_COLABS_ERROR]:", error?.message || error);
+    return { success: false, data: [], error: error?.message || "Erro ao buscar colaboradores" };
+  }
+}
+
 export async function getColaboradorById(id: string) {
   return await prisma.colaborador.findUnique({
     where: { id },

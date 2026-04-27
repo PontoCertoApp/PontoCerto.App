@@ -71,7 +71,7 @@ import {
   registrarInconformidade,
   getTotalAtivos,
 } from "@/actions/ponto-actions";
-import { getColaboradores } from "@/actions/colaborador-actions";
+import { getColaboradoresParaPonto } from "@/actions/colaborador-actions";
 
 import { exportToExcel } from "@/lib/utils/export";
 
@@ -165,12 +165,16 @@ export default function PontoPage() {
       });
       setTotalColaboradores(total);
 
-      // Carregar todos para o seletor manual
-      const colabs = await getColaboradores().catch((err) => {
-        console.error("Erro ao buscar lista completa:", err);
-        return [];
-      });
-      setAllColabs(colabs);
+      // Carregar todos para o seletor manual — usa action dedicada sem filtros restritivos
+      const colabsResult = await getColaboradoresParaPonto();
+      if (colabsResult.success) {
+        setAllColabs(colabsResult.data);
+        console.log("[PONTO] Colaboradores carregados para modal:", colabsResult.data.length);
+      } else {
+        console.error("[PONTO] Falha ao carregar colaboradores:", colabsResult.error);
+        toast.error(`Erro ao carregar lista de colaboradores: ${colabsResult.error}`);
+        setAllColabs([]);
+      }
 
     } catch (error) {
       console.error("[PONTO_LOAD_FATAL_SILENCED]:", error);
