@@ -13,7 +13,8 @@ export default async function DashboardPage() {
 
     // Se for RH, não filtra por lojaId (vê tudo)
     // Se for GERENTE, filtra por lojaId
-    const isRH = role === "RH";
+    const role = session?.user?.role?.toUpperCase();
+    const isRH = role === "RH" || role === "ADMIN";
     const filter = isRH ? {} : (lojaId ? { lojaId } : { id: 'none' });
 
     // 1. Fetch Stats safely

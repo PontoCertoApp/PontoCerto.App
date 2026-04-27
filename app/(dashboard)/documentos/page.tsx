@@ -80,8 +80,8 @@ export default function DocumentosPage() {
   }, []);
 
   const filtered = documentos.filter(d => 
-    d.colaborador.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    (d.colaborador?.nomeCompleto || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (d.nome || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: DocumentoStatus) => {
@@ -199,8 +199,8 @@ export default function DocumentosPage() {
                   <TableRow key={d.id}>
                     <TableCell>
                        <div className="flex flex-col">
-                         <span className="font-medium">{d.colaborador.nomeCompleto}</span>
-                         <span className="text-xs text-muted-foreground">{d.colaborador.loja.nome}</span>
+                         <span className="font-medium">{d.colaborador?.nomeCompleto || "Colaborador não identificado"}</span>
+                         <span className="text-xs text-muted-foreground">{d.colaborador?.loja?.nome || "Unidade Geral"}</span>
                        </div>
                     </TableCell>
                     <TableCell>
@@ -235,7 +235,7 @@ export default function DocumentosPage() {
                                   <FileText className="h-10 w-10 text-primary" />
                                   <div className="flex flex-col">
                                     <span className="font-bold">{d.nome}</span>
-                                    <span className="text-xs text-muted-foreground">Colaborador: {d.colaborador.nomeCompleto}</span>
+                                    <span className="text-xs text-muted-foreground">Colaborador: {d.colaborador?.nomeCompleto || "N/A"}</span>
                                   </div>
                                 </div>
                                  <a href={`/api/uploads/${d.path.split('/').pop()}`} target="_blank" rel="noopener noreferrer">

@@ -269,14 +269,14 @@ export default function ColaboradoresPage() {
                   <TableCell>
                     <div className="flex flex-col">
                        <span className="text-sm font-medium flex items-center gap-1">
-                         <Briefcase className="h-3 w-3 text-muted-foreground" /> {c.funcao.nome}
+                         <Briefcase className="h-3 w-3 text-muted-foreground" /> {c.funcao?.nome || "Sem Função"}
                        </span>
-                       <span className="text-xs text-muted-foreground italic pl-4">{c.setor.nome}</span>
+                       <span className="text-xs text-muted-foreground italic pl-4">{c.setor?.nome || "Sem Setor"}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-muted-foreground" /> {c.loja.nome}
+                      <MapPin className="h-3 w-3 text-muted-foreground" /> {c.loja?.nome || "Sem Unidade"}
                     </span>
                   </TableCell>
                   <TableCell>

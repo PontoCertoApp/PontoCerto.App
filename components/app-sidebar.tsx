@@ -126,7 +126,10 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {items.map((item) => {
-              if (item.role && !item.role.includes(user?.role ?? "")) return null;
+              const userRole = user?.role?.toUpperCase() || "";
+              const allowedRoles = item.role?.map(r => r.toUpperCase()) || [];
+              
+              if (item.role && !allowedRoles.includes(userRole)) return null;
 
               const isActive = pathname.startsWith(item.url);
 

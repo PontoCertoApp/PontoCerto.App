@@ -99,11 +99,11 @@ export default function PenalidadesPage() {
     setIsExporting(true);
     try {
       const dataToExport = filtered.map(p => ({
-        'Colaborador': p.colaborador.nomeCompleto,
-        'Loja': p.colaborador.loja.nome,
+        'Colaborador': p.colaborador?.nomeCompleto || "N/A",
+        'Loja': p.colaborador?.loja?.nome || "Geral",
         'Tipo': p.tipo,
         'Descrição': p.descricao,
-        'Data': format(new Date(p.dataOcorrencia), "dd/MM/yyyy"),
+        'Data': p.dataOcorrencia ? format(new Date(p.dataOcorrencia), "dd/MM/yyyy") : "--/--/----",
         'Status': p.status
       }));
       
@@ -134,8 +134,8 @@ export default function PenalidadesPage() {
   }, []);
 
   const filtered = penalidades.filter(p => 
-    p.colaborador.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.colaborador?.nomeCompleto || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.descricao || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -229,7 +229,7 @@ export default function PenalidadesPage() {
                     <SelectContent>
                       {colaboradores.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          {c.nomeCompleto} ({c.loja.nome})
+                          {c.nomeCompleto} ({c.loja?.nome || "Sem Loja"})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -379,8 +379,8 @@ export default function PenalidadesPage() {
                   <TableRow key={p.id} className={p.status === "ATIVA" ? "bg-destructive/5" : ""}>
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span>{p.colaborador.nomeCompleto}</span>
-                        <span className="text-xs text-muted-foreground">{p.colaborador.loja.nome}</span>
+                        <span>{p.colaborador?.nomeCompleto || "Colaborador Excluído"}</span>
+                        <span className="text-xs text-muted-foreground">{p.colaborador?.loja?.nome || "Unidade não identificada"}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getTipoBadge(p.tipo)}</TableCell>
