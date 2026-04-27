@@ -16,7 +16,8 @@ import {
   UserCheck,
   Search,
   FileDown,
-  Loader2
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -247,9 +248,9 @@ export default function PontoPage() {
   }
 
   function resetForm() {
-    setTipo("FALTA_INJUSTIFICADA");
+    setTipo("PONTO_POSITIVO"); // Default to positive
     setJustificativa("");
-    setGerarRap(true);
+    setGerarRap(false);
     setSelectedColab(null);
     setSearchTerm("");
   }
@@ -274,18 +275,19 @@ export default function PontoPage() {
   const InconformidadeBadge = (t: TipoInconformidade) => {
     if (!t) return <Badge variant="outline">Indefinido</Badge>;
     const colors: Record<string, string> = {
-      FALTA_INJUSTIFICADA: "bg-red-500",
-      ATRASO: "bg-amber-500",
-      SAIDA_ANTECIPADA: "bg-orange-500",
-      PONTO_NAO_REGISTRADO: "bg-blue-500",
-      PRESENCA_MANUAL: "bg-emerald-600",
-      FALTA_JUSTIFICADA: "bg-indigo-500",
-      ATESTADO_MEDICO: "bg-purple-600",
-      PONTO_POSITIVO: "bg-cyan-500",
-      META_BATIDA: "bg-green-600",
-      ELOGIO: "bg-pink-500",
+      FALTA_INJUSTIFICADA: "bg-red-500 shadow-sm",
+      ATRASO: "bg-amber-500 shadow-sm",
+      SAIDA_ANTECIPADA: "bg-orange-500 shadow-sm",
+      PONTO_NAO_REGISTRADO: "bg-slate-500 shadow-sm",
+      PRESENCA_MANUAL: "bg-emerald-600 shadow-sm",
+      FALTA_JUSTIFICADA: "bg-indigo-500 shadow-sm",
+      ATESTADO_MEDICO: "bg-purple-600 shadow-sm",
+      PONTO_POSITIVO: "bg-cyan-500 shadow-sm",
+      META_BATIDA: "bg-green-600 shadow-sm font-bold animate-pulse",
+      ELOGIO: "bg-pink-500 shadow-sm font-bold",
     };
-    return <Badge className={colors[t] || "bg-gray-500"}>{formatTipo(t)}</Badge>;
+    return <Badge className={cn("px-2 py-0.5 whitespace-nowrap", colors[t] || "bg-gray-500")}>{formatTipo(t)}</Badge>;
+  };
   };
 
   return (
@@ -489,184 +491,186 @@ export default function PontoPage() {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-fit grid-cols-2">
-          <TabsTrigger value="pendentes">Inconsistências</TabsTrigger>
-          <TabsTrigger value="tratados">Histórico do Dia</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pendentes" className="space-y-4">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Loja/Setor</TableHead>
-                    <TableHead className="text-right">Ação</TableHead>
+      {/* Quadro Geral Unificado */}
+      <Card className="border-0 shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="border-b bg-muted/30 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-bold">Quadro de Performance do Dia</CardTitle>
+              <CardDescription>Lista unificada de pontuações e pendências</CardDescription>
+            </div>
+            <Badge variant="outline" className="bg-background/50">
+              {tratados.length + pendentes.length} Colaboradores
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent bg-muted/20">
+                <TableHead className="w-[300px]">Colaborador</TableHead>
+                <TableHead>Loja/Setor</TableHead>
+                <TableHead>Status / Pontuação</TableHead>
+                <TableHead className="text-right">Ação</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell><Skeleton className="h-10 w-[200px]" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-[150px]" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
-                      </TableRow>
-                    ))
-                  ) : pendentes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="h-32 text-center text-muted-foreground">
-                         <div className="flex flex-col items-center gap-2">
-                           <CheckCircle2 className="h-8 w-8 text-green-500" />
-                           <p>Nenhuma inconsistência pendente para esta data.</p>
+                ))
+              ) : (
+                <>
+                  {/* Primeiro: Mostrar os que JÁ POSSUEM PONTO (Tratados/Ganhos) */}
+                  {tratados.map((registro) => (
+                    <TableRow key={registro.id} className="group hover:bg-muted/40 transition-colors border-l-4 border-l-primary/50 bg-primary/5">
+                      <TableCell className="font-medium py-4">
+                        <div className="flex flex-col">
+                          <span className="text-foreground font-bold">{registro.colaborador.nomeCompleto}</span>
+                          {registro.justificativa && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[250px] italic">
+                              "{registro.justificativa}"
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-xs">
+                          <span className="font-semibold text-muted-foreground">{registro.colaborador.loja?.nome || "---"}</span>
+                          <span className="opacity-60">{registro.colaborador.setor?.nome || "---"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                           {InconformidadeBadge(registro.tipo as any)}
+                           {registro.rapGerado && (
+                             <Badge variant="destructive" className="text-[9px] h-4 px-1 animate-pulse">RAP</Badge>
+                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                         <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors">
+                               <Trash2 className="h-4 w-4" />
+                            </Button>
                          </div>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    pendentes.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.nomeCompleto}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {c.loja?.nome || "Não definida"} / {c.setor?.nome || "Não definido"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Dialog open={isDialogOpen && selectedColab?.id === c.id} onOpenChange={(open) => {
-                            setIsDialogOpen(open);
-                            if (open) setSelectedColab(c);
-                            else resetForm();
-                          }}>
-                            <DialogTrigger className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-muted transition-colors outline-none">
-                              Tratar <AlertCircle className="ml-2 h-4 w-4" />
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Tratamento de Inconformidade</DialogTitle>
-                                <DialogDescription>
-                                  Registrar motivo para o ponto não registrado do colaborador: <br />
-                                  <strong className="text-foreground">{c.nomeCompleto}</strong>
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                  <Label>Tipo de Inconformidade</Label>
-                                  <Select value={tipo} onValueChange={(val) => val && setTipo(val as TipoInconformidade)}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="PONTO_POSITIVO">Ponto Positivo (+)</SelectItem>
-                                      <SelectItem value="META_BATIDA">Meta Batida (++)</SelectItem>
-                                      <SelectItem value="ELOGIO">Elogio Cliente/Equipe</SelectItem>
-                                      <SelectItem value="PRESENCA_MANUAL">Presença / OK</SelectItem>
-                                      <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada (-)</SelectItem>
-                                      <SelectItem value="ATRASO">Atraso (-)</SelectItem>
-                                      <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada (-)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Justificativa / Observação</Label>
-                                  <Textarea 
-                                    placeholder="Descreva o motivo..." 
-                                    value={justificativa}
-                                    onChange={(e) => setJustificativa(e.target.value)}
-                                  />
-                                </div>
-                                {["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"].includes(tipo) && (
-                                  <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
-                                    <div className="space-y-0.5">
-                                      <Label className="flex items-center gap-2">
-                                        <ShieldAlert className="h-4 w-4 text-destructive" />
-                                        Gerar RAP Automático?
-                                      </Label>
-                                      <p className="text-xs text-muted-foreground">
-                                        Cria uma advertência no perfil do colaborador.
-                                      </p>
-                                    </div>
-                                    <Switch 
-                                      checked={gerarRap}
-                                      onCheckedChange={setGerarRap}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                                <Button onClick={handleSubmit} disabled={isSubmitting}>
-                                  {isSubmitting ? "Salvando..." : "Confirmar Gravação"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  ))}
 
-        <TabsContent value="tratados">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Inconformidade</TableHead>
-                    <TableHead>RAP Gerado</TableHead>
-                    <TableHead>Horário</TableHead>
-                    <TableHead className="text-right">Ação</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                   {isLoading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
-                      </TableRow>
-                    ))
-                  ) : tratados.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
-                        Nenhum tratamento realizado nesta data.
+                  {/* Segundo: Mostrar os PENDENTES (Ainda sem ponto) */}
+                  {pendentes.map((colab) => (
+                    <TableRow key={colab.id} className="group hover:bg-muted/40 transition-colors">
+                      <TableCell className="font-medium py-4">
+                        <span className="text-muted-foreground font-medium group-hover:text-foreground transition-colors">{colab.nomeCompleto}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-xs opacity-60 group-hover:opacity-100 transition-opacity">
+                          <span>{colab.loja?.nome || "---"}</span>
+                          <span>{colab.setor?.nome || "---"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-muted/50 border-dashed text-muted-foreground">
+                          Aguardando Lançamento
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="rounded-full hover:bg-primary hover:text-primary-foreground transition-all">
+                              <Plus className="h-4 w-4 mr-1" /> Pontuar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Lançar Pontuação: {colab.nomeCompleto}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label>Tipo de Pontuação</Label>
+                                <Select value={tipo} onValueChange={(v) => setTipo(v as any)}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="PONTO_POSITIVO">Ponto Positivo (+)</SelectItem>
+                                    <SelectItem value="META_BATIDA">Meta Batida (++)</SelectItem>
+                                    <SelectItem value="ELOGIO">Elogio Cliente/Equipe</SelectItem>
+                                    <SelectItem value="PRESENCA_MANUAL">Presença / OK</SelectItem>
+                                    <SelectItem value="FALTA_INJUSTIFICADA">Falta Injustificada (-)</SelectItem>
+                                    <SelectItem value="ATRASO">Atraso (-)</SelectItem>
+                                    <SelectItem value="SAIDA_ANTECIPADA">Saída Antecipada (-)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Motivo / Observação</Label>
+                                <Textarea 
+                                  placeholder="Detalhes sobre a pontuação..."
+                                  value={justificativa}
+                                  onChange={(e) => setJustificativa(e.target.value)}
+                                />
+                              </div>
+                              {["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"].includes(tipo) && (
+                                <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/20">
+                                  <div className="space-y-0.5">
+                                    <Label className="flex items-center gap-2">
+                                      <ShieldAlert className="h-4 w-4 text-destructive" />
+                                      Gerar RAP Automático?
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">Cria uma advertência no perfil.</p>
+                                  </div>
+                                  <Switch checked={gerarRap} onCheckedChange={setGerarRap} />
+                                </div>
+                              )}
+                            </div>
+                            <DialogFooter>
+                              <Button onClick={async () => {
+                                setIsSubmitting(true);
+                                const res = await registrarInconformidade({
+                                  colaboradorId: colab.id,
+                                  data: date,
+                                  tipo,
+                                  justificativa,
+                                  gerarRap,
+                                });
+                                if (res.success) {
+                                  toast.success("Pontuação registrada!");
+                                  resetForm();
+                                  loadData();
+                                }
+                                setIsSubmitting(false);
+                              }} disabled={isSubmitting}>
+                                {isSubmitting ? "Gravando..." : "Confirmar Pontuação"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    tratados.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-medium">
-                          {t.colaborador?.nomeCompleto || t.justificativa?.match(/\[MANUAL: (.*?)\]/)?.[1] || "Lançamento Manual"}
-                        </TableCell>
-                        <TableCell>{InconformidadeBadge(t.tipo)}</TableCell>
-                        <TableCell>
-                          {t.rapGerado ? (
-                            <Badge variant="outline" className="text-destructive border-destructive">Sim</Badge>
-                          ) : (
-                            <Badge variant="outline">Não</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                           {t.createdAt ? format(new Date(t.createdAt), "HH:mm") : "--:--"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                           <Button size="sm" variant="ghost">
-                             <FileText className="h-4 w-4 mr-2" /> PGF
-                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  ))}
+
+                  {tratados.length === 0 && pendentes.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 opacity-30">
+                          <CheckCircle2 className="h-12 w-12" />
+                          <p className="text-lg font-bold">Nenhum colaborador encontrado</p>
+                          <p className="text-sm">Verifique os filtros ou a data selecionada.</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
