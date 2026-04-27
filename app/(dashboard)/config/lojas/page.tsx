@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Building2, MapPin } from "lucide-react";
+import { Plus, Trash2, Building2, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,7 +41,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createLoja, getLojas, deleteLoja } from "@/actions/loja-actions";
+import { createLoja, getLojas, deleteLoja, updateLoja } from "@/actions/loja-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Loja {
@@ -59,6 +59,7 @@ export default function LojasPage() {
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof lojaSchema>>({
     resolver: zodResolver(lojaSchema),
@@ -79,10 +80,31 @@ export default function LojasPage() {
     loadLojas();
   }, []);
 
+  function handleOpenCreate() {
+    setEditingId(null);
+    form.reset({ nome: "", cidade: "" });
+    setIsDialogOpen(true);
+  }
+
+  function handleEdit(loja: Loja) {
+    setEditingId(loja.id);
+    form.reset({
+      nome: loja.nome,
+      cidade: loja.cidade || "",
+    });
+    setIsDialogOpen(true);
+  }
+
   async function onSubmit(values: z.infer<typeof lojaSchema>) {
-    const result = await createLoja(values);
+    let result;
+    if (editingId) {
+      result = await updateLoja(editingId, values);
+    } else {
+      result = await createLoja(values);
+    }
+
     if (result.success) {
-      toast.success("Loja criada com sucesso!");
+      toast.success(editingId ? "Loja atualizada!" : "Loja criada!");
       setIsDialogOpen(false);
       form.reset();
       loadLojas();
@@ -95,7 +117,7 @@ export default function LojasPage() {
     if (confirm("Tem certeza que deseja excluir esta loja?")) {
       const result = await deleteLoja(id);
       if (result.success) {
-        toast.success("Loja excluída com sucesso!");
+        toast.success("Loja excluída!");
         loadLojas();
       } else {
         toast.error(result.error as string);
@@ -109,19 +131,19 @@ export default function LojasPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Lojas</h1>
           <p className="text-muted-foreground">
-            Gerencie as unidades da empresa.
+            Gerencie as unidades da empresa com total autonomia.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
+          <Button onClick={handleOpenCreate} className="shadow-lg shadow-primary/20">
             <Plus className="mr-2 h-4 w-4" />
             Nova Loja
-          </DialogTrigger>
-          <DialogContent>
+          </Button>
+          <DialogContent className="rounded-3xl border-primary/20">
             <DialogHeader>
-              <DialogTitle>Cadastrar Nova Loja</DialogTitle>
+              <DialogTitle>{editingId ? "Editar Loja" : "Cadastrar Nova Loja"}</DialogTitle>
               <DialogDescription>
-                Preencha os dados da nova unidade.
+                {editingId ? "Modifique os dados da unidade selecionada." : "Preencha os dados da nova unidade."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -133,7 +155,7 @@ export default function LojasPage() {
                     <FormItem>
                       <FormLabel>Nome da Loja</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Loja Centro" {...field} />
+                        <Input placeholder="Ex: Loja Centro" {...field} className="rounded-xl" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -146,14 +168,16 @@ export default function LojasPage() {
                     <FormItem>
                       <FormLabel>Cidade</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: São Paulo" {...field} />
+                        <Input placeholder="Ex: São Paulo" {...field} className="rounded-xl" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit">Salvar</Button>
+                  <Button type="submit" className="w-full sm:w-auto rounded-xl">
+                    {editingId ? "Salvar Alterações" : "Criar Loja"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -161,55 +185,67 @@ export default function LojasPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="rounded-3xl border-primary/5 shadow-xl overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Cidade</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Nome</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest">Cidade</TableHead>
+                <TableHead className="w-[120px] font-bold uppercase text-[10px] tracking-widest text-right px-6">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-[200px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[200px]" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-[150px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[50px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[80px]" /></TableCell>
                   </TableRow>
                 ))
               ) : lojas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">
                     Nenhuma loja cadastrada.
                   </TableCell>
                 </TableRow>
               ) : (
                 lojas.map((loja) => (
-                  <TableRow key={loja.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        {loja.nome}
+                  <TableRow key={loja.id} className="hover:bg-primary/5 transition-colors group">
+                    <TableCell className="font-medium px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-110">
+                          <Building2 className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm">{loja.nome}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        {loja.cidade || "N/A"}
+                      <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <MapPin className="h-4 w-4 text-primary/50" />
+                        <span className="text-xs font-semibold">{loja.cidade || "N/A"}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => handleDelete(loja.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <TableCell className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
+                          onClick={() => handleEdit(loja)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
+                          onClick={() => handleDelete(loja.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

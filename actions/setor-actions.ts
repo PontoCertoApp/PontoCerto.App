@@ -37,3 +37,18 @@ export async function deleteSetor(id: string) {
     return { success: false, error: "Erro ao excluir setor" };
   }
 }
+
+export async function updateSetor(id: string, data: z.infer<typeof setorSchema>) {
+  try {
+    const setor = await prisma.setor.update({
+      where: { id },
+      data: {
+        nome: data.nome,
+      },
+    });
+    revalidatePath("/config/setores");
+    return { success: true, data: setor };
+  } catch (error) {
+    return { success: false, error: "Erro ao atualizar setor" };
+  }
+}

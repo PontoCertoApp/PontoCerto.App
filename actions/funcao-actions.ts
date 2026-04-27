@@ -42,3 +42,20 @@ export async function deleteFuncao(id: string) {
     return { success: false, error: "Erro ao excluir função" };
   }
 }
+
+export async function updateFuncao(id: string, data: z.infer<typeof funcaoSchema>) {
+  try {
+    const funcao = await prisma.funcao.update({
+      where: { id },
+      data: {
+        nome: data.nome,
+        setorId: data.setorId,
+        salarioBase: data.salarioBase,
+      },
+    });
+    revalidatePath("/config/funcoes");
+    return { success: true, data: funcao };
+  } catch (error) {
+    return { success: false, error: "Erro ao atualizar função" };
+  }
+}

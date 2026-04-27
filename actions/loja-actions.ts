@@ -39,3 +39,19 @@ export async function deleteLoja(id: string) {
     return { success: false, error: "Erro ao excluir loja" };
   }
 }
+
+export async function updateLoja(id: string, data: z.infer<typeof lojaSchema>) {
+  try {
+    const loja = await prisma.loja.update({
+      where: { id },
+      data: {
+        nome: data.nome,
+        cidade: data.cidade,
+      },
+    });
+    revalidatePath("/config/lojas");
+    return { success: true, data: loja };
+  } catch (error) {
+    return { success: false, error: "Erro ao atualizar loja" };
+  }
+}

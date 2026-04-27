@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Briefcase, DollarSign } from "lucide-react";
+import { Plus, Trash2, Briefcase, DollarSign, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,15 +47,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createFuncao, getFuncoes, deleteFuncao } from "@/actions/funcao-actions";
+import { createFuncao, getFuncoes, deleteFuncao, updateFuncao } from "@/actions/funcao-actions";
 import { getSetores } from "@/actions/setor-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface Funcao {
   id: string;
   nome: string;
   salarioBase: number;
+  setorId: string;
   setor: { nome: string };
 }
 
@@ -75,6 +77,7 @@ export default function FuncoesPage() {
   const [setores, setSetores] = useState<Setor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof funcaoSchema>>({
     resolver: zodResolver(funcaoSchema),
@@ -91,7 +94,7 @@ export default function FuncoesPage() {
       getFuncoes(),
       getSetores(),
     ]);
-    setFuncoes(funcoesData);
+    setFuncoes(funcoesData as any);
     setSetores(setoresData);
     setIsLoading(false);
   }
@@ -100,10 +103,32 @@ export default function FuncoesPage() {
     loadData();
   }, []);
 
+  function handleOpenCreate() {
+    setEditingId(null);
+    form.reset({ nome: "", setorId: "", salarioBase: 0 });
+    setIsDialogOpen(true);
+  }
+
+  function handleEdit(funcao: Funcao) {
+    setEditingId(funcao.id);
+    form.reset({
+      nome: funcao.nome,
+      setorId: funcao.setorId,
+      salarioBase: funcao.salarioBase,
+    });
+    setIsDialogOpen(true);
+  }
+
   async function onSubmit(values: z.infer<typeof funcaoSchema>) {
-    const result = await createFuncao(values);
+    let result;
+    if (editingId) {
+      result = await updateFuncao(editingId, values);
+    } else {
+      result = await createFuncao(values);
+    }
+
     if (result.success) {
-      toast.success("Função criada com sucesso!");
+      toast.success(editingId ? "Cargo atualizado!" : "Cargo criado!");
       setIsDialogOpen(false);
       form.reset();
       loadData();
@@ -113,10 +138,10 @@ export default function FuncoesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (confirm("Tem certeza que deseja excluir esta função?")) {
+    if (confirm("Tem certeza que deseja excluir este cargo?")) {
       const result = await deleteFuncao(id);
       if (result.success) {
-        toast.success("Função excluída com sucesso!");
+        toast.success("Cargo excluído!");
         loadData();
       } else {
         toast.error(result.error as string);
@@ -125,24 +150,24 @@ export default function FuncoesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Funções</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Funções <span className="text-primary">&</span> Cargos</h1>
           <p className="text-muted-foreground">
-            Gerencie os cargos e salários base.
+            Gerencie os cargos, salários base e atribuições de setor.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
+          <Button onClick={handleOpenCreate} className="shadow-lg shadow-primary/20">
             <Plus className="mr-2 h-4 w-4" />
             Nova Função
-          </DialogTrigger>
-          <DialogContent>
+          </Button>
+          <DialogContent className="rounded-3xl border-primary/20">
             <DialogHeader>
-              <DialogTitle>Cadastrar Nova Função</DialogTitle>
+              <DialogTitle>{editingId ? "Editar Cargo" : "Novo Cargo"}</DialogTitle>
               <DialogDescription>
-                Defina os detalhes do cargo.
+                {editingId ? "Modifique as informações do cargo selecionado." : "Preencha os detalhes para criar um novo cargo."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -154,7 +179,7 @@ export default function FuncoesPage() {
                     <FormItem>
                       <FormLabel>Nome da Função</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Vendedor" {...field} />
+                        <Input placeholder="Ex: Vendedor" {...field} className="rounded-xl" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -165,17 +190,17 @@ export default function FuncoesPage() {
                   name="setorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Setor</FormLabel>
+                      <FormLabel>Setor Responsável</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um setor" />
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Selecione o setor" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl">
                           {setores.map((setor) => (
                             <SelectItem key={setor.id} value={setor.id}>
                               {setor.nome}
@@ -194,20 +219,26 @@ export default function FuncoesPage() {
                     <FormItem>
                       <FormLabel>Salário Base (R$)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          placeholder="0.00"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="0.00"
+                            className="pl-9 rounded-xl"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <DialogFooter>
-                  <Button type="submit">Salvar</Button>
+                <DialogFooter className="pt-2">
+                  <Button type="submit" className="w-full sm:w-auto rounded-xl">
+                    {editingId ? "Salvar Alterações" : "Criar Cargo"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -215,60 +246,74 @@ export default function FuncoesPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="rounded-3xl border-primary/5 shadow-xl overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Função</TableHead>
-                <TableHead>Setor</TableHead>
-                <TableHead>Salário Base</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 py-4 text-primary">Função / Cargo</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-primary">Setor</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-primary">Salário Base</TableHead>
+                <TableHead className="w-[120px] font-bold uppercase text-[10px] tracking-widest text-right px-6 text-primary">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-[150px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[150px]" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[50px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[80px]" /></TableCell>
                   </TableRow>
                 ))
               ) : funcoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Nenhuma função cadastrada.
+                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
+                    Nenhum cargo cadastrado.
                   </TableCell>
                 </TableRow>
               ) : (
                 funcoes.map((funcao) => (
-                  <TableRow key={funcao.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        {funcao.nome}
+                  <TableRow key={funcao.id} className="hover:bg-primary/5 transition-colors group">
+                    <TableCell className="font-medium px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-110">
+                          <Briefcase className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm">{funcao.nome}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{funcao.setor.nome}</Badge>
+                      <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] uppercase font-black tracking-widest">
+                        {funcao.setor.nome}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <div className="flex items-center gap-1 font-bold text-emerald-600">
+                        <span className="text-[10px] opacity-60">R$</span>
                         {funcao.salarioBase.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => handleDelete(funcao.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <TableCell className="px-6 py-4 text-right">
+                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
+                          onClick={() => handleEdit(funcao)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
+                          onClick={() => handleDelete(funcao.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

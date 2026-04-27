@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, FolderKanban } from "lucide-react";
+import { Plus, Trash2, FolderKanban, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +40,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createSetor, getSetores, deleteSetor } from "@/actions/setor-actions";
+import { createSetor, getSetores, deleteSetor, updateSetor } from "@/actions/setor-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Setor {
@@ -56,6 +56,7 @@ export default function SetoresPage() {
   const [setores, setSetores] = useState<Setor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof setorSchema>>({
     resolver: zodResolver(setorSchema),
@@ -75,10 +76,30 @@ export default function SetoresPage() {
     loadSetores();
   }, []);
 
+  function handleOpenCreate() {
+    setEditingId(null);
+    form.reset({ nome: "" });
+    setIsDialogOpen(true);
+  }
+
+  function handleEdit(setor: Setor) {
+    setEditingId(setor.id);
+    form.reset({
+      nome: setor.nome,
+    });
+    setIsDialogOpen(true);
+  }
+
   async function onSubmit(values: z.infer<typeof setorSchema>) {
-    const result = await createSetor(values);
+    let result;
+    if (editingId) {
+      result = await updateSetor(editingId, values);
+    } else {
+      result = await createSetor(values);
+    }
+
     if (result.success) {
-      toast.success("Setor criado com sucesso!");
+      toast.success(editingId ? "Setor atualizado!" : "Setor criado!");
       setIsDialogOpen(false);
       form.reset();
       loadSetores();
@@ -91,7 +112,7 @@ export default function SetoresPage() {
     if (confirm("Tem certeza que deseja excluir este setor?")) {
       const result = await deleteSetor(id);
       if (result.success) {
-        toast.success("Setor excluído com sucesso!");
+        toast.success("Setor excluído!");
         loadSetores();
       } else {
         toast.error(result.error as string);
@@ -100,24 +121,24 @@ export default function SetoresPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Setores</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Setores <span className="text-primary">&</span> Departamentos</h1>
           <p className="text-muted-foreground">
-            Gerencie os departamentos da empresa.
+            Gerencie os departamentos da empresa para organizar as funções.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 outline-none">
+          <Button onClick={handleOpenCreate} className="shadow-lg shadow-primary/20">
             <Plus className="mr-2 h-4 w-4" />
             Novo Setor
-          </DialogTrigger>
-          <DialogContent>
+          </Button>
+          <DialogContent className="rounded-3xl border-primary/20">
             <DialogHeader>
-              <DialogTitle>Cadastrar Novo Setor</DialogTitle>
+              <DialogTitle>{editingId ? "Editar Setor" : "Novo Setor"}</DialogTitle>
               <DialogDescription>
-                Informe o nome do novo departamento.
+                {editingId ? "Altere o nome do departamento selecionado." : "Informe o nome do novo departamento."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -129,14 +150,16 @@ export default function SetoresPage() {
                     <FormItem>
                       <FormLabel>Nome do Setor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Financeiro" {...field} />
+                        <Input placeholder="Ex: Financeiro" {...field} className="rounded-xl" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <DialogFooter>
-                  <Button type="submit">Salvar</Button>
+                <DialogFooter className="pt-2">
+                  <Button type="submit" className="w-full sm:w-auto rounded-xl">
+                    {editingId ? "Salvar Alterações" : "Criar Setor"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -144,47 +167,59 @@ export default function SetoresPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="rounded-3xl border-primary/5 shadow-xl overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 py-4 text-primary">Nome do Setor</TableHead>
+                <TableHead className="w-[120px] font-bold uppercase text-[10px] tracking-widest text-right px-6 text-primary">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-[200px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[50px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[250px]" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-5 w-[80px]" /></TableCell>
                   </TableRow>
                 ))
               ) : setores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={2} className="h-24 text-center">
+                  <TableCell colSpan={2} className="h-24 text-center text-muted-foreground italic">
                     Nenhum setor cadastrado.
                   </TableCell>
                 </TableRow>
               ) : (
                 setores.map((setor) => (
-                  <TableRow key={setor.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                        {setor.nome}
+                  <TableRow key={setor.id} className="hover:bg-primary/5 transition-colors group">
+                    <TableCell className="font-medium px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-110">
+                          <FolderKanban className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm">{setor.nome}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => handleDelete(setor.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <TableCell className="px-6 py-4 text-right">
+                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
+                          onClick={() => handleEdit(setor)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
+                          onClick={() => handleDelete(setor.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
