@@ -72,14 +72,13 @@ interface ColaboradorOption {
 }
 
 const prizeTypes = [
-  "Meta de Perda",
   "Meta de Venda",
   "Campanha Local",
   "Bônus Escalonado",
   "Prêmio Cota Individual",
   "Vale-Alimentação",
-  "Abono Pontualidade",
   "Resgate de Pontos (Meritocracia)",
+  "Outro (Especificar...)"
 ];
 
 export default function PremiosPage() {
@@ -101,6 +100,7 @@ function PremiosContent() {
   // Form State
   const [selectedColabId, setSelectedColabId] = useState("");
   const [selectedType, setSelectedType] = useState("");
+  const [customType, setCustomType] = useState("");
   const [valor, setValor] = useState("0");
   const [obs, setObs] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,9 +143,11 @@ function PremiosContent() {
     }
 
     setIsSubmitting(true);
+    const finalType = selectedType === "Outro (Especificar...)" ? customType : selectedType;
+
     const result = await createPremio({
       colaboradorId: selectedColabId,
-      tipo: selectedType,
+      tipo: finalType,
       valorOriginal: parseFloat(valor),
       valorFinal: parseFloat(valor),
       dataReferencia: new Date(),
@@ -166,6 +168,7 @@ function PremiosContent() {
   function resetForm() {
     setSelectedColabId("");
     setSelectedType("");
+    setCustomType("");
     setValor("0");
     setObs("");
   }
@@ -222,6 +225,18 @@ function PremiosContent() {
                    </SelectContent>
                  </Select>
                </div>
+
+               {selectedType === "Outro (Especificar...)" && (
+                 <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                   <Label>Especifique o Tipo</Label>
+                   <Input 
+                     placeholder="Ex: Prêmio Produtividade Extra" 
+                     value={customType}
+                     onChange={(e) => setCustomType(e.target.value)}
+                   />
+                 </div>
+               )}
+
                <div className="space-y-2">
                  <Label>Valor do Bônus (R$)</Label>
                  <Input 
