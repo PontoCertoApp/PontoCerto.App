@@ -210,6 +210,11 @@ export default function PontoPage() {
     setEditingId(null);
   }
 
+  const formatLabel = (t: string) => {
+    if (!t) return "";
+    return t.replaceAll("_", " ");
+  };
+
   const getPointsValue = (t: TipoInconformidade) => {
     const values: Record<string, number> = {
       PONTO_POSITIVO: 10,
@@ -238,7 +243,7 @@ export default function PontoPage() {
     
     return (
       <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter", colors[t])}>
-        {t.replace("_", " ")} {sign}{val}
+        {t.replaceAll("_", " ")} {sign}{val}
       </Badge>
     );
   };
@@ -471,8 +476,10 @@ export default function PontoPage() {
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Tipo de Performance</Label>
               <Select value={tipo} onValueChange={(v) => setTipo(v as any)}>
-                <SelectTrigger className="w-full h-11 border-2 border-primary/5 rounded-xl">
-                  <SelectValue />
+                <SelectTrigger className="w-full h-11 border-2 border-primary/5 rounded-xl uppercase font-black text-xs tracking-widest">
+                  <SelectValue placeholder="Selecione o tipo">
+                    {formatLabel(tipo)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="PONTO_POSITIVO">Ponto Positivo (+10)</SelectItem>
