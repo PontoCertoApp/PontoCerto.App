@@ -115,21 +115,24 @@ export async function getInconformidadesDoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    // A data vem como string YYYY-MM-DD
-    const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
-    const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
-    const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
+    // Se não passar data, traz os últimos 100 de sempre
+    const where: any = {};
+    if (data) {
+      const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
+      const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
+      const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
+      where.data = { gte: inicioDia, lte: fimDia };
+    }
 
     return await prisma.registroPonto.findMany({
-      where: {
-        data: { gte: inicioDia, lte: fimDia }
-      },
+      where,
       include: {
         colaborador: {
           include: { loja: true, setor: true }
         }
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      take: 100
     });
   } catch (error) {
     console.error("Erro ao buscar registros do dia:", error);
@@ -190,5 +193,69 @@ export async function getTotalAtivos() {
   } catch (error) {
     console.error("[GET_TOTAL_ATIVOS_ERROR]:", error);
     return 0;
+  }
+}
+export async function getLeaderboard() {
+  try {
+    const session = await auth();
+    if (!session?.user) return [];
+
+    // Busca todos os registros do mês atual
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
+
+    const registros = await prisma.registroPonto.findMany({
+      where: {
+        data: { gte: inicioMes }
+      },
+      select: {
+        colaboradorId: true,
+        tipo: true,
+        colaborador: {
+          select: {
+            nomeCompleto: true,
+            loja: { select: { nome: true } }
+          }
+        }
+      }
+    });
+
+    // Tabela de valores de pontos
+    const PONTOS_MAP: Record<string, number> = {
+      PONTO_POSITIVO: 10,
+      META_BATIDA: 50,
+      ELOGIO: 100,
+      PRESENCA_MANUAL: 5,
+      FALTA_INJUSTIFICADA: -50,
+      ATRASO: -10,
+      SAIDA_ANTECIPADA: -10,
+      PONTO_NAO_REGISTRADO: -20
+    };
+
+    const leaderboardMap: Record<string, any> = {};
+
+    registros.forEach(r => {
+      const colabId = r.colaboradorId;
+      if (!leaderboardMap[colabId]) {
+        leaderboardMap[colabId] = {
+          id: colabId,
+          nome: r.colaborador.nomeCompleto,
+          loja: r.colaborador.loja?.nome || "Geral",
+          pontos: 0,
+          vitorias: 0
+        };
+      }
+      const pts = PONTOS_MAP[r.tipo || ""] || 0;
+      leaderboardMap[colabId].pontos += pts;
+      if (pts > 0) leaderboardMap[colabId].vitorias += 1;
+    });
+
+    return Object.values(leaderboardMap)
+      .sort((a, b) => b.pontos - a.pontos)
+      .slice(0, 5); // Top 5
+  } catch (error) {
+    console.error("Erro no Leaderboard:", error);
+    return [];
   }
 }
