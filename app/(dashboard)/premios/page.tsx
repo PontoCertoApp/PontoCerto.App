@@ -9,11 +9,14 @@ import {
   DollarSign, 
   TrendingUp, 
   Zap,
-  Info 
+  Info,
+  Gift
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -77,9 +80,18 @@ const prizeTypes = [
   "Prêmio Cota Individual",
   "Vale-Alimentação",
   "Abono Pontualidade",
+  "Resgate de Pontos (Meritocracia)",
 ];
 
 export default function PremiosPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-screen w-full" />}>
+      <PremiosContent />
+    </Suspense>
+  );
+}
+
+function PremiosContent() {
   const [premios, setPremios] = useState<Premio[]>([]);
   const [colaboradores, setColaboradores] = useState<ColaboradorOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,6 +105,7 @@ export default function PremiosPage() {
   const [valor, setValor] = useState("0");
   const [obs, setObs] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
 
   async function loadData() {
     setIsLoading(true);
@@ -105,7 +118,19 @@ export default function PremiosPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+
+    // Lógica de Integração: Se vier com params, abre o modal
+    const colabId = searchParams.get("colabId");
+    const tipo = searchParams.get("tipo");
+    if (colabId) {
+      setSelectedColabId(colabId);
+      if (tipo === "RESGATE_PONTOS") {
+        setSelectedType("Resgate de Pontos (Meritocracia)");
+        setObs("Resgate automático originado do Clube de Performance.");
+      }
+      setIsDialogOpen(true);
+    }
+  }, [searchParams]);
 
   const filtered = premios.filter(p => 
     (p.colaborador?.nomeCompleto || "").toLowerCase().includes(searchTerm.toLowerCase()) ||

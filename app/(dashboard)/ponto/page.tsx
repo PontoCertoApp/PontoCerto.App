@@ -16,7 +16,8 @@ import {
   Award,
   Medal,
   ChevronRight,
-  Pencil
+  Pencil,
+  Gift
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -316,11 +317,26 @@ export default function PontoPage() {
                  <div className="flex-1 min-w-0">
                     <h3 className="font-black text-sm tracking-tight uppercase truncate">{player.nome}</h3>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase">{player.loja}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="font-black text-xs text-primary">{player.pontos} pts</span>
-                      <span className="text-[9px] font-bold opacity-40 uppercase">{player.vitorias} méritos</span>
+                    <div className="bg-background/80 backdrop-blur px-4 py-1 rounded-full border shadow-sm flex items-center gap-2 mt-1 w-fit">
+                      <span className="font-black text-primary">{player.pontos} pts</span>
+                      <span className="text-[10px] uppercase font-bold opacity-50">{player.vitorias} méritos</span>
                     </div>
-                 </div>
+                  </div>
+
+                 {player.pontos >= 100 && (
+                   <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2 rounded-xl bg-primary/5 border-primary/20 hover:bg-primary hover:text-white transition-all font-black text-[10px] uppercase group"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `/premios?colabId=${player.id}&tipo=RESGATE_PONTOS`;
+                    }}
+                   >
+                     <Gift className="h-3 w-3 mr-1 group-hover:animate-bounce" />
+                     Resgatar Prêmio
+                   </Button>
+                 )}
               </CardContent>
             </Card>
           ))
