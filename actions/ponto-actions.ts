@@ -21,8 +21,12 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   const session = await auth();
   if (!session?.user) return { success: false, error: "Não autorizado" };
   const userId = session.user.id!;
+  
+  console.log("[PONTO_REG] User:", session.user.email, "Role:", session.user.role, "LojaId:", session.user.lojaId);
 
   try {
+    // Normaliza a data para o início do dia para evitar problemas de fuso horário na consulta posterior
+    const dataPonto = startOfDay(data.data);
     const isManual = data.colaboradorId === "MANUAL";
     let colaborador = null;
     let lojaId = session.user.lojaId || null;
@@ -54,7 +58,7 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
         data: {
           colaboradorId: finalColabId,
           lojaId: lojaId,
-          data: data.data,
+          data: dataPonto, // Usando a data normalizada
           tipo: data.tipo,
           justificativa: !colaborador ? `[MANUAL: ${data.manualName}] ${data.justificativa || ""}` : data.justificativa,
           status: PontoStatus.INCONSISTENTE,
@@ -112,16 +116,20 @@ export async function getInconformidadesDoDia(data: Date) {
     const inicioDia = startOfDay(data);
     const fimDia = endOfDay(data);
 
-    return await prisma.registroPonto.findMany({
-      where: {
-        data: { gte: inicioDia, lte: fimDia },
-        ...(isRH ? {} : { 
-          OR: [
-            { colaborador: { lojaId: targetLojaId } },
-            { lojaId: targetLojaId } // Fallback para registros manuais sem relação direta
-          ]
-        })
-      },
+    const where: any = {
+      data: { gte: inicioDia, lte: fimDia }
+    };
+
+    // Se NÃO for RH/ADMIN, filtra pela loja do colaborador OU pela loja do registro
+    if (!isRH && targetLojaId) {
+      where.OR = [
+        { colaborador: { lojaId: targetLojaId } },
+        { lojaId: targetLojaId }
+      ];
+    }
+
+    const result = await prisma.registroPonto.findMany({
+      where,
       include: {
         colaborador: {
           include: {
@@ -133,6 +141,9 @@ export async function getInconformidadesDoDia(data: Date) {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log(`[PONTO_TRATADOS] Data: ${data.toISOString()} | Encontrados: ${result.length} | isRH: ${isRH}`);
+    return result;
   } catch (error) {
     console.error("[GET_INCONFORMIDADES_ERROR]:", error);
     return [];
@@ -150,11 +161,19 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     const inicioDia = startOfDay(data);
     const fimDia = endOfDay(data);
 
+    const whereRegistros: any = {
+      data: { gte: inicioDia, lte: fimDia }
+    };
+
+    if (!isRH && targetLojaId) {
+      whereRegistros.OR = [
+        { colaborador: { lojaId: targetLojaId } },
+        { lojaId: targetLojaId }
+      ];
+    }
+
     const registrosNoDia = await prisma.registroPonto.findMany({
-      where: {
-        data: { gte: inicioDia, lte: fimDia },
-        ...(isRH ? {} : { colaborador: { lojaId: targetLojaId } })
-      },
+      where: whereRegistros,
       select: { colaboradorId: true },
     });
 
@@ -184,23 +203,20 @@ export async function getTotalAtivos() {
     const session = await auth();
     if (!session?.user) return 0;
     
-    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
-    
-    if (isRH) {
-      return await prisma.colaborador.count({
-        where: { status: { in: ["ATIVO", "EM_EXPERIENCIA"] } },
-      });
-    }
-
+    const role = (session.user.role || "").toUpperCase();
+    const isRH = role === "RH" || role === "ADMIN";
     const lojaId = session.user.lojaId;
-    if (!lojaId) return 0;
+
+    const where: any = {
+      status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
+    };
+
+    if (!isRH) {
+      if (!lojaId) return 0;
+      where.lojaId = lojaId;
+    }
     
-    return await prisma.colaborador.count({
-      where: {
-        lojaId,
-        status: { in: ["ATIVO", "EM_EXPERIENCIA"] },
-      },
-    });
+    return await prisma.colaborador.count({ where });
   } catch (error) {
     console.error("[GET_TOTAL_ATIVOS_ERROR]:", error);
     return 0;
