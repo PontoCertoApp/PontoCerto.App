@@ -110,21 +110,29 @@ export async function getInconformidadesDoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
+    const userId = session.user.id!;
+    const role = (session.user.role || "").toUpperCase();
+    const isRH = role === "RH" || role === "ADMIN";
     const targetLojaId = session.user.lojaId;
 
-    const inicioDia = startOfDay(data);
-    const fimDia = endOfDay(data);
+    // Normalização rigorosa para o dia UTC
+    const inicioDia = new Date(data);
+    inicioDia.setUTCHours(0, 0, 0, 0);
+    const fimDia = new Date(data);
+    fimDia.setUTCHours(23, 59, 59, 999);
 
     const where: any = {
       data: { gte: inicioDia, lte: fimDia }
     };
 
-    // Se NÃO for RH/ADMIN, filtra pela loja do colaborador OU pela loja do registro
-    if (!isRH && targetLojaId) {
+    // Filtro de visibilidade:
+    // 1. Se for RH/Admin, vê tudo.
+    // 2. Se for Gerente, vê sua loja OU registros que ele mesmo criou.
+    if (!isRH) {
       where.OR = [
-        { colaborador: { lojaId: targetLojaId } },
-        { lojaId: targetLojaId }
+        { criadoPorId: userId },
+        { lojaId: targetLojaId },
+        { colaborador: { lojaId: targetLojaId } }
       ];
     }
 
@@ -142,7 +150,7 @@ export async function getInconformidadesDoDia(data: Date) {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log(`[PONTO_TRATADOS] Data: ${data.toISOString()} | Encontrados: ${result.length} | isRH: ${isRH}`);
+    console.log(`[PONTO_DEBUG] User:${userId} | isRH:${isRH} | Found:${result.length}`);
     return result;
   } catch (error) {
     console.error("[GET_INCONFORMIDADES_ERROR]:", error);
@@ -155,20 +163,26 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
+    const userId = session.user.id!;
+    const role = (session.user.role || "").toUpperCase();
+    const isRH = role === "RH" || role === "ADMIN";
     const targetLojaId = session.user.lojaId;
 
-    const inicioDia = startOfDay(data);
-    const fimDia = endOfDay(data);
+    // Normalização rigorosa para o dia UTC
+    const inicioDia = new Date(data);
+    inicioDia.setUTCHours(0, 0, 0, 0);
+    const fimDia = new Date(data);
+    fimDia.setUTCHours(23, 59, 59, 999);
 
     const whereRegistros: any = {
       data: { gte: inicioDia, lte: fimDia }
     };
 
-    if (!isRH && targetLojaId) {
+    if (!isRH) {
       whereRegistros.OR = [
-        { colaborador: { lojaId: targetLojaId } },
-        { lojaId: targetLojaId }
+        { criadoPorId: userId },
+        { lojaId: targetLojaId },
+        { colaborador: { lojaId: targetLojaId } }
       ];
     }
 
