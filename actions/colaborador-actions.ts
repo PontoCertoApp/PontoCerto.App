@@ -167,7 +167,7 @@ export async function getColaboradoresPaged({
   const skip = (page - 1) * limit;
   const where: any = {
     AND: [
-      query ? { OR: [{ nomeCompleto: { contains: query } }, { cpf: { contains: query } }] } : {},
+      query ? { OR: [{ nomeCompleto: { contains: query, mode: 'insensitive' } }, { cpf: { contains: query, mode: 'insensitive' } }] } : {},
       status ? { status } : {},
       targetLojaId ? { lojaId: targetLojaId } : {},
     ],
@@ -193,7 +193,11 @@ export async function getColaboradores() {
   
   const role = session.user.role?.toUpperCase();
   const isRH = role === "RH" || role === "ADMIN";
-  const where = isRH ? {} : { lojaId: session.user.lojaId };
+  // Guard: only filter by lojaId if it's actually set.
+  // A null/undefined lojaId would generate WHERE lojaId IS NULL in PostgreSQL
+  // returning zero rows instead of all rows.
+  const lojaId = session.user.lojaId;
+  const where = isRH ? {} : (lojaId ? { lojaId } : {});
 
   return await prisma.colaborador.findMany({
     where,

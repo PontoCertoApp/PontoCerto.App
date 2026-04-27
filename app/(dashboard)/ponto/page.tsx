@@ -218,6 +218,7 @@ export default function PontoPage() {
     setJustificativa("");
     setGerarRap(true);
     setSelectedColab(null);
+    setSearchTerm("");
   }
 
   const formatTipo = (t: TipoInconformidade) => {
@@ -297,52 +298,64 @@ export default function PontoPage() {
                     <Label>Colaborador</Label>
                     <div className="relative mt-1">
                       <Input
-                        placeholder="Pesquisar ou escrever nome completo..."
+                        placeholder="Digite o nome para buscar..."
                         className="pr-10"
                         value={searchTerm}
                         onChange={(e) => {
                           const term = e.target.value;
                           setSearchTerm(term);
-                          const found = allColabs.find(c => c.nomeCompleto.toLowerCase() === term.toLowerCase());
-                          if (found) setSelectedColab(found);
+                          // Clear selection if user edits the name
+                          if (selectedColab && term !== selectedColab.nomeCompleto) {
+                            setSelectedColab(null);
+                          }
                         }}
+                        autoComplete="off"
                       />
                       <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
-                    
-                    {searchTerm.length > 2 && !selectedColab && (
-                      <p className="text-[10px] text-amber-500 mt-1 italic">
-                        * Colaborador não encontrado na lista. Será registrado como entrada manual.
-                      </p>
-                    )}
 
-                    <div className="mt-2">
-                      <Select 
-                        value={selectedColab?.id} 
-                        onValueChange={(val) => {
-                          const colab = allColabs.find(c => c.id === val);
-                          setSelectedColab(colab);
-                          if (colab) setSearchTerm(colab.nomeCompleto);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ou selecione na lista aqui" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allColabs && allColabs.length > 0 ? (
-                            allColabs.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.nomeCompleto} ({c.loja?.nome || "Geral"})
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="p-4 text-center text-sm text-muted-foreground">
-                              Lista vazia. Digite o nome acima.
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* Dynamic filtered suggestions */}
+                    {searchTerm.length > 0 && !selectedColab && (() => {
+                      const suggestions = allColabs.filter(c =>
+                        c.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase())
+                      );
+                      return suggestions.length > 0 ? (
+                        <div className="border rounded-md shadow-sm bg-popover max-h-48 overflow-y-auto">
+                          {suggestions.slice(0, 8).map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex flex-col"
+                              onClick={() => {
+                                setSelectedColab(c);
+                                setSearchTerm(c.nomeCompleto);
+                              }}
+                            >
+                              <span className="font-medium">{c.nomeCompleto}</span>
+                              <span className="text-xs text-muted-foreground">{c.loja?.nome || "Sem Loja"} — {c.funcao?.nome || ""}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : searchTerm.length > 2 ? (
+                        <p className="text-[10px] text-amber-500 mt-1 italic">
+                          * Colaborador não encontrado. Será registrado como entrada manual com o nome digitado.
+                        </p>
+                      ) : null;
+                    })()}
+
+                    {selectedColab && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 text-sm">
+                        <UserCheck className="h-4 w-4 text-primary shrink-0" />
+                        <span className="font-medium text-primary">{selectedColab.nomeCompleto}</span>
+                        <button
+                          type="button"
+                          className="ml-auto text-xs text-muted-foreground hover:text-destructive"
+                          onClick={() => { setSelectedColab(null); setSearchTerm(""); }}
+                        >
+                          Limpar
+                        </button>
+                      </div>
+                    )}
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo de Lançamento</Label>
