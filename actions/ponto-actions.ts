@@ -151,6 +151,7 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
       include: {
         loja: true,
         funcao: true,
+        setor: true,
       },
       orderBy: { nomeCompleto: "asc" },
     });

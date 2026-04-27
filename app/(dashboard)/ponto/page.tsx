@@ -220,7 +220,7 @@ export default function PontoPage() {
   }
 
   const formatTipo = (t: TipoInconformidade) => {
-    if (!t) return "";
+    if (!t) return "Tipo não definido";
     const labels: Record<string, string> = {
       FALTA_INJUSTIFICADA: "Falta Injustificada",
       ATRASO: "Atraso",
@@ -230,10 +230,11 @@ export default function PontoPage() {
       FALTA_JUSTIFICADA: "Falta Justificada",
       ATESTADO_MEDICO: "Atestado Médico",
     };
-    return labels[t] || String(t).replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    return labels[t] || String(t).replace(/_/g, " ");
   };
 
-  const InconformidadeBadge = (tipo: TipoInconformidade) => {
+  const InconformidadeBadge = (t: TipoInconformidade) => {
+    if (!t) return <Badge variant="outline">Indefinido</Badge>;
     const colors: Record<string, string> = {
       FALTA_INJUSTIFICADA: "bg-red-500",
       ATRASO: "bg-amber-500",
@@ -243,7 +244,7 @@ export default function PontoPage() {
       FALTA_JUSTIFICADA: "bg-indigo-500",
       ATESTADO_MEDICO: "bg-purple-600",
     };
-    return <Badge className={colors[tipo] || "bg-gray-500"}>{formatTipo(tipo)}</Badge>;
+    return <Badge className={colors[t] || "bg-gray-500"}>{formatTipo(t)}</Badge>;
   };
 
   return (
@@ -376,28 +377,7 @@ export default function PontoPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsManualDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={async () => {
-                  if (!selectedColab) {
-                    toast.error("Selecione um colaborador");
-                    return;
-                  }
-                  setIsSubmitting(true);
-                  const result = await registrarInconformidade({
-                    colaboradorId: selectedColab.id,
-                    data: date,
-                    tipo,
-                    justificativa,
-                    gerarRap: false, // Lançamento manual geralmente não gera RAP automático
-                  });
-                  if (result.success) {
-                    toast.success("Lançamento realizado!");
-                    setIsManualDialogOpen(false);
-                    loadData();
-                  } else {
-                    toast.error(result.error as string);
-                  }
-                  setIsSubmitting(false);
-                }} disabled={isSubmitting}>
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
                   {isSubmitting ? "Gravando..." : "Confirmar Lançamento"}
                 </Button>
               </DialogFooter>
@@ -490,7 +470,7 @@ export default function PontoPage() {
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.nomeCompleto}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {c.loja.nome} / {c.setor.nome}
+                          {c.loja?.nome || "Não definida"} / {c.setor?.nome || "Não definido"}
                         </TableCell>
                         <TableCell className="text-right">
                           <Dialog open={isDialogOpen && selectedColab?.id === c.id} onOpenChange={(open) => {
@@ -595,7 +575,9 @@ export default function PontoPage() {
                   ) : (
                     tratados.map((t) => (
                       <TableRow key={t.id}>
-                        <TableCell className="font-medium">{t.colaborador.nomeCompleto}</TableCell>
+                        <TableCell className="font-medium">
+                          {t.colaborador?.nomeCompleto || t.justificativa?.match(/\[MANUAL: (.*?)\]/)?.[1] || "Lançamento Manual"}
+                        </TableCell>
                         <TableCell>{InconformidadeBadge(t.tipo)}</TableCell>
                         <TableCell>
                           {t.rapGerado ? (
@@ -605,7 +587,7 @@ export default function PontoPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                           {format(new Date(t.createdAt), "HH:mm")}
+                           {t.createdAt ? format(new Date(t.createdAt), "HH:mm") : "--:--"}
                         </TableCell>
                         <TableCell className="text-right">
                            <Button size="sm" variant="ghost">
