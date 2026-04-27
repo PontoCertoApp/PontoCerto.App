@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -15,7 +15,8 @@ import {
   Plus,
   UserCheck,
   Search,
-  FileDown
+  FileDown,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,7 +72,6 @@ import {
   registrarInconformidade,
   getTotalAtivos,
 } from "@/actions/ponto-actions";
-import { getColaboradoresParaPonto } from "@/actions/colaborador-actions";
 
 import { exportToExcel } from "@/lib/utils/export";
 
@@ -108,11 +108,14 @@ export default function PontoPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
-  const [allColabs, setAllColabs] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [selectedColab, setSelectedColab] = useState<any>(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [manualName, setManualName] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [tipo, setTipo] = useState<TipoInconformidade>("FALTA_INJUSTIFICADA");
   const [justificativa, setJustificativa] = useState("");
@@ -165,16 +168,8 @@ export default function PontoPage() {
       });
       setTotalColaboradores(total);
 
-      // Carregar todos para o seletor manual — usa action dedicada sem filtros restritivos
-      const colabsResult = await getColaboradoresParaPonto();
-      if (colabsResult.success) {
-        setAllColabs(colabsResult.data);
-        console.log("[PONTO] Colaboradores carregados para modal:", colabsResult.data.length);
-      } else {
-        console.error("[PONTO] Falha ao carregar colaboradores:", colabsResult.error);
-        toast.error(`Erro ao carregar lista de colaboradores: ${colabsResult.error}`);
-        setAllColabs([]);
-      }
+      // Colaboradores são buscados on-demand via /api/colaboradores/search
+      // quando o usuário digita no modal — sem pré-carregamento aqui.
 
     } catch (error) {
       console.error("[PONTO_LOAD_FATAL_SILENCED]:", error);
@@ -188,10 +183,42 @@ export default function PontoPage() {
     loadData();
   }, [date]);
 
+  useEffect(() => {
+    if (searchTerm.trim().length > 1 && !selectedColab) {
+      setIsSearching(true);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      
+      searchTimerRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/colaboradores/search?q=${encodeURIComponent(searchTerm)}`);
+          const json = await res.json();
+          if (json.success) {
+            setSearchResults(json.data);
+            setSearchError(null);
+          } else {
+            setSearchError(json.error);
+          }
+        } catch (err) {
+          setSearchError("Erro ao buscar");
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchTerm, selectedColab]);
+
   async function handleSubmit() {
-    const finalColab = selectedColab || allColabs.find(c => c.nomeCompleto.toLowerCase() === searchTerm.toLowerCase());
+    // If we have a selectedColab, use it. Otherwise, it's a manual entry using the searchTerm.
+    const finalColab = selectedColab;
     
-    if (!finalColab && !searchTerm) {
+    if (!finalColab && !searchTerm.trim()) {
       toast.error("Escreva o nome do colaborador.");
       return;
     }
@@ -208,7 +235,7 @@ export default function PontoPage() {
 
     if (result.success) {
       toast.success("Tratamento registrado com sucesso!");
-      setIsDialogOpen(false);
+      setIsManualDialogOpen(false);
       resetForm();
       loadData();
     } else {
@@ -318,34 +345,40 @@ export default function PontoPage() {
                       <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
 
-                    {/* Dynamic filtered suggestions */}
-                    {searchTerm.length > 0 && !selectedColab && (() => {
-                      const suggestions = allColabs.filter(c =>
-                        c.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase())
-                      );
-                      return suggestions.length > 0 ? (
-                        <div className="border rounded-md shadow-sm bg-popover max-h-48 overflow-y-auto">
-                          {suggestions.slice(0, 8).map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex flex-col"
-                              onClick={() => {
-                                setSelectedColab(c);
-                                setSearchTerm(c.nomeCompleto);
-                              }}
-                            >
-                              <span className="font-medium">{c.nomeCompleto}</span>
-                              <span className="text-xs text-muted-foreground">{c.loja?.nome || "Sem Loja"} — {c.funcao?.nome || ""}</span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : searchTerm.length > 2 ? (
-                        <p className="text-[10px] text-amber-500 mt-1 italic">
-                          * Colaborador não encontrado. Será registrado como entrada manual com o nome digitado.
-                        </p>
-                      ) : null;
-                    })()}
+                    {/* Dynamic API suggestions */}
+                    {searchTerm.length > 0 && !selectedColab && (
+                      <div className="relative">
+                        {isSearching && (
+                          <div className="absolute top-1 right-3">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                        
+                        {searchResults.length > 0 ? (
+                          <div className="absolute z-50 w-full mt-1 border rounded-md shadow-lg bg-popover max-h-48 overflow-y-auto">
+                            {searchResults.map(c => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex flex-col"
+                                onClick={() => {
+                                  setSelectedColab(c);
+                                  setSearchTerm(c.nomeCompleto);
+                                  setSearchResults([]);
+                                }}
+                              >
+                                <span className="font-medium">{c.nomeCompleto}</span>
+                                <span className="text-xs text-muted-foreground">{c.loja?.nome || "Sem Loja"} — {c.funcao?.nome || ""}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : searchTerm.length > 2 && !isSearching && (
+                          <p className="text-[10px] text-amber-500 mt-1 italic">
+                            * Colaborador não encontrado. Será registrado como entrada manual com o nome digitado.
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {selectedColab && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 text-sm">
