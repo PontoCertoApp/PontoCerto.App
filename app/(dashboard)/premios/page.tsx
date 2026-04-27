@@ -108,8 +108,8 @@ export default function PremiosPage() {
   }, []);
 
   const filtered = premios.filter(p => 
-    p.colaborador.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.colaborador?.nomeCompleto || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.tipo || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   async function handleSubmit() {
@@ -309,8 +309,8 @@ export default function PremiosPage() {
                   <TableRow key={p.id}>
                     <TableCell>
                        <div className="flex flex-col">
-                         <span className="font-medium">{p.colaborador.nomeCompleto}</span>
-                         <span className="text-xs text-muted-foreground">{p.colaborador.loja.nome}</span>
+                         <span className="font-medium">{p.colaborador?.nomeCompleto || "N/A"}</span>
+                         <span className="text-xs text-muted-foreground">{p.colaborador?.loja?.nome || "Sem Loja"}</span>
                        </div>
                     </TableCell>
                     <TableCell>

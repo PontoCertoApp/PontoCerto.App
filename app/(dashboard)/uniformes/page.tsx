@@ -269,8 +269,8 @@ export default function UniformesPage() {
                         <TableRow key={h.id}>
                           <TableCell>
                              <div className="flex flex-col text-sm">
-                               <span className="font-medium">{h.colaborador.nomeCompleto}</span>
-                               <span className="text-xs text-muted-foreground">{h.colaborador.loja.nome}</span>
+                               <span className="font-medium">{h.colaborador?.nomeCompleto || "N/A"}</span>
+                               <span className="text-xs text-muted-foreground">{h.colaborador?.loja?.nome || "Sem Loja"}</span>
                              </div>
                           </TableCell>
                           <TableCell>
@@ -321,7 +321,7 @@ export default function UniformesPage() {
                 estoque.map((e) => (
                   <Card key={e.id}>
                     <CardHeader className="pb-2">
-                       <CardTitle className="text-sm font-bold">{e.loja.nome}</CardTitle>
+                       <CardTitle className="text-sm font-bold">{e.loja?.nome || "Sem Unidade"}</CardTitle>
                        <CardDescription>{e.item}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex items-center justify-between">

@@ -110,6 +110,7 @@ export default function PontoPage() {
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
   const [allColabs, setAllColabs] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedColab, setSelectedColab] = useState<ColaboradorSemPonto | null>(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [manualName, setManualName] = useState("");
 
@@ -347,14 +348,7 @@ export default function PontoPage() {
                   <Label>Tipo de Lançamento</Label>
                   <Select value={tipo} onValueChange={(val) => setTipo(val as TipoInconformidade)}>
                     <SelectTrigger>
-                      <SelectValue>
-                        {tipo === "FALTA_INJUSTIFICADA" ? "Falta Injustificada" : 
-                         tipo === "PRESENCA_MANUAL" ? "Presença Manual (Ajuste)" :
-                         tipo === "FALTA_JUSTIFICADA" ? "Falta Justificada" :
-                         tipo === "ATESTADO_MEDICO" ? "Atestado Médico" :
-                         tipo === "ATRASO" ? "Atraso" :
-                         tipo === "SAIDA_ANTECIPADA" ? "Saída Antecipada" : "Selecione o tipo"}
-                      </SelectValue>
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PRESENCA_MANUAL">Presença Manual (Ajuste)</SelectItem>

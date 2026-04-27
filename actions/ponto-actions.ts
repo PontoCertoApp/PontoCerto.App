@@ -93,7 +93,7 @@ export async function getInconformidadesDoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    const isRH = session.user.role === "RH";
+    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
     const targetLojaId = session.user.lojaId;
 
     const inicioDia = startOfDay(data);
@@ -126,7 +126,7 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    const isRH = session.user.role === "RH";
+    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
     const targetLojaId = session.user.lojaId;
 
     const inicioDia = startOfDay(data);
@@ -166,7 +166,7 @@ export async function getTotalAtivos() {
     const session = await auth();
     if (!session?.user) return 0;
     
-    const isRH = session.user.role === "RH";
+    const isRH = ["RH", "ADMIN"].includes((session.user.role || "").toUpperCase());
     
     if (isRH) {
       return await prisma.colaborador.count({
