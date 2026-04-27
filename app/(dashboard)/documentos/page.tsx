@@ -347,8 +347,8 @@ export default function DocumentosPage() {
                                             </DialogFooter>
                                           </DialogContent>
                                         </Dialog>
-                                     </DialogTrigger>
-                                     <TooltipContent className="bg-red-600 text-white font-black uppercase text-[9px] border-0 rounded-lg">Rejeitar com Motivo</TooltipContent>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="bg-red-600 text-white font-black uppercase text-[9px] border-0 rounded-lg">Rejeitar com Motivo</TooltipContent>
                                    </Tooltip>
                                  </TooltipProvider>
                                )}
