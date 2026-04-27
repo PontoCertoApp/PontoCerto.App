@@ -25,25 +25,38 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   try {
     const isManual = data.colaboradorId === "MANUAL";
     let colaborador = null;
-    let lojaId = null;
+    let lojaId = session.user.lojaId || null;
 
     if (!isManual) {
       colaborador = await prisma.colaborador.findUnique({
         where: { id: data.colaboradorId },
-        select: { nomeCompleto: true, email: true, lojaId: true },
+        select: { id: true, nomeCompleto: true, email: true, lojaId: true },
       });
       if (!colaborador) throw new Error("Colaborador não encontrado");
       lojaId = colaborador.lojaId;
+    } else if (data.manualName) {
+      // Tenta encontrar por nome exato para evitar duplicidade de "Manual" vs "Existente"
+      colaborador = await prisma.colaborador.findFirst({
+        where: { nomeCompleto: { equals: data.manualName.trim(), mode: "insensitive" } },
+        select: { id: true, nomeCompleto: true, email: true, lojaId: true },
+      });
+      if (colaborador) {
+        lojaId = colaborador.lojaId;
+      }
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Se encontramos o colaborador (mesmo vindo como MANUAL), usamos o ID dele.
+      // Se NÃO encontramos, e a schema exige um ID, somos obrigados a usar o do criador (Admin).
+      const finalColabId = colaborador ? colaborador.id : userId;
+
       const registro = await tx.registroPonto.create({
         data: {
-          colaboradorId: isManual ? userId : data.colaboradorId, // Link to creator if manual
+          colaboradorId: finalColabId,
           lojaId: lojaId,
           data: data.data,
           tipo: data.tipo,
-          justificativa: isManual ? `[MANUAL: ${data.manualName}] ${data.justificativa || ""}` : data.justificativa,
+          justificativa: !colaborador ? `[MANUAL: ${data.manualName}] ${data.justificativa || ""}` : data.justificativa,
           status: PontoStatus.INCONSISTENTE,
           rapGerado: data.gerarRap,
           criadoPorId: userId,
@@ -102,7 +115,12 @@ export async function getInconformidadesDoDia(data: Date) {
     return await prisma.registroPonto.findMany({
       where: {
         data: { gte: inicioDia, lte: fimDia },
-        ...(isRH ? {} : { colaborador: { lojaId: targetLojaId } })
+        ...(isRH ? {} : { 
+          OR: [
+            { colaborador: { lojaId: targetLojaId } },
+            { lojaId: targetLojaId } // Fallback para registros manuais sem relação direta
+          ]
+        })
       },
       include: {
         colaborador: {
