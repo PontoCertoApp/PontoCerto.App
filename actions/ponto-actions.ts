@@ -115,82 +115,39 @@ export async function getInconformidadesDoDia(data: Date) {
     const session = await auth();
     if (!session?.user) return [];
 
-    const userId = session.user.id!;
-    const role = (session.user.role || "").toUpperCase();
-    const isRH = role === "RH" || role === "ADMIN";
-    const targetLojaId = session.user.lojaId;
-
     // A data vem como string YYYY-MM-DD
     const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
     const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
     const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
 
-    const where: any = {
-      data: { gte: inicioDia, lte: fimDia }
-    };
-
-    // Filtro de visibilidade:
-    // 1. Se for RH/Admin, vê tudo.
-    // 2. Se for Gerente, vê sua loja OU registros que ele mesmo criou.
-    if (!isRH) {
-      where.OR = [
-        { criadoPorId: userId },
-        { lojaId: targetLojaId },
-        { colaborador: { lojaId: targetLojaId } }
-      ];
-    }
-
-    const result = await prisma.registroPonto.findMany({
-      where,
+    return await prisma.registroPonto.findMany({
+      where: {
+        data: { gte: inicioDia, lte: fimDia }
+      },
       include: {
         colaborador: {
-          include: {
-            loja: true,
-            funcao: true,
-          },
-        },
-        penalidade: true,
+          include: { loja: true, setor: true }
+        }
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "desc" }
     });
-
-    console.log(`[PONTO_DEBUG] User:${userId} | isRH:${isRH} | Found:${result.length}`);
-    return result;
   } catch (error) {
-    console.error("[GET_INCONFORMIDADES_ERROR]:", error);
+    console.error("Erro ao buscar registros do dia:", error);
     return [];
   }
 }
 
 export async function getColaboradoresSemPontoNoDia(data: Date) {
   try {
-    const session = await auth();
-    if (!session?.user) return [];
-
-    const userId = session.user.id!;
-    const role = (session.user.role || "").toUpperCase();
-    const isRH = role === "RH" || role === "ADMIN";
-    const targetLojaId = session.user.lojaId;
-
     // A data vem como string YYYY-MM-DD
     const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
     const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
     const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
 
-    const whereRegistros: any = {
-      data: { gte: inicioDia, lte: fimDia }
-    };
-
-    if (!isRH) {
-      whereRegistros.OR = [
-        { criadoPorId: userId },
-        { lojaId: targetLojaId },
-        { colaborador: { lojaId: targetLojaId } }
-      ];
-    }
-
     const registrosNoDia = await prisma.registroPonto.findMany({
-      where: whereRegistros,
+      where: {
+        data: { gte: inicioDia, lte: fimDia }
+      },
       select: { colaboradorId: true },
     });
 
@@ -199,8 +156,6 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
     return await prisma.colaborador.findMany({
       where: {
         id: { notIn: idsRegistrados },
-        // Se for RH, não filtra por loja. Se for Gerente, filtra pela loja dele.
-        ...(isRH ? {} : (targetLojaId ? { lojaId: targetLojaId } : {}))
       },
       include: {
         loja: true,
