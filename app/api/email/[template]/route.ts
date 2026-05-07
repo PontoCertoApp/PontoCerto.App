@@ -7,7 +7,7 @@ const typeSchema = z.enum(["penalidade", "premio", "documento", "relatorio"]);
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { template: string } }
+  { params }: { params: Promise<{ template: string }> }
 ) {
   try {
     const session = await auth();
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { template } = params;
+    const { template } = await params;
     const body = await req.json();
 
     let result;

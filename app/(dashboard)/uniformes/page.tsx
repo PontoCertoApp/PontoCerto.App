@@ -197,7 +197,7 @@ export default function UniformesPage() {
               <div className="p-3 w-fit bg-primary/10 rounded-2xl mb-2">
                 <Shirt className="h-8 w-8 text-primary" />
               </div>
-              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Registrar Entrega</DialogTitle>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Registrar Entrega</DialogTitle>
               <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
                 O sistema calculará automaticamente a data da próxima troca.
               </DialogDescription>
@@ -213,7 +213,7 @@ export default function UniformesPage() {
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-primary/10">
                       {colaboradores.map(c => (
-                        <SelectItem key={c.id} value={c.id} className="rounded-lg">{c.nomeCompleto}</SelectItem>
+                        <SelectItem key={c.id} value={c.id} className="rounded-lg"><span className="tracking-wide">{c.nomeCompleto}</span></SelectItem>
                       ))}
                    </SelectContent>
                  </Select>
@@ -227,7 +227,7 @@ export default function UniformesPage() {
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-primary/10">
                       {itemOptions.map(opt => (
-                        <SelectItem key={opt} value={opt} className="rounded-lg">{opt}</SelectItem>
+                        <SelectItem key={opt} value={opt} className="rounded-lg"><span className="tracking-wide">{opt}</span></SelectItem>
                       ))}
                    </SelectContent>
                  </Select>
@@ -322,7 +322,7 @@ export default function UniformesPage() {
                         <TableRow key={h.id} className="group hover:bg-primary/5 transition-colors border-primary/5">
                           <TableCell className="px-6 py-4">
                              <div className="flex flex-col">
-                               <span className="font-black uppercase tracking-tighter text-sm group-hover:text-primary transition-colors">{h.colaborador?.nomeCompleto}</span>
+                               <span className="font-black uppercase tracking-tight text-sm group-hover:text-primary transition-colors">{h.colaborador?.nomeCompleto}</span>
                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">{h.colaborador?.loja?.nome}</span>
                              </div>
                           </TableCell>
