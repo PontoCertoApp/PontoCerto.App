@@ -110,11 +110,19 @@ export default function NovoColaboradorPage() {
 
   useEffect(() => {
     async function loadData() {
-      const data = await getLojas();
-      setLojas(data);
+      const [lojasData, setoresData, funcoesData] = await Promise.all([
+        getLojas(),
+        getSetores(),
+        getFuncoes()
+      ]);
+      
+      setLojas(lojasData);
+      setSetores(setoresData);
+      setFuncoes(funcoesData);
+
       // Auto-select first loja if available
-      if (data.length > 0) {
-        form.setValue("lojaId", data[0].id);
+      if (lojasData.length > 0) {
+        form.setValue("lojaId", lojasData[0].id);
       }
     }
     loadData();
@@ -331,71 +339,144 @@ export default function NovoColaboradorPage() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    className="space-y-8"
                   >
-                    <FormField
-                      control={form.control}
-                      name="setorNome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Setor</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: Operacional, Administrativo..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="funcaoNome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Função (Cargo)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: Atendente, Gerente..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="agenciaBB"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Agência BB</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Ex: 1234-5" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="contaBB"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Conta Corrente BB</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Ex: 12345-6" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    {/* Seção: Dados Profissionais */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-lg">Dados Profissionais</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="setorNome"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Setor</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input 
+                                    placeholder="Ex: Operacional, Administrativo..." 
+                                    list="setores-list"
+                                    {...field} 
+                                  />
+                                  <datalist id="setores-list">
+                                    {setores.map((s: any) => (
+                                      <option key={s.id} value={s.nome} />
+                                    ))}
+                                  </datalist>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="funcaoNome"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Função (Cargo)</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input 
+                                    placeholder="Ex: Atendente, Gerente..." 
+                                    list="funcoes-list"
+                                    {...field} 
+                                  />
+                                  <datalist id="funcoes-list">
+                                    {funcoes.map((f: any) => (
+                                      <option key={f.id} value={f.nome} />
+                                    ))}
+                                  </datalist>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
+
+                    {/* Seção: Dados Bancários */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between pb-2 border-b">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 items-center justify-center rounded bg-yellow-400 text-[10px] font-bold text-blue-900 border border-blue-900 shadow-sm">
+                            BB
+                          </div>
+                          <h3 className="font-semibold text-lg">Conta para Pagamento</h3>
+                        </div>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">Exclusivo Banco do Brasil</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                        <FormField
+                          control={form.control}
+                          name="agenciaBB"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Agência BB</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="0000-0" 
+                                  maxLength={6}
+                                  {...field}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "");
+                                    if (val.length <= 4) {
+                                      field.onChange(val);
+                                    } else {
+                                      field.onChange(`${val.slice(0, 4)}-${val.slice(4, 5)}`);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-[10px]">Apenas números e o dígito verificador.</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="contaBB"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Conta Corrente BB</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="00000-0" 
+                                  maxLength={10}
+                                  {...field}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "");
+                                    if (val.length <= 5) {
+                                      field.onChange(val);
+                                    } else {
+                                      field.onChange(`${val.slice(0, -1)}-${val.slice(-1)}`);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-[10px]">Inclua o dígito (ex: 12345-6).</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="possuiFilhosMenores14"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 col-span-2">
+                        <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4 bg-muted/20">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">Possui filhos menores de 14 anos?</FormLabel>
-                            <FormDescription>
-                              Se sim, será necessário o upload da certidão de nascimento.
+                            <FormDescription className="text-xs">
+                              Se ativado, habilitará o campo de Certidão de Nascimento na próxima etapa.
                             </FormDescription>
                           </div>
                           <FormControl>
