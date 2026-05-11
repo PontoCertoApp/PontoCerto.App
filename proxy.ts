@@ -11,6 +11,15 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const userRole = req.auth?.user?.role;
 
+  // Robust origin detection for redirects in proxy environments (Easypanel)
+  const host = req.headers.get("host") || nextUrl.host;
+  const protocol = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  const baseOrigin = `${protocol}://${host}`;
+
+  const getAbsoluteUrl = (path: string) => {
+    return new URL(path, baseOrigin);
+  };
+
   // 1. NUNCA bloquear rotas do NextAuth
   if (nextUrl.pathname.startsWith("/api/auth")) {
     return NextResponse.next();
@@ -23,7 +32,7 @@ export default auth((req) => {
   if (isPublicPath) {
     // If logged in and trying to access auth routes, redirect to dashboard
     if (isLoggedIn && isAuthRoute) {
-      return NextResponse.redirect(new URL('/dashboard', nextUrl));
+      return NextResponse.redirect(getAbsoluteUrl('/dashboard'));
     }
     return NextResponse.next();
   }
@@ -35,7 +44,7 @@ export default auth((req) => {
       from += nextUrl.search;
     }
     return NextResponse.redirect(
-      new URL(`/login?callbackUrl=${encodeURIComponent(from)}`, nextUrl)
+      getAbsoluteUrl(`/login?callbackUrl=${encodeURIComponent(from)}`)
     );
   }
 
@@ -60,7 +69,7 @@ export default auth((req) => {
       if (nextUrl.pathname === '/dashboard' && nextUrl.searchParams.has('error')) {
         return NextResponse.next();
       }
-      return NextResponse.redirect(new URL('/dashboard?error=AccessDenied', nextUrl));
+      return NextResponse.redirect(getAbsoluteUrl('/dashboard?error=AccessDenied'));
     }
   }
 
