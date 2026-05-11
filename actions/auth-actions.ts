@@ -11,6 +11,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  role: z.enum(["ADMIN", "STORE_MANAGER", "HR_STAFF", "EMPLOYEE"]).default("ADMIN"),
 });
 
 export async function registerUser(data: z.infer<typeof registerSchema>) {
@@ -44,7 +45,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
           name: validatedData.name,
           email: validatedData.email,
           password: hashedPassword,
-          role: "ADMIN", // Default role for registering user (Company Owner)
+          role: validatedData.role || "ADMIN",
           lojaId: loja.id,
         },
       });

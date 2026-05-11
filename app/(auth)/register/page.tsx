@@ -5,9 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Clock, Loader2, ArrowRight } from "lucide-react";
+import { Clock, Loader2, ArrowRight, ShieldCheck, Users, UserCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -24,9 +23,35 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+type UserRole = "STORE_MANAGER" | "HR_STAFF" | "EMPLOYEE";
+
+const roles: { value: UserRole; label: string; description: string; icon: React.ElementType; color: string }[] = [
+  {
+    value: "STORE_MANAGER",
+    label: "Gestor de Loja",
+    description: "Gerencia equipe e operações da loja",
+    icon: ShieldCheck,
+    color: "text-orange-400",
+  },
+  {
+    value: "HR_STAFF",
+    label: "RH",
+    description: "Acesso a documentos, ponto e cadastros",
+    icon: Users,
+    color: "text-blue-400",
+  },
+  {
+    value: "EMPLOYEE",
+    label: "Colaborador",
+    description: "Acesso aos próprios dados e documentos",
+    icon: UserCircle,
+    color: "text-slate-400",
+  },
+];
+
 export default function RegisterPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const {
     register,
@@ -34,40 +59,30 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      companyName: "",
-      password: "",
-    },
+    defaultValues: { name: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
+    if (!selectedRole) {
+      toast.error("Selecione um perfil de acesso para continuar.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const result = await registerUser(data);
+      const result = await registerUser({ ...data, role: selectedRole });
 
       if (result.success) {
         toast.success("Conta criada com sucesso! Entrando...");
-        
-        // Auto sign in after registration using server action
-        // O redirecionamento acontece dentro da action e não deve ser capturado pelo catch de erro genérico
-        const loginResult = await loginUser({
-          email: data.email,
-          password: data.password,
-        });
-
-        if (loginResult && loginResult.success) {
+        const loginResult = await loginUser({ email: data.email, password: data.password });
+        if (loginResult?.success) {
           window.location.href = "/dashboard";
         }
       } else {
         toast.error(result.error || "Ocorreu um erro ao criar sua conta.");
       }
     } catch (error: any) {
-      // Se for um erro de redirecionamento do Next.js (comum em server actions), não mostramos o toast de erro
       if (error?.message === "NEXT_REDIRECT") return;
-      
-      console.error("Erro no cadastro:", error);
       toast.error("Erro inesperado. Tente novamente mais tarde.");
     } finally {
       setIsLoading(false);
@@ -91,19 +106,50 @@ export default function RegisterPage() {
           </Link>
           <h1 className="text-2xl font-bold">Comece sua jornada</h1>
           <p className="text-muted-foreground text-center">
-            Crie sua conta administrativa e gerencie sua empresa.
+            Crie sua conta e escolha seu perfil de acesso.
           </p>
         </div>
 
         <Card className="border-border/50 shadow-xl glass-card">
           <CardHeader>
             <CardTitle>Cadastro</CardTitle>
-            <CardDescription>
-              Preencha os dados abaixo para criar sua conta.
-            </CardDescription>
+            <CardDescription>Preencha os dados abaixo para criar sua conta.</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label>Perfil de acesso</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {roles.map((role) => {
+                    const Icon = role.icon;
+                    const isSelected = selectedRole === role.value;
+                    return (
+                      <button
+                        key={role.value}
+                        type="button"
+                        onClick={() => setSelectedRole(role.value)}
+                        className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all duration-200 ${
+                          isSelected
+                            ? "border-primary bg-primary/10 shadow-sm shadow-primary/20"
+                            : "border-border/50 bg-muted/30 hover:border-primary/40 hover:bg-muted"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 ${isSelected ? "text-primary" : role.color}`} />
+                        <span className={`text-xs font-bold leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>
+                          {role.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedRole && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    {roles.find(r => r.value === selectedRole)?.description}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Seu Nome</Label>
                 <Input
@@ -113,11 +159,9 @@ export default function RegisterPage() {
                   className={errors.name ? "border-destructive" : ""}
                   disabled={isLoading}
                 />
-                {errors.name && (
-                  <p className="text-xs text-destructive font-medium">{errors.name.message}</p>
-                )}
+                {errors.name && <p className="text-xs text-destructive font-medium">{errors.name.message}</p>}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
@@ -128,11 +172,8 @@ export default function RegisterPage() {
                   className={errors.email ? "border-destructive" : ""}
                   disabled={isLoading}
                 />
-                {errors.email && (
-                  <p className="text-xs text-destructive font-medium">{errors.email.message}</p>
-                )}
+                {errors.email && <p className="text-xs text-destructive font-medium">{errors.email.message}</p>}
               </div>
-
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
@@ -144,27 +185,20 @@ export default function RegisterPage() {
                   className={errors.password ? "border-destructive" : ""}
                   disabled={isLoading}
                 />
-                {errors.password && (
-                  <p className="text-xs text-destructive font-medium">{errors.password.message}</p>
-                )}
+                {errors.password && <p className="text-xs text-destructive font-medium">{errors.password.message}</p>}
               </div>
             </CardContent>
+
             <CardFooter className="flex flex-col gap-4">
-              <Button 
-                type="submit" 
-                className="w-full h-11 rounded-xl shadow-lg shadow-primary/20" 
-                disabled={isLoading}
+              <Button
+                type="submit"
+                className="w-full h-11 rounded-xl shadow-lg shadow-primary/20"
+                disabled={isLoading || !selectedRole}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando conta...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando conta...</>
                 ) : (
-                  <>
-                    Criar conta
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+                  <>Criar conta<ArrowRight className="ml-2 h-4 w-4" /></>
                 )}
               </Button>
               <div className="text-center text-sm">
