@@ -131,8 +131,13 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {items.map((item) => {
-              const userRole = user?.role?.toUpperCase() || "";
+              let userRole = user?.role?.toUpperCase() || "";
               
+              // Legacy mapping for compatibility
+              if (userRole === "RH") userRole = "HR_STAFF";
+              if (userRole === "GERENTE") userRole = "STORE_MANAGER";
+              if (userRole === "COLABORADOR") userRole = "EMPLOYEE";
+
               // ADMIN has access to everything
               if (userRole === "ADMIN") {
                 // proceed
