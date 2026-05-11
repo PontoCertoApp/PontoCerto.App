@@ -7,12 +7,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Loader2, ArrowRight, Lock, Mail } from "lucide-react";
+import { Loader2, ArrowRight, Lock, Mail, ShieldCheck, Building2, Users, User, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { seedTestUsers } from "@/actions/auth-actions";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }),
@@ -21,10 +22,19 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const TEST_PROFILES = [
+  { label: "Admin",         email: "admin@teste.com",       role: "ADMIN",         icon: ShieldCheck, color: "text-red-400" },
+  { label: "Gestor",        email: "gerente@teste.com",     role: "STORE_MANAGER", icon: Building2,   color: "text-orange-400" },
+  { label: "RH",            email: "rh@teste.com",          role: "HR_STAFF",      icon: Users,       color: "text-blue-400" },
+  { label: "Colaborador",   email: "colaborador@teste.com", role: "EMPLOYEE",      icon: User,        color: "text-slate-400" },
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [testLoading, setTestLoading] = useState<string | null>(null);
+  const [showTestAccess, setShowTestAccess] = useState(false);
 
   const {
     register,
@@ -55,6 +65,32 @@ export default function LoginPage() {
       setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleTestLogin(email: string) {
+    setTestLoading(email);
+    setErrorMessage(null);
+    try {
+      // Garante que os usuários de teste existem
+      await seedTestUsers();
+
+      const result = await signIn("credentials", {
+        email,
+        password: "admin123",
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setErrorMessage("Erro ao entrar com perfil de teste. Tente novamente.");
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      setErrorMessage("Ocorreu um erro inesperado.");
+    } finally {
+      setTestLoading(null);
     }
   }
 
@@ -158,7 +194,42 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground/50 mt-6">
+        {/* Acesso de Teste */}
+        <div className="mt-4">
+          <button
+            onClick={() => setShowTestAccess(!showTestAccess)}
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors py-2"
+          >
+            <span>Acesso de teste</span>
+            <ChevronDown className={`size-3 transition-transform ${showTestAccess ? "rotate-180" : ""}`} />
+          </button>
+
+          {showTestAccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-border/30 bg-card/50 backdrop-blur-sm p-3 grid grid-cols-2 gap-2"
+            >
+              {TEST_PROFILES.map(({ label, email, icon: Icon, color }) => (
+                <button
+                  key={email}
+                  onClick={() => handleTestLogin(email)}
+                  disabled={testLoading !== null}
+                  className="flex items-center gap-2 rounded-xl border border-border/30 hover:border-border hover:bg-muted/50 px-3 py-2.5 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {testLoading === email ? (
+                    <Loader2 className={`size-4 shrink-0 ${color} animate-spin`} />
+                  ) : (
+                    <Icon className={`size-4 shrink-0 ${color}`} />
+                  )}
+                  <span className="text-xs font-semibold text-foreground">{label}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground/50 mt-4">
           © 2025 PontoCerto · Todos os direitos reservados
         </p>
       </motion.div>
