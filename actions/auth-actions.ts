@@ -99,80 +99,61 @@ export async function loginUser(data: any) {
 export async function seedTestUsers() {
   try {
     const hashedPassword = await bcrypt.hash("admin123", 10);
-    
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Ensure Store
-      let loja = await tx.loja.findFirst();
-      if (!loja) {
-        loja = await tx.loja.create({ data: { nome: "Loja Teste", cidade: "São Paulo" } });
+
+    const testEmails = ["admin@teste.com", "gerente@teste.com", "rh@teste.com", "colaborador@teste.com"];
+    const testCpfs   = ["11111111111", "22222222222", "33333333333", "44444444444"];
+
+    // Busca IDs dos colaboradores de teste para deletar dependentes primeiro
+    const existingColabs = await prisma.colaborador.findMany({
+      where: { OR: [{ email: { in: testEmails } }, { cpf: { in: testCpfs } }] },
+      select: { id: true },
+    });
+    const colabIds = existingColabs.map((c) => c.id);
+
+    await prisma.$transaction(async (tx) => {
+      // Deleta dependentes na ordem correta (FK constraints do PostgreSQL)
+      if (colabIds.length > 0) {
+        await tx.penalidade.deleteMany({ where: { colaboradorId: { in: colabIds } } });
+        await tx.registroPonto.deleteMany({ where: { colaboradorId: { in: colabIds } } });
+        await tx.documento.deleteMany({ where: { colaboradorId: { in: colabIds } } });
+        await tx.premio.deleteMany({ where: { colaboradorId: { in: colabIds } } });
+        await tx.controleUniforme.deleteMany({ where: { colaboradorId: { in: colabIds } } });
       }
-
-      // 2. Ensure Sector
-      let setor = await tx.setor.findFirst();
-      if (!setor) {
-        setor = await tx.setor.create({ data: { nome: "Geral" } });
-      }
-
-      // 3. Ensure Function
-      let funcao = await tx.funcao.findFirst({ where: { setorId: setor.id } });
-      if (!funcao) {
-        funcao = await tx.funcao.create({ 
-          data: { nome: "Colaborador", setorId: setor.id, salarioBase: 1500 } 
-        });
-      }
-
-      const testUsers = [
-        { name: "Admin Teste", email: "admin@teste.com", role: "ADMIN", cpf: "11111111111" },
-        { name: "Gerente Teste", email: "gerente@teste.com", role: "STORE_MANAGER", cpf: "22222222222" },
-        { name: "RH Teste", email: "rh@teste.com", role: "HR_STAFF", cpf: "33333333333" },
-        { name: "Funcionario Teste", email: "colaborador@teste.com", role: "EMPLOYEE", cpf: "44444444444" },
-      ];
-
-      // Cleanup existing test users/colaboradores to avoid unique constraint conflicts
-      const testEmails = testUsers.map(u => u.email);
-      const testCpfs = testUsers.map(u => u.cpf);
-
       await tx.user.deleteMany({ where: { email: { in: testEmails } } });
-      await tx.colaborador.deleteMany({ 
-        where: { 
-          OR: [
-            { email: { in: testEmails } },
-            { cpf: { in: testCpfs } }
-          ]
-        } 
+      await tx.colaborador.deleteMany({
+        where: { OR: [{ email: { in: testEmails } }, { cpf: { in: testCpfs } }] },
       });
 
+      // Garante loja, setor e função
+      let loja = await tx.loja.findFirst();
+      if (!loja) loja = await tx.loja.create({ data: { nome: "Loja Teste", cidade: "São Paulo" } });
+
+      let setor = await tx.setor.findFirst();
+      if (!setor) setor = await tx.setor.create({ data: { nome: "Geral" } });
+
+      let funcao = await tx.funcao.findFirst({ where: { setorId: setor.id } });
+      if (!funcao) funcao = await tx.funcao.create({ data: { nome: "Colaborador", setorId: setor.id, salarioBase: 1500 } });
+
+      const testUsers = [
+        { name: "Admin Teste",       email: "admin@teste.com",       role: "ADMIN",         cpf: "11111111111" },
+        { name: "Gerente Teste",     email: "gerente@teste.com",     role: "STORE_MANAGER", cpf: "22222222222" },
+        { name: "RH Teste",          email: "rh@teste.com",          role: "HR_STAFF",      cpf: "33333333333" },
+        { name: "Colaborador Teste", email: "colaborador@teste.com", role: "EMPLOYEE",      cpf: "44444444444" },
+      ];
+
       for (const u of testUsers) {
-        // Create Colaborador
         const colab = await tx.colaborador.create({
           data: {
-            nomeCompleto: u.name,
-            cpf: u.cpf,
-            rg: "000000000",
-            dataNascimento: new Date("1990-01-01"),
-            email: u.email,
-            telefonePrincipal: "11999999999",
-            contaBancoBrasil: "0000-0",
-            lojaId: loja.id,
-            setorId: setor.id,
-            funcaoId: funcao.id,
-            status: "ATIVO",
+            nomeCompleto: u.name, cpf: u.cpf, rg: "000000000",
+            dataNascimento: new Date("1990-01-01"), email: u.email,
+            telefonePrincipal: "11999999999", contaBancoBrasil: "0000-0",
+            lojaId: loja.id, setorId: setor.id, funcaoId: funcao.id, status: "ATIVO",
           },
         });
-
-        // Create User
         await tx.user.create({
-          data: {
-            name: u.name,
-            email: u.email,
-            password: hashedPassword,
-            role: u.role,
-            lojaId: loja.id,
-            colaboradorId: colab.id,
-          },
+          data: { name: u.name, email: u.email, password: hashedPassword, role: u.role, lojaId: loja.id, colaboradorId: colab.id },
         });
       }
-      return true;
     });
 
     return { success: true, message: "Usuários de teste criados com sucesso!" };
