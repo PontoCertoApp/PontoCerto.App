@@ -16,8 +16,8 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // 2. List of public paths (Landing, Login, Register)
-  const isAuthRoute = ["/login", "/register"].includes(nextUrl.pathname);
+  // 2. List of public paths (Landing, Login, Register, Seed)
+  const isAuthRoute = ["/login", "/register", "/seed"].includes(nextUrl.pathname);
   const isPublicPath = nextUrl.pathname === '/' || isAuthRoute;
 
   if (isPublicPath) {
