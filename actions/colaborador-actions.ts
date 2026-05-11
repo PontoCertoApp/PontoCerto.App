@@ -125,7 +125,7 @@ export const createColaborador = createAction(
         sendBoasVindas(colaborador.email, {
           nomeUsuario: colaborador.nomeCompleto,
           empresa: loja?.nome ?? "PontoCerto",
-          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
+          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://pontocertoapp-pontocertoapp.xyzjfn.easypanel.host"}/login`,
         }).catch(() => {});
       }
 

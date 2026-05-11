@@ -43,7 +43,7 @@ export async function createPenalidade(data: z.infer<typeof penalidadeSchema>) {
         tipoPenalidade: data.tipo,
         motivo: data.motivo,
         dataOcorrencia: data.dataOcorrencia.toLocaleDateString("pt-BR"),
-        linkDocumento: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/colaboradores/${data.colaboradorId}`,
+        linkDocumento: `${process.env.NEXT_PUBLIC_APP_URL || "https://pontocertoapp-pontocertoapp.xyzjfn.easypanel.host"}/colaboradores/${data.colaboradorId}`,
       }).catch((err) => console.error("[email/penalidade] Falha:", err));
     }
 
