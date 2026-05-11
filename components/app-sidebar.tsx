@@ -237,7 +237,10 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={async () => {
+                    await signOut({ redirect: false });
+                    window.location.href = "/";
+                  }}
                 >
                   <LogOut className="size-4" />
                   <span>Sair do PontoCerto</span>
