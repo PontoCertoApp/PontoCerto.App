@@ -96,3 +96,59 @@ export async function loginUser(data: any) {
     throw error;
   }
 }
+export async function seedTestUsers() {
+  try {
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    
+    // Get a default store
+    let loja = await prisma.loja.findFirst();
+    if (!loja) {
+      loja = await prisma.loja.create({ data: { nome: "Loja Teste", cidade: "São Paulo" } });
+    }
+
+    const testUsers = [
+      { name: "Admin Teste", email: "admin@teste.com", role: "ADMIN" },
+      { name: "Gerente Teste", email: "gerente@teste.com", role: "STORE_MANAGER" },
+      { name: "RH Teste", email: "rh@teste.com", role: "HR_STAFF" },
+      { name: "Funcionario Teste", email: "colaborador@teste.com", role: "EMPLOYEE" },
+    ];
+
+    for (const u of testUsers) {
+      // Create Colaborador
+      const colab = await prisma.colaborador.upsert({
+        where: { email: u.email },
+        update: {},
+        create: {
+          nomeCompleto: u.name,
+          cpf: Math.random().toString().slice(2, 13),
+          rg: "000000000",
+          dataNascimento: new Date("1990-01-01"),
+          email: u.email,
+          telefonePrincipal: "11999999999",
+          contaBancoBrasil: "0000-0",
+          lojaId: loja.id,
+          status: "ATIVO",
+        },
+      });
+
+      // Create User
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { password: hashedPassword, role: u.role },
+        create: {
+          name: u.name,
+          email: u.email,
+          password: hashedPassword,
+          role: u.role,
+          lojaId: loja.id,
+          colaboradorId: colab.id,
+        },
+      });
+    }
+
+    return { success: true, message: "Usuários de teste criados com sucesso!" };
+  } catch (error: any) {
+    console.error("Seed error:", error);
+    return { success: false, error: error.message };
+  }
+}
