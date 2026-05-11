@@ -128,12 +128,24 @@ export async function seedTestUsers() {
         { name: "Funcionario Teste", email: "colaborador@teste.com", role: "EMPLOYEE", cpf: "44444444444" },
       ];
 
+      // Cleanup existing test users/colaboradores to avoid unique constraint conflicts
+      const testEmails = testUsers.map(u => u.email);
+      const testCpfs = testUsers.map(u => u.cpf);
+
+      await tx.user.deleteMany({ where: { email: { in: testEmails } } });
+      await tx.colaborador.deleteMany({ 
+        where: { 
+          OR: [
+            { email: { in: testEmails } },
+            { cpf: { in: testCpfs } }
+          ]
+        } 
+      });
+
       for (const u of testUsers) {
         // Create Colaborador
-        const colab = await tx.colaborador.upsert({
-          where: { email: u.email },
-          update: { cpf: u.cpf },
-          create: {
+        const colab = await tx.colaborador.create({
+          data: {
             nomeCompleto: u.name,
             cpf: u.cpf,
             rg: "000000000",
@@ -149,10 +161,8 @@ export async function seedTestUsers() {
         });
 
         // Create User
-        await tx.user.upsert({
-          where: { email: u.email },
-          update: { password: hashedPassword, role: u.role },
-          create: {
+        await tx.user.create({
+          data: {
             name: u.name,
             email: u.email,
             password: hashedPassword,
