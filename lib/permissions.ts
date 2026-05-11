@@ -88,7 +88,12 @@ export const PERMISSIONS: NavItem[] = [
  */
 export function canAccess(role: string | undefined, path: string): boolean {
   if (!role) return false;
-  const userRole = role.toUpperCase() as Role;
+  let userRole = role.toUpperCase();
+  
+  // Legacy mapping for backward compatibility
+  if (userRole === 'RH') userRole = ROLES.HR_STAFF;
+  if (userRole === 'GERENTE') userRole = ROLES.STORE_MANAGER;
+  if (userRole === 'COLABORADOR') userRole = ROLES.EMPLOYEE;
   
   // Admin bypass
   if (userRole === ROLES.ADMIN) return true;

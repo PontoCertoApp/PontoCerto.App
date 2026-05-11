@@ -56,7 +56,10 @@ export default auth((req) => {
 
   if (isProtectedPath) {
     if (!canAccess(userRole, nextUrl.pathname)) {
-      // If access denied, redirect to dashboard with error state
+      // Evitar loop de redirecionamento: se já estamos no dashboard com erro, não redireciona de novo
+      if (nextUrl.pathname === '/dashboard' && nextUrl.searchParams.has('error')) {
+        return NextResponse.next();
+      }
       return NextResponse.redirect(new URL('/dashboard?error=AccessDenied', nextUrl));
     }
   }
