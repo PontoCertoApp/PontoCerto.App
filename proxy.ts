@@ -1,47 +1,79 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import { auth } from './auth';
+import { canAccess } from './lib/permissions';
 
-export function proxy(req: NextRequest) {
+/**
+ * Next.js 16+ Proxy/Middleware Handler
+ * Standardizing on proxy.ts to resolve deployment conflicts.
+ */
+export default auth((req) => {
   const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const userRole = req.auth?.user?.role;
 
-  // Checar cookie de sessão diretamente — evita race condition com JWT
-  // NextAuth v5 pode usar prefixo "authjs" ou "next-auth" dependendo do ambiente
-  const sessionToken =
-    req.cookies.get("next-auth.session-token")?.value ??
-    req.cookies.get("__Secure-next-auth.session-token")?.value ??
-    req.cookies.get("authjs.session-token")?.value ??
-    req.cookies.get("__Secure-authjs.session-token")?.value;
-
-  const isLoggedIn = !!sessionToken;
-
-  // NUNCA bloquear rotas do NextAuth (signout, csrf, session, callback, etc.)
+  // 1. NUNCA bloquear rotas do NextAuth
   if (nextUrl.pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
+  // 2. List of public paths (Landing, Login, Register)
   const isAuthRoute = ["/login", "/register"].includes(nextUrl.pathname);
+  const isPublicPath = nextUrl.pathname === '/' || isAuthRoute;
 
-  // Usuário autenticado tentando acessar /login ou /register → /dashboard
-  if (isAuthRoute) {
-    if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  if (isPublicPath) {
+    // If logged in and trying to access auth routes, redirect to dashboard
+    if (isLoggedIn && isAuthRoute) {
+      return NextResponse.redirect(new URL('/dashboard', nextUrl));
     }
     return NextResponse.next();
   }
 
-  // Rota pública da landing page
-  if (nextUrl.pathname === "/") {
-    return NextResponse.next();
+  // 3. If not logged in and not public, redirect to login
+  if (!isLoggedIn) {
+    let from = nextUrl.pathname;
+    if (nextUrl.search) {
+      from += nextUrl.search;
+    }
+    return NextResponse.redirect(
+      new URL(`/login?callbackUrl=${encodeURIComponent(from)}`, nextUrl)
+    );
   }
 
-  // Rota protegida sem sessão → /login
-  if (!isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", nextUrl));
+  // 4. Check RBAC for protected routes
+  const protectedPrefixes = [
+    '/dashboard',
+    '/colaboradores',
+    '/documentos',
+    '/ponto',
+    '/penalidades',
+    '/premios',
+    '/uniformes',
+    '/config',
+    '/relatorios'
+  ];
+
+  const isProtectedPath = protectedPrefixes.some(prefix => nextUrl.pathname.startsWith(prefix));
+
+  if (isProtectedPath) {
+    if (!canAccess(userRole, nextUrl.pathname)) {
+      // If access denied, redirect to dashboard with error state
+      return NextResponse.redirect(new URL('/dashboard?error=AccessDenied', nextUrl));
+    }
   }
 
   return NextResponse.next();
-}
+});
 
+// Proxy config (matcher)
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public folder)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
 };
