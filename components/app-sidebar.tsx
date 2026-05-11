@@ -239,7 +239,7 @@ export function AppSidebar() {
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
                   onClick={async () => {
                     await signOut({ redirect: false });
-                    window.location.href = "/";
+                    window.location.replace("/login");
                   }}
                 >
                   <LogOut className="size-4" />

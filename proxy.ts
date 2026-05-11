@@ -12,7 +12,8 @@ export default auth((req) => {
   const userRole = req.auth?.user?.role;
 
   // Robust origin detection for redirects in proxy environments (Easypanel)
-  const host = req.headers.get("host") || nextUrl.host;
+  // Prefer x-forwarded-host so the public-facing domain is used, not the internal container host
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || nextUrl.host;
   const protocol = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
   const baseOrigin = `${protocol}://${host}`;
 

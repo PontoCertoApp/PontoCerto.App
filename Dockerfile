@@ -46,6 +46,7 @@ RUN echo '#!/bin/sh\n\
 echo "Iniciando PontoCerto..."\n\
 echo "DATABASE_URL: $DATABASE_URL"\n\
 ./node_modules/.bin/prisma db push --accept-data-loss || echo "Aviso: db push falhou"\n\
+./node_modules/.bin/prisma db seed || echo "Aviso: seed falhou (pode ignorar se ja existe)"\n\
 echo "Iniciando Next.js na porta $PORT..."\n\
 npm start' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
