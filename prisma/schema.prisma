@@ -9,7 +9,7 @@ datasource db {
 }
 
 // Enums converted to Strings for maximum compatibility and to avoid production cast errors
-// Role: COLABORADOR | GERENTE | RH
+// Role: ADMIN | STORE_MANAGER | HR_STAFF | EMPLOYEE
 // ColaboradorStatus: ATIVO | INATIVO | DESLIGADO | EM_EXPERIENCIA
 // DocumentStatus: PENDENTE | ENVIADO | VALIDADO | REJEITADO
 // PenalidadeStatus: ATIVA | VENCIDA | CANCELADA
@@ -24,7 +24,7 @@ model User {
   email         String    @unique
   image         String?
   password      String
-  role          String    @default("COLABORADOR")
+  role          String    @default("EMPLOYEE")
   lojaId        String?
   loja          Loja?     @relation(fields: [lojaId], references: [id])
   colaboradorId String?   @unique

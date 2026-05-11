@@ -59,7 +59,8 @@ export async function getPenalidades() {
   const session = await auth();
   if (!session?.user) return [];
 
-  const isRH = session.user.role === "RH";
+  const role = session.user.role?.toUpperCase();
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
   const filter = isRH ? {} : { colaborador: { lojaId: session.user.lojaId } };
 
   return await prisma.penalidade.findMany({

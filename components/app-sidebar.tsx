@@ -46,55 +46,60 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Colaboradores",
     url: "/colaboradores",
     icon: Users,
-    role: ["RH", "GERENTE"],
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Documentação",
     url: "/documentos",
     icon: FileText,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF", "EMPLOYEE"],
   },
   {
     title: "Pontuação de Equipe",
     url: "/ponto",
     icon: Clock,
-    role: ["RH", "GERENTE"],
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Penalidades (RAP)",
     url: "/penalidades",
     icon: AlertTriangle,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Prêmios & Benefícios",
     url: "/premios",
     icon: Gift,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Controle de Uniformes",
     url: "/uniformes",
     icon: Shirt,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
     title: "Funções & Lojas",
     url: "/config",
     icon: Building2,
-    role: ["RH"],
+    roles: ["ADMIN", "HR_STAFF"],
     items: [
-      { title: "Funções", url: "/config/funcoes" },
-      { title: "Lojas", url: "/config/lojas" },
-      { title: "Setores", url: "/config/setores" },
+      { title: "Funções", url: "/config/funcoes", roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Lojas", url: "/config/lojas", roles: ["ADMIN"] },
+      { title: "Setores", url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
     ],
   },
   {
     title: "Relatórios",
     url: "/relatorios",
     icon: BarChart3,
-    role: ["RH", "GERENTE"],
+    roles: ["ADMIN", "HR_STAFF"],
   },
 ];
 
@@ -127,9 +132,13 @@ export function AppSidebar() {
           <SidebarMenu className="gap-1">
             {items.map((item) => {
               const userRole = user?.role?.toUpperCase() || "";
-              const allowedRoles = item.role?.map(r => r.toUpperCase()) || [];
               
-              if (item.role && !allowedRoles.includes(userRole)) return null;
+              // ADMIN has access to everything
+              if (userRole === "ADMIN") {
+                // proceed
+              } else if (item.roles && !item.roles.includes(userRole)) {
+                return null;
+              }
 
               const isActive = pathname.startsWith(item.url);
 

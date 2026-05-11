@@ -40,7 +40,7 @@ const colaboradorSchema = z.object({
  */
 export const createColaborador = createAction(
   colaboradorSchema,
-  ["RH", "GERENTE"],
+  ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   async (data, session) => {
     console.log("[CREATE_COLABORADOR] Iniciando processo para:", data.nomeCompleto);
     try {
@@ -157,7 +157,8 @@ export async function getColaboradoresPaged({
   const session = await auth();
   if (!session?.user) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
 
-  const isRH = session.user.role === "RH";
+  const role = session.user.role?.toUpperCase();
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
   const userLojaId = session.user.lojaId;
 
   // Se for Gerente, obrigatoriamente filtra pela loja dele
@@ -192,7 +193,7 @@ export async function getColaboradores() {
   if (!session?.user) return [];
   
   const role = session.user.role?.toUpperCase();
-  const isRH = role === "RH" || role === "ADMIN";
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
   // Guard: only filter by lojaId if it's actually set.
   // A null/undefined lojaId would generate WHERE lojaId IS NULL in PostgreSQL
   // returning zero rows instead of all rows.
@@ -259,7 +260,7 @@ export async function getColaboradorById(id: string) {
 
 export const deleteColaborador = createAction(
   z.string(),
-  ["RH"],
+  ["ADMIN", "HR_STAFF"],
   async (id) => {
     try {
       await prisma.$transaction([

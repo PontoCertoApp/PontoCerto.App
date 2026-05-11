@@ -179,7 +179,7 @@ export async function getTotalAtivos() {
     if (!session?.user) return 0;
     
     const role = (session.user.role || "").toUpperCase();
-    const isRH = role === "RH" || role === "ADMIN";
+    const isRH = role === "ADMIN" || role === "HR_STAFF";
     const lojaId = session.user.lojaId;
 
     const where: any = {};

@@ -7,7 +7,8 @@ async function getReportFilter() {
   const session = await auth();
   if (!session?.user) return null;
   
-  const isRH = session.user.role === "RH";
+  const role = session.user.role?.toUpperCase();
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
   const lojaId = session.user.lojaId;
   
   if (isRH) return {};

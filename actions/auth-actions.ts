@@ -44,7 +44,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
           name: validatedData.name,
           email: validatedData.email,
           password: hashedPassword,
-          role: "RH", // Default role for registering user
+          role: "ADMIN", // Default role for registering user (Company Owner)
           lojaId: loja.id,
         },
       });
