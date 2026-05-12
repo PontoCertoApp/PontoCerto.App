@@ -60,8 +60,9 @@ export const createAction = <T, S extends z.ZodType>(
     }
 
     try {
-      if (schema) schema.parse(data);
-      const result = await handler(data, session);
+      // Parse strips unknown fields — use parsed data, NOT the raw input
+      const validatedData = schema ? schema.parse(data) : data;
+      const result = await handler(validatedData, session);
       return { success: true, data: result };
     } catch (e: any) {
       console.error("[ACTION_ERROR]:", e);
