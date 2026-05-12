@@ -97,7 +97,7 @@ export default function UserManagementPage() {
     email: "",
     password: "",
     role: "EMPLOYEE",
-    lojaId: "none",
+    unidade: "", // Changed from lojaId to unidade string
     teamId: "none"
   });
 
@@ -147,14 +147,14 @@ export default function UserManagementPage() {
     try {
       const res = await createUserByAdmin({
         ...formData,
-        lojaId: formData.lojaId === "none" ? undefined : formData.lojaId,
+        unidade: formData.unidade, // Pass unit name
         teamId: formData.teamId === "none" ? undefined : formData.teamId,
       });
 
       if (res?.success) {
         toast.success("Usuário criado com sucesso!");
         setIsCreateOpen(false);
-        setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", lojaId: "none", teamId: "none" });
+        setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", unidade: "", teamId: "none" });
         fetchData();
       } else {
         toast.error(res?.error || "Erro ao criar usuário");
@@ -175,7 +175,7 @@ export default function UserManagementPage() {
         userId: selectedUser.id,
         name: formData.name,
         role: formData.role,
-        lojaId: formData.lojaId === "none" ? null : formData.lojaId,
+        unidade: formData.unidade, // Pass unit name
         teamId: formData.teamId === "none" ? null : formData.teamId,
       });
 
@@ -200,7 +200,7 @@ export default function UserManagementPage() {
       email: user.email || "",
       password: "", // Not used in edit
       role: user.role || "EMPLOYEE",
-      lojaId: user.lojaId || "none",
+      unidade: user.loja?.nome || "", // Use store name
       teamId: user.teamId || "none"
     });
     setIsEditOpen(true);
@@ -213,9 +213,9 @@ export default function UserManagementPage() {
 
   const roleLabel: Record<string, string> = {
     ADMIN: "ADMINISTRADOR",
-    STORE_MANAGER: "GESTOR DE LOJA",
-    HR_STAFF: "RH",
-    EMPLOYEE: "COLABORADOR",
+    STORE_MANAGER: "GESTOR DE UNIDADE",
+    HR_STAFF: "RECURSOS HUMANOS (RH)",
+    EMPLOYEE: "COLABORADOR PADRÃO",
   };
 
   return (
@@ -301,26 +301,24 @@ export default function UserManagementPage() {
                      </SelectTrigger>
                      <SelectContent className="rounded-xl border-none shadow-2xl p-1">
                        <SelectItem value="ADMIN" className="rounded-lg h-10 font-bold text-primary">ADMINISTRADOR</SelectItem>
-                       <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-medium">RH</SelectItem>
-                       <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-medium">GESTOR</SelectItem>
-                       <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-medium">COLABORADOR</SelectItem>
+                       <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-bold">RECURSOS HUMANOS (RH)</SelectItem>
+                       <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-bold">GESTOR DE UNIDADE</SelectItem>
+                       <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-bold">COLABORADOR PADRÃO</SelectItem>
                      </SelectContent>
                    </Select>
                  </div>
                  
                  <div className="grid gap-2">
-                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade</Label>
-                   <Select value={formData.lojaId} onValueChange={val => setFormData({...formData, lojaId: val})}>
-                     <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none focus:ring-0">
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                       <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Sem Unidade</SelectItem>
-                       {lojas.map(l => (
-                         <SelectItem key={l.id} value={l.id} className="rounded-lg h-10 font-medium">{l.nome}</SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
+                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
+                   <div className="relative">
+                     <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                     <Input 
+                       value={formData.unidade} 
+                       onChange={e => setFormData({...formData, unidade: e.target.value})}
+                       className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                       placeholder="Digite o nome da unidade"
+                     />
+                   </div>
                  </div>
                </div>
              </div>
@@ -575,26 +573,23 @@ export default function UserManagementPage() {
                    </SelectTrigger>
                    <SelectContent className="rounded-xl border-none shadow-2xl p-1">
                      <SelectItem value="ADMIN" className="rounded-lg h-10 font-bold text-primary">ADMINISTRADOR</SelectItem>
-                     <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-medium">RH</SelectItem>
-                     <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-medium">GESTOR</SelectItem>
-                     <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-medium">COLABORADOR</SelectItem>
+                     <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-bold">RECURSOS HUMANOS (RH)</SelectItem>
+                     <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-bold">GESTOR DE UNIDADE</SelectItem>
+                     <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-bold">COLABORADOR PADRÃO</SelectItem>
                    </SelectContent>
                  </Select>
                </div>
                
                <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Loja Vinculada</Label>
-                 <Select value={formData.lojaId} onValueChange={val => setFormData({...formData, lojaId: val})}>
-                   <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                     <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Sem Unidade</SelectItem>
-                     {lojas.map(l => (
-                       <SelectItem key={l.id} value={l.id} className="rounded-lg h-10 font-medium">{l.nome}</SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
+                 <div className="relative">
+                    <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                    <Input 
+                      value={formData.unidade} 
+                      onChange={e => setFormData({...formData, unidade: e.target.value})}
+                      className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                    />
+                 </div>
                </div>
 
                <div className="grid gap-2 md:col-span-2">
@@ -605,7 +600,7 @@ export default function UserManagementPage() {
                    </SelectTrigger>
                    <SelectContent className="rounded-xl border-none shadow-2xl p-1">
                      <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Nenhum Time</SelectItem>
-                     {times.filter(t => formData.lojaId === 'none' || t.lojaId === formData.lojaId).map(t => (
+                     {times.map(t => (
                        <SelectItem key={t.id} value={t.id} className="rounded-lg h-10 font-medium">
                          {t.nome} {t.loja?.nome ? `(${t.loja.nome})` : ""}
                        </SelectItem>

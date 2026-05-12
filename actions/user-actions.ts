@@ -112,13 +112,27 @@ export const createUserByAdmin = createAction(
     email: z.string().email("E-mail inválido"),
     password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     role: z.string(),
-    lojaId: z.string().optional(),
+    unidade: z.string().optional(),
     teamId: z.string().optional(),
   }),
   ["ADMIN"],
   async (data) => {
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) throw new Error("E-mail já cadastrado.");
+
+    let lojaId = null;
+    if (data.unidade && data.unidade.trim() !== "") {
+      const name = data.unidade.trim();
+      const existingLoja = await prisma.loja.findFirst({
+        where: { nome: { equals: name } }
+      });
+      if (existingLoja) {
+        lojaId = existingLoja.id;
+      } else {
+        const newLoja = await prisma.loja.create({ data: { nome: name } });
+        lojaId = newLoja.id;
+      }
+    }
 
     const hashed = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
@@ -127,13 +141,14 @@ export const createUserByAdmin = createAction(
         email: data.email,
         password: hashed,
         role: data.role,
-        lojaId: data.lojaId || null,
+        lojaId: lojaId,
         teamId: data.teamId || null,
       },
     });
 
     revalidatePath("/config/usuarios");
     revalidatePath("/admin/usuarios");
+    revalidatePath("/config/lojas");
     return user;
   }
 );
@@ -143,7 +158,7 @@ export const updateUserDetails = createAction(
     userId: z.string(),
     name: z.string().optional(),
     role: z.string().optional(),
-    lojaId: z.string().nullable().optional(),
+    unidade: z.string().nullable().optional(),
     teamId: z.string().nullable().optional(),
   }),
   ["ADMIN"],
@@ -152,8 +167,24 @@ export const updateUserDetails = createAction(
     const updateData: Record<string, unknown> = {};
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.role !== undefined) updateData.role = updates.role;
-    if (updates.lojaId !== undefined) updateData.lojaId = updates.lojaId;
     if (updates.teamId !== undefined) updateData.teamId = updates.teamId;
+
+    if (updates.unidade !== undefined) {
+      if (!updates.unidade || updates.unidade.trim() === "") {
+        updateData.lojaId = null;
+      } else {
+        const name = updates.unidade.trim();
+        const existingLoja = await prisma.loja.findFirst({
+          where: { nome: { equals: name } }
+        });
+        if (existingLoja) {
+          updateData.lojaId = existingLoja.id;
+        } else {
+          const newLoja = await prisma.loja.create({ data: { nome: name } });
+          updateData.lojaId = newLoja.id;
+        }
+      }
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -161,6 +192,7 @@ export const updateUserDetails = createAction(
     });
     revalidatePath("/config/usuarios");
     revalidatePath("/admin/usuarios");
+    revalidatePath("/config/lojas");
     return user;
   }
 );
