@@ -486,17 +486,12 @@ export default function NovoColaboradorPage() {
                               <FormLabel>Time</FormLabel>
                               <FormControl>
                                 <ComboboxField
-                                  placeholder={
-                                    !currentLojaId
-                                      ? "Selecione a loja primeiro"
-                                      : "Digite o nome do time..."
-                                  }
+                                  placeholder="Digite o nome do time..."
                                   items={times}
                                   selectedId={currentTeamId}
                                   selectedName={selectedTimeName}
                                   onSelect={(id) => handleTimeSelect(id)}
                                   onClear={handleTimeClear}
-                                  disabled={!currentLojaId}
                                 />
                               </FormControl>
                               <FormMessage />
