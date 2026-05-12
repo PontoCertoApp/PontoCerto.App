@@ -127,6 +127,7 @@ export const createUserByAdmin = createAction(
     });
 
     revalidatePath("/config/usuarios");
+    revalidatePath("/admin/usuarios");
     return user;
   }
 );
@@ -151,6 +152,7 @@ export const updateUserDetails = createAction(
       data: updateData,
     });
     revalidatePath("/config/usuarios");
+    revalidatePath("/admin/usuarios");
     return user;
   }
 );
@@ -168,6 +170,7 @@ export const toggleUserAtivo = createAction(
       data: { ativo: !current?.ativo },
     });
     revalidatePath("/config/usuarios");
+    revalidatePath("/admin/usuarios");
     return { success: true };
   }
 );
@@ -181,6 +184,7 @@ export const updateUserRole = createAction(
       data: { role: data.role },
     });
     revalidatePath("/config/usuarios");
+    revalidatePath("/admin/usuarios");
     return user;
   }
 );
@@ -191,6 +195,7 @@ export const deleteUser = createAction(
   async (userId) => {
     await prisma.user.delete({ where: { id: userId } });
     revalidatePath("/config/usuarios");
+    revalidatePath("/admin/usuarios");
     return { success: true };
   }
 );

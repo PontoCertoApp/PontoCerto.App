@@ -109,6 +109,12 @@ const items = [
     icon: BarChart3,
     roles: ["ADMIN", "HR_STAFF"],
   },
+  {
+    title: "Gestão de Usuários",
+    url: "/admin/usuarios",
+    icon: UserCog,
+    roles: ["ADMIN"],
+  },
 ];
 
 export function AppSidebar() {
@@ -118,12 +124,14 @@ export function AppSidebar() {
   const user = session?.user;
 
   function getRoleLabel(role?: string | null): string {
+    const roleLabel: Record<string, string> = {
+      ADMIN: "ADMINISTRADOR",
+      STORE_MANAGER: "GESTOR DE LOJA",
+      HR_STAFF: "RH",
+      EMPLOYEE: "COLABORADOR",
+    };
     const r = (role || "").toUpperCase();
-    const normalized = r === "RH" ? "HR_STAFF" : r === "GERENTE" ? "STORE_MANAGER" : r === "COLABORADOR" ? "EMPLOYEE" : r;
-    if (normalized === "ADMIN") return "Administrador";
-    if (normalized === "HR_STAFF") return "RH";
-    if (normalized === "STORE_MANAGER") return "Gestor de Loja";
-    return "Colaborador";
+    return roleLabel[r] || "COLABORADOR";
   }
 
   return (

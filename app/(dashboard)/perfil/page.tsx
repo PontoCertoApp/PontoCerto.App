@@ -174,9 +174,14 @@ export default function PerfilPage() {
     }
   };
 
-  const userRoleLabel = user?.role === 'ADMIN' ? 'Administrador' : 
-                        user?.role === 'HR_STAFF' ? 'RH' : 
-                        user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador';
+  const roleLabel: Record<string, string> = {
+    ADMIN: "ADMINISTRADOR",
+    STORE_MANAGER: "GESTOR DE LOJA",
+    HR_STAFF: "RH",
+    EMPLOYEE: "COLABORADOR",
+  };
+
+  const userRoleLabel = user?.role ? roleLabel[user.role] || user.role : "COLABORADOR";
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-6">
