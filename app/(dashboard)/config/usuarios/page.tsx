@@ -8,8 +8,12 @@ import {
   Loader2, 
   Mail, 
   Building,
-  UserCog
+  UserCog,
+  Search,
+  ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 import { 
@@ -56,6 +60,12 @@ import {
 export default function UsuariosConfigPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredUsers = users.filter(u => 
+    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   async function loadUsers() {
     setIsLoading(true);
@@ -102,10 +112,27 @@ export default function UsuariosConfigPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/perfil">
+            <ArrowLeft className="size-4" />
+          </Link>
+        </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Contas</h1>
           <p className="text-muted-foreground">Administre quem tem acesso à plataforma PontoCerto.</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar por nome ou e-mail..." 
+            className="pl-10 h-10 rounded-xl bg-muted/30 border-muted focus:bg-background"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
@@ -133,7 +160,7 @@ export default function UsuariosConfigPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/30 border-muted/30 transition-colors">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">

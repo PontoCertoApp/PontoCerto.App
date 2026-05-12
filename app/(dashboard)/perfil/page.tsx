@@ -11,7 +11,8 @@ import {
   Shield,
   Building,
   Key,
-  Save
+  Save,
+  UserCog
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { updateProfile, promoteToAdmin } from "@/actions/user-actions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function PerfilPage() {
   const { data: session, update } = useSession();
@@ -37,12 +38,16 @@ export default function PerfilPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const user = session?.user;
+  const promotionAttempted = useRef(false);
 
   useEffect(() => {
-    if (user?.email === 'henriquemendonca060502@gmail.com' && user?.role !== 'ADMIN') {
-      promoteToAdmin(user.email).then(() => {
-        update();
-        toast.success("Perfil de Administrador ativado!");
+    if (user?.email === 'henriquemendonca060502@gmail.com' && user?.role !== 'ADMIN' && !promotionAttempted.current) {
+      promotionAttempted.current = true;
+      promoteToAdmin(user.email).then((res) => {
+        if (res.success) {
+          update();
+          toast.success("Perfil de Administrador ativado!");
+        }
       });
     }
   }, [user, update]);
@@ -210,6 +215,22 @@ export default function PerfilPage() {
             <CheckCircle2 className="size-4 text-emerald-500" />
             <span className="text-xs font-bold text-emerald-500 uppercase tracking-tighter">Conta Verificada</span>
           </div>
+          
+          {user?.role === 'ADMIN' && (
+            <div className="flex items-center gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold h-9 gap-2"
+                asChild
+              >
+                <Link href="/config/usuarios">
+                  <UserCog className="size-4" />
+                  Gerenciar Contas
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -258,14 +279,14 @@ export default function PerfilPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Loja Vinculada</Label>
-                <div className="p-4 rounded-2xl bg-muted/10 border border-muted/20 flex items-center gap-3 font-medium opacity-60 grayscale">
+                <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
                   <Building className="size-4 opacity-40" />
-                  Loja Matriz (Logística)
+                  {user?.loja?.nome || "Sede (Administrativo)"}
                 </div>
               </div>
               <Button 
                 onClick={handleUpdateBasic} 
-                disabled={isUpdatingBasic}
+                disabled={isUpdatingBasic || (name === user?.name && email === user?.email)}
                 className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
               >
                 {isUpdatingBasic ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
@@ -322,7 +343,7 @@ export default function PerfilPage() {
               </div>
               <Button 
                 onClick={handleUpdateSecurity}
-                disabled={isUpdatingSecurity}
+                disabled={isUpdatingSecurity || !currentPassword || !newPassword || !confirmPassword}
                 className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
               >
                 {isUpdatingSecurity ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
