@@ -9,6 +9,7 @@ import { sendBoasVindas } from "@/lib/email/send";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  companyName: z.string().min(2, "Nome da empresa é obrigatório"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   role: z.enum(["ADMIN", "STORE_MANAGER", "HR_STAFF", "EMPLOYEE"]).default("ADMIN"),
@@ -35,7 +36,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
       // 1. Create the Loja (Company) with a default name
       const loja = await tx.loja.create({
         data: {
-          nome: "Minha Empresa",
+          nome: validatedData.companyName,
         },
       });
 

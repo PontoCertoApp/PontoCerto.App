@@ -17,6 +17,7 @@ import { registerUser, loginUser } from "@/actions/auth-actions";
 
 const registerSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
+  companyName: z.string().min(2, "O nome da empresa deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
@@ -59,7 +60,7 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", companyName: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
@@ -160,6 +161,18 @@ export default function RegisterPage() {
                   disabled={isLoading}
                 />
                 {errors.name && <p className="text-xs text-destructive font-medium">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Nome da Empresa / Unidade</Label>
+                <Input
+                  id="companyName"
+                  placeholder="Ex: Loja Centro, Bariani Comércio..."
+                  {...register("companyName")}
+                  className={errors.companyName ? "border-destructive" : ""}
+                  disabled={isLoading}
+                />
+                {errors.companyName && <p className="text-xs text-destructive font-medium">{errors.companyName.message}</p>}
               </div>
 
               <div className="space-y-2">
