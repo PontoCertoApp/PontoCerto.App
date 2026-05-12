@@ -123,13 +123,19 @@ export function AppSidebar() {
   const pathname = usePathname();
   const user = session?.user;
 
-  function getRoleLabel(role?: string | null): string {
+  function getRoleLabel(role?: string | null, email?: string | null): string {
     const roleLabel: Record<string, string> = {
       ADMIN: "ADMINISTRADOR",
       STORE_MANAGER: "GESTOR DE LOJA",
       HR_STAFF: "RH",
       EMPLOYEE: "COLABORADOR",
     };
+    
+    // UI-LEVEL FORCE: Mestre sempre é Administrador
+    if (email?.toLowerCase() === 'henriquemendonca060502@gmail.com') {
+      return "ADMINISTRADOR";
+    }
+
     const r = (role || "").toUpperCase();
     return roleLabel[r] || "COLABORADOR";
   }
@@ -232,7 +238,7 @@ export function AppSidebar() {
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
                   <span className="truncate font-bold text-foreground">{user?.name}</span>
                   <span className="truncate text-[10px] font-black uppercase text-primary/60">
-                    {getRoleLabel(user?.role)}
+                    {getRoleLabel(user?.role, user?.email)}
                   </span>
                 </div>
                 <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />

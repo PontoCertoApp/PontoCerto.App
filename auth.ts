@@ -38,10 +38,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        // MASTER OVERRIDE: Garantir que este email sempre seja ADMIN
-        const finalRole = user.email === 'henriquemendonca060502@gmail.com' ? 'ADMIN' : user.role;
+        // MASTER OVERRIDE: Garantir que este email sempre seja ADMIN (Case Insensitive)
+        const isMaster = user.email?.toLowerCase() === 'henriquemendonca060502@gmail.com';
+        const finalRole = isMaster ? 'ADMIN' : user.role;
         
         token.role = finalRole as UserRole;
+        token.email = user.email; // Garantir que o email está no token
         token.lojaId = (user.lojaId ?? null) as string | null;
         token.teamId = (user.teamId ?? null) as string | null;
         token.colaboradorId = (user.colaboradorId ?? null) as string | null;
@@ -54,8 +56,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: { role: true, name: true, email: true, image: true, lojaId: true, teamId: true, colaboradorId: true }
         });
         if (dbUser) {
-          // MASTER OVERRIDE no update também
-          const finalRole = dbUser.email === 'henriquemendonca060502@gmail.com' ? 'ADMIN' : dbUser.role;
+          // MASTER OVERRIDE no update também (Case Insensitive)
+          const isMaster = dbUser.email?.toLowerCase() === 'henriquemendonca060502@gmail.com';
+          const finalRole = isMaster ? 'ADMIN' : dbUser.role;
           
           token.role = finalRole as UserRole;
           token.name = dbUser.name;

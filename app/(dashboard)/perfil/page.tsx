@@ -163,7 +163,10 @@ export default function PerfilPage() {
     EMPLOYEE: "COLABORADOR",
   };
 
-  const userRoleLabel = user?.role ? roleLabel[user.role] || user.role : "COLABORADOR";
+  // UI-LEVEL FORCE: Se for o email mestre, sempre exibir como ADMINISTRADOR
+  const isMaster = user?.email?.toLowerCase() === 'henriquemendonca060502@gmail.com';
+  const effectiveRole = isMaster ? 'ADMIN' : (user?.role || 'EMPLOYEE');
+  const userRoleLabel = roleLabel[effectiveRole] || "COLABORADOR";
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-6">
@@ -225,7 +228,7 @@ export default function PerfilPage() {
               <Key className="size-4" />
               Segurança
             </TabsTrigger>
-            {user?.role === 'ADMIN' && (
+            {effectiveRole === 'ADMIN' && (
               <TabsTrigger value="admin" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl gap-2 text-primary">
                 <Shield className="size-4" />
                 Painel Administrativo
@@ -338,7 +341,7 @@ export default function PerfilPage() {
 
         {/* ADMIN TAB */}
         <TabsContent value="admin">
-          {user?.role === 'ADMIN' && (
+          {effectiveRole === 'ADMIN' && (
             <div className="space-y-8">
               <Card className="surface-card border-none premium-shadow bg-gradient-to-r from-primary/20 to-primary/5">
                 <CardHeader className="flex flex-row items-center justify-between">
