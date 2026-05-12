@@ -14,7 +14,10 @@ import {
   Eye, 
   Download,
   Loader2,
-  Clock
+  Clock,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -53,6 +56,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { getColaboradorById } from "@/actions/colaborador-actions";
+import { updateLoja } from "@/actions/loja-actions";
 import { aprovarContratacao, iniciarDesligamento, reprovarExperiencia } from "@/actions/processo-actions";
 
 export default function ColaboradorDetalhesPage() {
@@ -61,11 +65,15 @@ export default function ColaboradorDetalhesPage() {
   const [colab, setColab] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [editingLoja, setEditingLoja] = useState(false);
+  const [lojaName, setLojaName] = useState("");
+  const [isSavingLoja, setIsSavingLoja] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       const found = await getColaboradorById(id as string);
       setColab(found);
+      setLojaName(found?.loja?.nome || "");
       setIsLoading(false);
     }
     loadData();
@@ -102,6 +110,22 @@ export default function ColaboradorDetalhesPage() {
     setIsProcessing(false);
   }
 
+  async function handleSaveLoja() {
+    if (!lojaName.trim() || !colab?.loja?.id) return;
+    setIsSavingLoja(true);
+    const res = await updateLoja(colab.loja.id, { nome: lojaName.trim() });
+    if (res.success) {
+      toast.success("Unidade renomeada com sucesso!");
+      const found = await getColaboradorById(id as string);
+      setColab(found);
+      setLojaName(found?.loja?.nome || "");
+      setEditingLoja(false);
+    } else {
+      toast.error("Erro ao renomear unidade.");
+    }
+    setIsSavingLoja(false);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -128,9 +152,37 @@ export default function ColaboradorDetalhesPage() {
              <CardDescription>{colab.funcao?.nome || "Sem Função"}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 text-sm">
-               <Building className="h-4 w-4 text-muted-foreground" />
-               <span>{colab.loja?.nome || "Sede"}</span>
+            <div className="flex items-center gap-2 text-sm group">
+               <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+               {editingLoja ? (
+                 <div className="flex items-center gap-1 flex-1">
+                   <input
+                     autoFocus
+                     value={lojaName}
+                     onChange={e => setLojaName(e.target.value)}
+                     onKeyDown={e => { if (e.key === "Enter") handleSaveLoja(); if (e.key === "Escape") { setEditingLoja(false); setLojaName(colab.loja?.nome || ""); } }}
+                     className="flex-1 text-sm bg-muted border border-primary rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary"
+                     disabled={isSavingLoja}
+                   />
+                   <button onClick={handleSaveLoja} disabled={isSavingLoja} className="text-primary hover:text-primary/80 disabled:opacity-50">
+                     {isSavingLoja ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                   </button>
+                   <button onClick={() => { setEditingLoja(false); setLojaName(colab.loja?.nome || ""); }} className="text-muted-foreground hover:text-foreground">
+                     <X className="h-3.5 w-3.5" />
+                   </button>
+                 </div>
+               ) : (
+                 <>
+                   <span>{colab.loja?.nome || "Sede"}</span>
+                   <button
+                     onClick={() => setEditingLoja(true)}
+                     className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary ml-1"
+                     title="Renomear unidade"
+                   >
+                     <Pencil className="h-3 w-3" />
+                   </button>
+                 </>
+               )}
             </div>
             <div className="flex items-center gap-2 text-sm">
                <Briefcase className="h-4 w-4 text-muted-foreground" />
