@@ -97,10 +97,11 @@ export default function FuncoesPage() {
         getFuncoes(),
         getSetores(),
       ]);
-      setFuncoes(funcoesData as any);
-      setSetores(setoresData);
-    } catch (err) {
-      toast.error("Erro ao carregar dados");
+      setFuncoes(Array.isArray(funcoesData) ? funcoesData : []);
+      setSetores(Array.isArray(setoresData) ? setoresData : []);
+    } catch (err: any) {
+      toast.error(`Erro ao carregar dados: ${err?.message || "Erro desconhecido"}`);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -157,8 +158,8 @@ export default function FuncoesPage() {
   }
 
   const filteredFuncoes = funcoes.filter(f => 
-    f.nome.toLowerCase().includes(search.toLowerCase()) || 
-    f.setor.nome.toLowerCase().includes(search.toLowerCase())
+    f.nome?.toLowerCase().includes(search.toLowerCase()) || 
+    f.setor?.nome?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (

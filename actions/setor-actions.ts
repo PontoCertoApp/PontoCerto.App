@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 
 const setorSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -18,14 +19,22 @@ export async function createSetor(data: z.infer<typeof setorSchema>) {
     revalidatePath("/config/setores");
     return { success: true, data: setor };
   } catch (error) {
+    console.error("ERRO EM createSetor:", error);
     return { success: false, error: "Erro ao criar setor" };
   }
 }
 
 export async function getSetores() {
-  return await prisma.setor.findMany({
-    orderBy: { nome: "asc" },
-  });
+  const session = await auth();
+  if (!session?.user) return [];
+  try {
+    return await prisma.setor.findMany({
+      orderBy: { nome: "asc" },
+    });
+  } catch (error: any) {
+    console.error("ERRO EM getSetores:", error);
+    return [];
+  }
 }
 
 export async function deleteSetor(id: string) {

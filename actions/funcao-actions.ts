@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 
 const funcaoSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -27,13 +28,22 @@ export async function createFuncao(data: z.infer<typeof funcaoSchema>) {
 }
 
 export async function getFuncoes() {
-  return await prisma.funcao.findMany({
-    include: { setor: true },
-    orderBy: { nome: "asc" },
-  });
+  const session = await auth();
+  if (!session?.user) return [];
+  try {
+    return await prisma.funcao.findMany({
+      include: { setor: true },
+      orderBy: { nome: "asc" },
+    });
+  } catch (error: any) {
+    console.error("ERRO EM getFuncoes:", error);
+    return [];
+  }
 }
 
 export async function deleteFuncao(id: string) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Não autorizado" };
   try {
     await prisma.funcao.delete({ where: { id } });
     revalidatePath("/config/funcoes");
