@@ -13,6 +13,7 @@ import {
   LogOut,
   MoreHorizontal,
   Building2,
+  UserCog,
 } from "lucide-react";
 
 import {
@@ -47,6 +48,12 @@ const items = [
     url: "/dashboard",
     icon: LayoutDashboard,
     roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
+  },
+  {
+    title: "Gestão de Usuários",
+    url: "/config/usuarios",
+    icon: UserCog,
+    roles: ["ADMIN"],
   },
   {
     title: "Colaboradores",
@@ -94,7 +101,6 @@ const items = [
       { title: "Lojas", url: "/config/lojas", roles: ["ADMIN"] },
       { title: "Times", url: "/config/times", roles: ["ADMIN", "HR_STAFF"] },
       { title: "Setores", url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
-      { title: "Contas", url: "/config/usuarios", roles: ["ADMIN"] },
     ],
   },
   {
@@ -110,6 +116,15 @@ export function AppSidebar() {
   const { theme } = useTheme();
   const pathname = usePathname();
   const user = session?.user;
+
+  function getRoleLabel(role?: string | null): string {
+    const r = (role || "").toUpperCase();
+    const normalized = r === "RH" ? "HR_STAFF" : r === "GERENTE" ? "STORE_MANAGER" : r === "COLABORADOR" ? "EMPLOYEE" : r;
+    if (normalized === "ADMIN") return "Administrador";
+    if (normalized === "HR_STAFF") return "RH";
+    if (normalized === "STORE_MANAGER") return "Gestor de Loja";
+    return "Colaborador";
+  }
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
@@ -209,9 +224,7 @@ export function AppSidebar() {
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
                   <span className="truncate font-bold text-foreground">{user?.name}</span>
                   <span className="truncate text-[10px] font-black uppercase text-primary/60">
-                    {user?.role === 'ADMIN' ? 'Administrador' : 
-                     user?.role === 'HR_STAFF' ? 'RH' : 
-                     user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador'}
+                    {getRoleLabel(user?.role)}
                   </span>
                 </div>
                 <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />

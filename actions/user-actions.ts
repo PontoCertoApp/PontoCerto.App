@@ -16,7 +16,7 @@ const updateProfileSchema = z.object({
 
 export const updateProfile = createAction(
   updateProfileSchema,
-  null, // Any logged in user
+  null,
   async (data, session) => {
     const updateData: any = {
       image: data.image,
@@ -48,16 +48,15 @@ export const updateProfile = createAction(
       data: updateData,
     });
 
-    // If this user is also a collaborator, update their photo and email too
     if (user.colaboradorId) {
       const colabData: any = {};
       if (data.image) colabData.fotoPerfilPath = data.image;
       if (data.email) colabData.email = data.email;
-      
+
       if (Object.keys(colabData).length > 0) {
         await prisma.colaborador.update({
           where: { id: user.colaboradorId },
-          data: colabData
+          data: colabData,
         });
       }
     }
@@ -69,21 +68,21 @@ export const updateProfile = createAction(
 );
 
 export const promoteToAdmin = createAction(
-  z.string(), // email
+  z.string(),
   null,
   async (email) => {
-    if (email !== 'henriquemendonca060502@gmail.com') {
+    if (email !== "henriquemendonca060502@gmail.com") {
       throw new Error("Não autorizado.");
     }
-    
+
     const user = await prisma.user.findUnique({ where: { email } });
-    if (user?.role === 'ADMIN') {
+    if (user?.role === "ADMIN") {
       return { status: "already_admin" };
     }
 
     await prisma.user.update({
       where: { email },
-      data: { role: 'ADMIN' },
+      data: { role: "ADMIN" },
     });
 
     return { status: "promoted" };
@@ -94,10 +93,82 @@ export const getUsers = createAction(
   z.undefined(),
   ["ADMIN"],
   async () => {
-    return await prisma.user.findMany({
-      include: { loja: true },
+    return prisma.user.findMany({
+      include: { loja: true, time: true },
       orderBy: { createdAt: "desc" },
     });
+  }
+);
+
+export const createUserByAdmin = createAction(
+  z.object({
+    name: z.string().min(2, "Nome muito curto"),
+    email: z.string().email("E-mail inválido"),
+    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+    role: z.string(),
+    lojaId: z.string().optional(),
+    teamId: z.string().optional(),
+  }),
+  ["ADMIN"],
+  async (data) => {
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) throw new Error("E-mail já cadastrado.");
+
+    const hashed = await bcrypt.hash(data.password, 10);
+    const user = await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: hashed,
+        role: data.role,
+        lojaId: data.lojaId || null,
+        teamId: data.teamId || null,
+      },
+    });
+
+    revalidatePath("/config/usuarios");
+    return user;
+  }
+);
+
+export const updateUserDetails = createAction(
+  z.object({
+    userId: z.string(),
+    role: z.string().optional(),
+    lojaId: z.string().nullable().optional(),
+    teamId: z.string().nullable().optional(),
+  }),
+  ["ADMIN"],
+  async (data) => {
+    const { userId, ...updates } = data;
+    const updateData: Record<string, unknown> = {};
+    if (updates.role !== undefined) updateData.role = updates.role;
+    if (updates.lojaId !== undefined) updateData.lojaId = updates.lojaId;
+    if (updates.teamId !== undefined) updateData.teamId = updates.teamId;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+    revalidatePath("/config/usuarios");
+    return user;
+  }
+);
+
+export const toggleUserAtivo = createAction(
+  z.string(),
+  ["ADMIN"],
+  async (userId) => {
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { ativo: true },
+    });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { ativo: !current?.ativo },
+    });
+    revalidatePath("/config/usuarios");
+    return { success: true };
   }
 );
 
@@ -123,5 +194,3 @@ export const deleteUser = createAction(
     return { success: true };
   }
 );
-
-

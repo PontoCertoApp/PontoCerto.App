@@ -31,6 +31,7 @@ model User {
   time          Time?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
   colaboradorId String?   @unique
   colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id], onDelete: SetNull)
+  ativo         Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
