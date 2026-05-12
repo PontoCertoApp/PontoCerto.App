@@ -486,7 +486,7 @@ export default function NovoColaboradorPage() {
                               <FormControl>
                                 <ComboboxField
                                   placeholder={
-                                    times.length === 0
+                                    !currentLojaId
                                       ? "Selecione a loja primeiro"
                                       : "Digite o nome do time..."
                                   }
@@ -495,7 +495,7 @@ export default function NovoColaboradorPage() {
                                   selectedName={selectedTimeName}
                                   onSelect={(id) => handleTimeSelect(id)}
                                   onClear={handleTimeClear}
-                                  disabled={times.length === 0}
+                                  disabled={!currentLojaId}
                                 />
                               </FormControl>
                               <FormMessage />
