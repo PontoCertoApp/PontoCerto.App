@@ -76,10 +76,17 @@ export const promoteToAdmin = createAction(
       throw new Error("Não autorizado.");
     }
     
-    return await prisma.user.update({
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user?.role === 'ADMIN') {
+      return { status: "already_admin" };
+    }
+
+    await prisma.user.update({
       where: { email },
       data: { role: 'ADMIN' },
     });
+
+    return { status: "promoted" };
   }
 );
 
