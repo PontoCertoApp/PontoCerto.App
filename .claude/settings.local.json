@@ -24,7 +24,10 @@
       "Bash(cat .env.local)",
       "Bash(npx prisma *)",
       "Bash(npx tsx -e ' *)",
-      "PowerShell(Get-ChildItem \"D:\\\\Proejtos\\\\PontoCerto\" -Name | Where-Object { $_ -match \"docker|compose|Dockerfile\" })"
+      "PowerShell(Get-ChildItem \"D:\\\\Proejtos\\\\PontoCerto\" -Name | Where-Object { $_ -match \"docker|compose|Dockerfile\" })",
+      "Bash(Get-ChildItem -Path \"D:\\\\Proejtos\\\\PontoCerto\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)"
     ]
   }
 }

@@ -94,6 +94,7 @@ const items = [
       { title: "Lojas", url: "/config/lojas", roles: ["ADMIN"] },
       { title: "Times", url: "/config/times", roles: ["ADMIN", "HR_STAFF"] },
       { title: "Setores", url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Contas", url: "/config/usuarios", roles: ["ADMIN"] },
     ],
   },
   {

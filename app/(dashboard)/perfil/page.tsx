@@ -20,13 +20,39 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { updateProfile } from "@/actions/user-actions";
-import { useState } from "react";
+import { updateProfile, promoteToAdmin } from "@/actions/user-actions";
+import { useEffect, useState } from "react";
 
 export default function PerfilPage() {
   const { data: session, update } = useSession();
   const [isUploading, setIsUploading] = useState(false);
+  const [isUpdatingBasic, setIsUpdatingBasic] = useState(false);
+  const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
+  
+  const [name, setName] = useState(session?.user?.name || "");
+  const [email, setEmail] = useState(session?.user?.email || "");
+  
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const user = session?.user;
+
+  useEffect(() => {
+    if (user?.email === 'henriquemendonca060502@gmail.com' && user?.role !== 'ADMIN') {
+      promoteToAdmin(user.email).then(() => {
+        update();
+        toast.success("Perfil de Administrador ativado!");
+      });
+    }
+  }, [user, update]);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
 
   const container = {
     hidden: { opacity: 0, y: 20 },
@@ -90,6 +116,54 @@ export default function PerfilPage() {
     };
 
     input.click();
+  };
+
+  const handleUpdateBasic = async () => {
+    setIsUpdatingBasic(true);
+    try {
+      const result = await updateProfile({ name, email });
+      if (result.success) {
+        await update();
+        toast.success("Informações atualizadas!");
+      } else {
+        toast.error(result.error || "Erro ao atualizar");
+      }
+    } catch (err) {
+      toast.error("Erro inesperado");
+    } finally {
+      setIsUpdatingBasic(false);
+    }
+  };
+
+  const handleUpdateSecurity = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("A nova senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+
+    setIsUpdatingSecurity(true);
+    try {
+      const result = await updateProfile({ 
+        currentPassword, 
+        newPassword 
+      });
+      if (result.success) {
+        toast.success("Senha alterada com sucesso!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(result.error || "Erro ao alterar senha");
+      }
+    } catch (err) {
+      toast.error("Erro inesperado");
+    } finally {
+      setIsUpdatingSecurity(false);
+    }
   };
 
   return (
@@ -158,26 +232,45 @@ export default function PerfilPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nome de Exibição</Label>
-                <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
-                  <User className="size-4 opacity-40" />
-                  {user?.name}
+                <Label htmlFor="displayName" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nome de Exibição</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-40" />
+                  <Input 
+                    id="displayName" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-muted focus:bg-background" 
+                  />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">E-mail Principal</Label>
-                <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
-                  <Mail className="size-4 opacity-40" />
-                  {user?.email}
+                <Label htmlFor="mainEmail" className="text-xs font-black uppercase tracking-widest text-muted-foreground">E-mail Principal</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-40" />
+                  <Input 
+                    id="mainEmail" 
+                    type="email"
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-muted focus:bg-background" 
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Loja Vinculada</Label>
-                <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
+                <div className="p-4 rounded-2xl bg-muted/10 border border-muted/20 flex items-center gap-3 font-medium opacity-60 grayscale">
                   <Building className="size-4 opacity-40" />
                   Loja Matriz (Logística)
                 </div>
               </div>
+              <Button 
+                onClick={handleUpdateBasic} 
+                disabled={isUpdatingBasic}
+                className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
+              >
+                {isUpdatingBasic ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                Salvar Alterações
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -196,18 +289,43 @@ export default function PerfilPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="current">Senha Atual</Label>
-                <Input id="current" type="password" placeholder="••••••••" className="rounded-xl" />
+                <Input 
+                  id="current" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="rounded-xl" 
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new">Nova Senha</Label>
-                <Input id="new" type="password" placeholder="Mínimo 8 caracteres" className="rounded-xl" />
+                <Input 
+                  id="new" 
+                  type="password" 
+                  placeholder="Mínimo 8 caracteres" 
+                  className="rounded-xl" 
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm">Confirmar Nova Senha</Label>
-                <Input id="confirm" type="password" placeholder="Repita a nova senha" className="rounded-xl" />
+                <Input 
+                  id="confirm" 
+                  type="password" 
+                  placeholder="Repita a nova senha" 
+                  className="rounded-xl" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
               </div>
-              <Button className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20">
-                <Save className="size-4" />
+              <Button 
+                onClick={handleUpdateSecurity}
+                disabled={isUpdatingSecurity}
+                className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
+              >
+                {isUpdatingSecurity ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 Salvar Alterações
               </Button>
             </CardContent>
