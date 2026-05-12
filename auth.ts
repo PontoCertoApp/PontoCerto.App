@@ -36,13 +36,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role as UserRole;
         token.lojaId = (user.lojaId ?? null) as string | null;
         token.teamId = (user.teamId ?? null) as string | null;
         token.colaboradorId = (user.colaboradorId ?? null) as string | null;
         token.name = user.name;
+      }
+      
+      if (trigger === "update" && token.sub) {
+        const dbUser = await prisma.user.findUnique({ 
+          where: { id: token.sub },
+          select: { role: true, name: true, email: true, image: true, lojaId: true, teamId: true, colaboradorId: true }
+        });
+        if (dbUser) {
+          token.role = dbUser.role as UserRole;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.image = dbUser.image;
+          token.lojaId = (dbUser.lojaId ?? null) as string | null;
+          token.teamId = (dbUser.teamId ?? null) as string | null;
+          token.colaboradorId = (dbUser.colaboradorId ?? null) as string | null;
+        }
       }
       return token;
     },

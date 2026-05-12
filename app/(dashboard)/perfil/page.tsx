@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { updateProfile, promoteToAdmin } from "@/actions/user-actions";
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 
 export default function PerfilPage() {
   const { data: session, update } = useSession();
@@ -98,7 +99,6 @@ export default function PerfilPage() {
         if (uploadResult.success) {
           const result = await updateProfile({ image: uploadResult.path });
           if (result.success) {
-            // Update the session to reflect the new image immediately
             await update({
               ...session,
               user: {
@@ -203,8 +203,10 @@ export default function PerfilPage() {
         <div className="flex flex-col items-center md:items-start gap-2 relative z-10">
           <div className="flex items-center gap-3">
              <h1 className="text-4xl font-black tracking-tight">{user?.name}</h1>
-             <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none font-bold uppercase tracking-widest text-[10px] px-3 py-1">
-               {user?.role}
+             <Badge className="bg-primary text-primary-foreground border-none font-bold uppercase tracking-widest text-[10px] px-3 py-1 shadow-lg shadow-primary/20">
+               {user?.role === 'ADMIN' ? 'Administrador' : 
+                user?.role === 'HR_STAFF' ? 'RH' : 
+                user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador'}
              </Badge>
           </div>
           <p className="text-muted-foreground text-lg flex items-center gap-2">
@@ -215,24 +217,29 @@ export default function PerfilPage() {
             <CheckCircle2 className="size-4 text-emerald-500" />
             <span className="text-xs font-bold text-emerald-500 uppercase tracking-tighter">Conta Verificada</span>
           </div>
-          
-          {user?.role === 'ADMIN' && (
-            <div className="flex items-center gap-2 mt-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold h-9 gap-2"
-                asChild
-              >
+        </div>
+      </motion.div>
+
+      {user?.role === 'ADMIN' && (
+        <motion.div variants={item} initial="hidden" animate="show">
+          <Card className="surface-card border-none premium-shadow bg-gradient-to-r from-primary/10 to-transparent">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="text-2xl font-black flex items-center gap-2">
+                  <Shield className="size-6 text-primary" />
+                  Painel de Administração
+                </CardTitle>
+                <CardDescription>Gerencie todos os usuários e permissões da plataforma.</CardDescription>
+              </div>
+              <Button asChild className="rounded-2xl font-bold h-12 px-8 shadow-xl shadow-primary/30">
                 <Link href="/config/usuarios">
-                  <UserCog className="size-4" />
                   Gerenciar Contas
                 </Link>
               </Button>
-            </div>
-          )}
-        </div>
-      </motion.div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+      )}
 
       <motion.div 
         variants={container}
@@ -245,11 +252,11 @@ export default function PerfilPage() {
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                  <Shield className="size-5" />
+                  <User className="size-5" />
                 </div>
                 <CardTitle className="text-xl font-bold">Informações Básicas</CardTitle>
               </div>
-              <CardDescription>Visualize seus dados de cadastro no PontoCerto.</CardDescription>
+              <CardDescription>Visualize e altere seus dados de acesso.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -278,7 +285,7 @@ export default function PerfilPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Loja Vinculada</Label>
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Unidade Vinculada</Label>
                 <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
                   <Building className="size-4 opacity-40" />
                   {user?.loja?.nome || "Sede (Administrativo)"}
@@ -290,7 +297,7 @@ export default function PerfilPage() {
                 className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
               >
                 {isUpdatingBasic ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Salvar Alterações
+                Salvar Informações
               </Button>
             </CardContent>
           </Card>
@@ -347,7 +354,7 @@ export default function PerfilPage() {
                 className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
               >
                 {isUpdatingSecurity ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Salvar Alterações
+                Salvar Nova Senha
               </Button>
             </CardContent>
           </Card>
