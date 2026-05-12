@@ -50,12 +50,6 @@ const items = [
     roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
-    title: "Gestão de Usuários",
-    url: "/config/usuarios",
-    icon: UserCog,
-    roles: ["ADMIN"],
-  },
-  {
     title: "Colaboradores",
     url: "/colaboradores",
     icon: Users,
@@ -110,9 +104,9 @@ const items = [
     roles: ["ADMIN", "HR_STAFF"],
   },
   {
-    title: "Gestão de Usuários",
+    title: "Administrador Geral",
     url: "/admin/usuarios",
-    icon: UserCog,
+    icon: Shield,
     roles: ["ADMIN"],
   },
 ];
@@ -126,9 +120,9 @@ export function AppSidebar() {
   function getRoleLabel(role?: string | null, email?: string | null): string {
     const roleLabel: Record<string, string> = {
       ADMIN: "ADMINISTRADOR",
-      STORE_MANAGER: "GESTOR DE LOJA",
-      HR_STAFF: "RH",
-      EMPLOYEE: "COLABORADOR",
+      STORE_MANAGER: "GESTOR DE UNIDADE",
+      HR_STAFF: "RECURSOS HUMANOS (RH)",
+      EMPLOYEE: "COLABORADOR PADRÃO",
     };
     
     // UI-LEVEL FORCE: Mestre sempre é Administrador
@@ -137,7 +131,7 @@ export function AppSidebar() {
     }
 
     const r = (role || "").toUpperCase();
-    return roleLabel[r] || "COLABORADOR";
+    return roleLabel[r] || "COLABORADOR PADRÃO";
   }
 
   return (
