@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Building2, MapPin, Pencil } from "lucide-react";
+import { Plus, Trash2, Building2, MapPin, Pencil, Store, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +49,7 @@ interface Loja {
   id: string;
   nome: string;
   cidade: string | null;
+  ativo?: boolean;
 }
 
 const lojaSchema = z.object({
@@ -60,6 +62,7 @@ export default function LojasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const form = useForm<z.infer<typeof lojaSchema>>({
     resolver: zodResolver(lojaSchema),
@@ -72,7 +75,7 @@ export default function LojasPage() {
   async function loadLojas() {
     setIsLoading(true);
     const data = await getLojas();
-    setLojas(data);
+    setLojas(data as Loja[]);
     setIsLoading(false);
   }
 
@@ -104,7 +107,7 @@ export default function LojasPage() {
     }
 
     if (result.success) {
-      toast.success(editingId ? "Loja atualizada!" : "Loja criada!");
+      toast.success(editingId ? "Unidade atualizada!" : "Unidade criada!");
       setIsDialogOpen(false);
       form.reset();
       loadLojas();
@@ -114,10 +117,10 @@ export default function LojasPage() {
   }
 
   async function handleDelete(id: string) {
-    if (confirm("Tem certeza que deseja excluir esta loja?")) {
+    if (confirm("Deseja realmente excluir esta unidade?")) {
       const result = await deleteLoja(id);
       if (result.success) {
-        toast.success("Loja excluída!");
+        toast.success("Unidade removida!");
         loadLojas();
       } else {
         toast.error(result.error as string);
@@ -125,39 +128,51 @@ export default function LojasPage() {
     }
   }
 
+  const filteredLojas = lojas.filter(l => 
+    l.nome.toLowerCase().includes(search.toLowerCase()) || 
+    (l.cidade || "").toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-8 space-y-8 max-w-[1400px] mx-auto min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lojas</h1>
-          <p className="text-muted-foreground">
-            Gerencie as unidades da empresa com total autonomia.
-          </p>
+          <h1 className="text-4xl font-black tracking-tight text-foreground flex items-center gap-3">
+            <Store className="size-10 text-primary" />
+            Unidades & Lojas
+          </h1>
+          <p className="text-muted-foreground mt-1 font-medium">Gestão geográfica e administrativa da PontoCerto.</p>
         </div>
+        
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleOpenCreate} className="shadow-lg shadow-primary/20">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Loja
+          <Button onClick={handleOpenCreate} className="rounded-2xl h-12 px-6 font-bold gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-transform active:scale-95">
+            <Plus className="size-5" />
+            Nova Unidade
           </Button>
-          <DialogContent className="rounded-3xl border-primary/20">
+          <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             <DialogHeader>
-              <DialogTitle>{editingId ? "Editar Loja" : "Cadastrar Nova Loja"}</DialogTitle>
-              <DialogDescription>
-                {editingId ? "Modifique os dados da unidade selecionada." : "Preencha os dados da nova unidade."}
-              </DialogDescription>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                {editingId ? <Pencil className="size-6 text-primary" /> : <Plus className="size-6 text-primary" />}
+                {editingId ? "Editar Unidade" : "Nova Unidade"}
+              </DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">Preencha os dados da unidade administrativa ou loja.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 relative z-10">
                 <FormField
                   control={form.control}
                   name="nome"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome da Loja</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome da Unidade</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Loja Centro" {...field} className="rounded-xl" />
+                        <div className="relative">
+                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                          <Input placeholder="Ex: Sede Administrativa" {...field} className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" />
+                        </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
@@ -165,18 +180,21 @@ export default function LojasPage() {
                   control={form.control}
                   name="cidade"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cidade / Localização</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: São Paulo" {...field} className="rounded-xl" />
+                        <div className="relative">
+                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                          <Input placeholder="Ex: Rio de Janeiro" {...field} className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" />
+                        </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
-                <DialogFooter>
-                  <Button type="submit" className="w-full sm:w-auto rounded-xl">
-                    {editingId ? "Salvar Alterações" : "Criar Loja"}
+                <DialogFooter className="pt-2">
+                  <Button type="submit" className="w-full rounded-2xl h-14 font-black text-lg gap-2 shadow-2xl shadow-primary/30">
+                    {editingId ? "Salvar Alterações" : "Criar Unidade"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -185,71 +203,106 @@ export default function LojasPage() {
         </Dialog>
       </div>
 
-      <Card className="rounded-3xl border-primary/5 shadow-xl overflow-hidden">
+      <Card className="surface-card border-none shadow-2xl overflow-hidden border-t-8 border-t-primary">
+        <CardHeader className="border-b bg-muted/10 pb-6 pt-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+             <CardTitle className="text-2xl font-black tracking-tight">Lista de Unidades</CardTitle>
+             <CardDescription className="font-medium">Todas as sedes e lojas cadastradas no sistema.</CardDescription>
+          </div>
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground opacity-50" />
+            <Input 
+              placeholder="Buscar unidade ou cidade..." 
+              className="pl-12 h-12 rounded-2xl bg-background border-none shadow-inner font-medium focus:ring-2 ring-primary/20"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6">Nome</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest">Cidade</TableHead>
-                <TableHead className="w-[120px] font-bold uppercase text-[10px] tracking-widest text-right px-6">Ações</TableHead>
+            <TableHeader className="bg-muted/50 border-b border-border/50">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16 pl-10">Nome da Unidade</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16">Localização</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16 text-center">Status</TableHead>
+                <TableHead className="w-[150px] font-black text-[10px] uppercase tracking-widest h-16 text-right pr-10">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="px-6"><Skeleton className="h-5 w-[200px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[150px]" /></TableCell>
-                    <TableCell className="px-6"><Skeleton className="h-5 w-[80px]" /></TableCell>
+              <AnimatePresence mode="popLayout">
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i} className="border-b border-border/50">
+                      <TableCell className="pl-10 py-6"><Skeleton className="h-6 w-[250px] rounded-lg" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-[150px] rounded-lg" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-5 w-[80px] mx-auto rounded-full" /></TableCell>
+                      <TableCell className="pr-10"><Skeleton className="h-8 w-8 ml-auto rounded-xl" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredLojas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-64 text-center">
+                       <div className="flex flex-col items-center justify-center gap-4 opacity-30">
+                          <Building2 className="size-16" />
+                          <p className="font-bold">Nenhuma unidade encontrada</p>
+                       </div>
+                    </TableCell>
                   </TableRow>
-                ))
-              ) : lojas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">
-                    Nenhuma loja cadastrada.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                lojas.map((loja) => (
-                  <TableRow key={loja.id} className="hover:bg-primary/5 transition-colors group">
-                    <TableCell className="font-medium px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-110">
-                          <Building2 className="h-4 w-4" />
+                ) : (
+                  filteredLojas.map((loja) => (
+                    <motion.tr 
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      key={loja.id} 
+                      className="group border-b border-border/50 hover:bg-muted/20 transition-all duration-300"
+                    >
+                      <TableCell className="font-black text-base pl-10 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform group-hover:bg-primary group-hover:text-white">
+                            <Building2 className="size-5" />
+                          </div>
+                          {loja.nome}
                         </div>
-                        <span className="text-sm">{loja.nome}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <MapPin className="h-4 w-4 text-primary/50" />
-                        <span className="text-xs font-semibold">{loja.cidade || "N/A"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
-                          onClick={() => handleEdit(loja)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
-                          onClick={() => handleDelete(loja.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 font-bold text-muted-foreground">
+                          <MapPin className="size-4 opacity-50" />
+                          {loja.cidade || "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                           <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                           <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Operacional</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="pr-10 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-primary hover:bg-primary/10 rounded-xl transition-all"
+                            onClick={() => handleEdit(loja)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                            onClick={() => handleDelete(loja.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </TableBody>
           </Table>
         </CardContent>

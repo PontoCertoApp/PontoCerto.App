@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Briefcase, DollarSign, Pencil } from "lucide-react";
+import { Plus, Trash2, Briefcase, DollarSign, Pencil, Search, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -51,7 +53,6 @@ import { createFuncao, getFuncoes, deleteFuncao, updateFuncao } from "@/actions/
 import { getSetores } from "@/actions/setor-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
 interface Funcao {
   id: string;
@@ -78,6 +79,7 @@ export default function FuncoesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const form = useForm<z.infer<typeof funcaoSchema>>({
     resolver: zodResolver(funcaoSchema),
@@ -90,13 +92,18 @@ export default function FuncoesPage() {
 
   async function loadData() {
     setIsLoading(true);
-    const [funcoesData, setoresData] = await Promise.all([
-      getFuncoes(),
-      getSetores(),
-    ]);
-    setFuncoes(funcoesData as any);
-    setSetores(setoresData);
-    setIsLoading(false);
+    try {
+      const [funcoesData, setoresData] = await Promise.all([
+        getFuncoes(),
+        getSetores(),
+      ]);
+      setFuncoes(funcoesData as any);
+      setSetores(setoresData);
+    } catch (err) {
+      toast.error("Erro ao carregar dados");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -149,94 +156,109 @@ export default function FuncoesPage() {
     }
   }
 
+  const filteredFuncoes = funcoes.filter(f => 
+    f.nome.toLowerCase().includes(search.toLowerCase()) || 
+    f.setor.nome.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="p-8 space-y-8 max-w-[1400px] mx-auto min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Funções <span className="text-primary">&</span> Cargos</h1>
-          <p className="text-muted-foreground">
-            Gerencie os cargos, salários base e atribuições de setor.
-          </p>
+          <h1 className="text-4xl font-black tracking-tight text-foreground flex items-center gap-3">
+            <ShieldCheck className="size-10 text-primary" />
+            Cargos & Salários
+          </h1>
+          <p className="text-muted-foreground mt-1 font-medium italic">Definição da estrutura hierárquica e financeira.</p>
         </div>
+        
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleOpenCreate} className="shadow-lg shadow-primary/20">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={handleOpenCreate} className="rounded-2xl h-12 px-6 font-bold gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-transform active:scale-95">
+            <Plus className="size-5" />
             Nova Função
           </Button>
-          <DialogContent className="rounded-3xl border-primary/20">
+          <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-8 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             <DialogHeader>
-              <DialogTitle>{editingId ? "Editar Cargo" : "Novo Cargo"}</DialogTitle>
-              <DialogDescription>
-                {editingId ? "Modifique as informações do cargo selecionado." : "Preencha os detalhes para criar um novo cargo."}
-              </DialogDescription>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                {editingId ? <Pencil className="size-6 text-primary" /> : <Plus className="size-6 text-primary" />}
+                {editingId ? "Editar Cargo" : "Novo Cargo"}
+              </DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">Especifique as atribuições e o salário base.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 relative z-10">
                 <FormField
                   control={form.control}
                   name="nome"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome da Função</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome da Função</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Vendedor" {...field} className="rounded-xl" />
+                        <div className="relative">
+                          <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                          <Input placeholder="Ex: Analista de RH" {...field} className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" />
+                        </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="setorId"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Setor Responsável</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Setor Responsável</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="rounded-xl">
+                          <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none focus:ring-0">
                             <SelectValue placeholder="Selecione o setor" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl">
+                        <SelectContent className="rounded-xl border-none shadow-2xl p-1">
                           {setores.map((setor) => (
-                            <SelectItem key={setor.id} value={setor.id}>
+                            <SelectItem key={setor.id} value={setor.id} className="rounded-lg h-10 font-medium">
                               {setor.nome}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
-                 <FormField
+
+                <FormField
                   control={form.control}
                   name="salarioBase"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Salário Base (R$)</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Salário Base (R$)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
                           <Input 
                             type="number" 
                             step="0.01" 
-                            placeholder="0.00"
-                            className="pl-9 rounded-xl"
+                            placeholder="0,00"
+                            className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
                             {...field}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
+                
                 <DialogFooter className="pt-2">
-                  <Button type="submit" className="w-full sm:w-auto rounded-xl">
+                  <Button type="submit" className="w-full rounded-2xl h-14 font-black text-lg gap-2 shadow-2xl shadow-primary/30">
                     {editingId ? "Salvar Alterações" : "Criar Cargo"}
                   </Button>
                 </DialogFooter>
@@ -246,78 +268,105 @@ export default function FuncoesPage() {
         </Dialog>
       </div>
 
-      <Card className="rounded-3xl border-primary/5 shadow-xl overflow-hidden">
+      <Card className="surface-card border-none shadow-2xl overflow-hidden border-t-8 border-t-primary">
+        <CardHeader className="border-b bg-muted/10 pb-6 pt-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+             <CardTitle className="text-2xl font-black tracking-tight">Lista de Funções</CardTitle>
+             <CardDescription className="font-medium">Definição de cargos e remuneração base.</CardDescription>
+          </div>
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground opacity-50" />
+            <Input 
+              placeholder="Buscar por cargo ou setor..." 
+              className="pl-12 h-12 rounded-2xl bg-background border-none shadow-inner font-medium focus:ring-2 ring-primary/20"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest px-6 py-4 text-primary">Função / Cargo</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-primary">Setor</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-primary">Salário Base</TableHead>
-                <TableHead className="w-[120px] font-bold uppercase text-[10px] tracking-widest text-right px-6 text-primary">Ações</TableHead>
+            <TableHeader className="bg-muted/50 border-b border-border/50">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16 pl-10">Função / Cargo</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16">Setor</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest h-16">Remuneração Base</TableHead>
+                <TableHead className="w-[150px] font-black text-[10px] uppercase tracking-widest h-16 text-right pr-10">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="px-6"><Skeleton className="h-5 w-[150px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-                    <TableCell className="px-6"><Skeleton className="h-5 w-[80px]" /></TableCell>
+              <AnimatePresence mode="popLayout">
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i} className="border-b border-border/50">
+                      <TableCell className="pl-10 py-6"><Skeleton className="h-6 w-[200px] rounded-lg" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-[120px] rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-[100px] rounded-lg" /></TableCell>
+                      <TableCell className="pr-10"><Skeleton className="h-8 w-8 ml-auto rounded-xl" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredFuncoes.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-64 text-center">
+                       <div className="flex flex-col items-center justify-center gap-4 opacity-30">
+                          <Briefcase className="size-16" />
+                          <p className="font-bold">Nenhuma função encontrada</p>
+                       </div>
+                    </TableCell>
                   </TableRow>
-                ))
-              ) : funcoes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
-                    Nenhum cargo cadastrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                funcoes.map((funcao) => (
-                  <TableRow key={funcao.id} className="hover:bg-primary/5 transition-colors group">
-                    <TableCell className="font-medium px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-110">
-                          <Briefcase className="h-4 w-4" />
+                ) : (
+                  filteredFuncoes.map((funcao) => (
+                    <motion.tr 
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      key={funcao.id} 
+                      className="group border-b border-border/50 hover:bg-muted/20 transition-all duration-300"
+                    >
+                      <TableCell className="font-black text-base pl-10 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 transition-transform group-hover:bg-primary group-hover:text-white">
+                            <Briefcase className="size-5" />
+                          </div>
+                          {funcao.nome}
                         </div>
-                        <span className="text-sm">{funcao.nome}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] uppercase font-black tracking-widest">
-                        {funcao.setor.nome}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 font-bold text-emerald-600">
-                        <span className="text-[10px] opacity-60">R$</span>
-                        {funcao.salarioBase.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-right">
-                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
-                          onClick={() => handleEdit(funcao)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
-                          onClick={() => handleDelete(funcao.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-muted text-muted-foreground font-black text-[9px] uppercase tracking-widest px-3 py-1 border-none">
+                          {funcao.setor.nome}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 font-black text-emerald-600 text-lg">
+                          <span className="text-[10px] opacity-40">R$</span>
+                          {funcao.salarioBase.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                      </TableCell>
+                      <TableCell className="pr-10 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-primary hover:bg-primary/10 rounded-xl transition-all"
+                            onClick={() => handleEdit(funcao)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                            onClick={() => handleDelete(funcao.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </TableBody>
           </Table>
         </CardContent>

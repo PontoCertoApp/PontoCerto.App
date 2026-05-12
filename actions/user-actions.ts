@@ -135,6 +135,7 @@ export const createUserByAdmin = createAction(
 export const updateUserDetails = createAction(
   z.object({
     userId: z.string(),
+    name: z.string().optional(),
     role: z.string().optional(),
     lojaId: z.string().nullable().optional(),
     teamId: z.string().nullable().optional(),
@@ -143,6 +144,7 @@ export const updateUserDetails = createAction(
   async (data) => {
     const { userId, ...updates } = data;
     const updateData: Record<string, unknown> = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.role !== undefined) updateData.role = updates.role;
     if (updates.lojaId !== undefined) updateData.lojaId = updates.lojaId;
     if (updates.teamId !== undefined) updateData.teamId = updates.teamId;

@@ -355,7 +355,7 @@ export default function PerfilPage() {
 
               <div className="grid gap-6 md:grid-cols-3">
                 <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
-                  <Link href="/config/usuarios">
+                  <Link href="/admin/usuarios">
                     <CardHeader className="p-6">
                       <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                         <Users className="size-6" />
