@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -208,9 +208,10 @@ export default function NovoColaboradorPage() {
     },
   });
 
-  // Derive display names from the loaded lists — no separate display-text state needed.
-  const currentLojaId = form.watch("lojaId") ?? "";
-  const currentTeamId = form.watch("teamId") ?? "";
+  // useWatch (not form.watch) guarantees a re-render whenever setValue is called,
+  // which is required for the Time field's disabled condition to update in time.
+  const currentLojaId = (useWatch({ control: form.control, name: "lojaId" }) as string) ?? "";
+  const currentTeamId = (useWatch({ control: form.control, name: "teamId" }) as string) ?? "";
   const selectedLojaName = lojas.find((l) => l.id === currentLojaId)?.nome ?? "";
   const selectedTimeName = times.find((t) => t.id === currentTeamId)?.nome ?? "";
 
