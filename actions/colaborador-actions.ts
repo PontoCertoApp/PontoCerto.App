@@ -72,7 +72,11 @@ export const createColaborador = createAction(
             setorId: setor.id,
             funcaoId: funcao.id,
             teamId: data.teamId || null,
-            dataNascimento: new Date(data.dataNascimento),
+            dataNascimento: (() => {
+              // Safe parsing: avoids timezone-shift bugs with "YYYY-MM-DD" strings
+              const [year, month, day] = data.dataNascimento.split("-").map(Number);
+              return new Date(year, month - 1, day, 12, 0, 0);
+            })(),
             email: data.email || null,
             status: ColaboradorStatus.EM_EXPERIENCIA,
           },
