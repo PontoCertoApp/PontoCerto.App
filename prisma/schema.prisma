@@ -28,9 +28,9 @@ model User {
   lojaId        String?
   loja          Loja?     @relation(fields: [lojaId], references: [id])
   teamId        String?
-  time          Time?     @relation(fields: [teamId], references: [id])
+  time          Time?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
   colaboradorId String?   @unique
-  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
+  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -70,7 +70,7 @@ model Colaborador {
   loja     Loja   @relation(fields: [lojaId], references: [id])
 
   teamId   String?
-  time     Time?  @relation(fields: [teamId], references: [id])
+  time     Time?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   user     User?
 
@@ -100,7 +100,7 @@ model Time {
   id            String        @id @default(cuid())
   nome          String
   lojaId        String
-  loja          Loja          @relation(fields: [lojaId], references: [id])
+  loja          Loja          @relation(fields: [lojaId], references: [id], onDelete: Cascade)
   ativo         Boolean       @default(true)
   colaboradores Colaborador[]
   usuarios      User[]
@@ -130,13 +130,13 @@ model Funcao {
 model Documento {
   id            String         @id @default(cuid())
   colaboradorId String
-  colaborador   Colaborador    @relation(fields: [colaboradorId], references: [id])
+  colaborador   Colaborador    @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   nome          String
   path          String
   status        String         @default("PENDENTE")
   observacao    String?
   validadoPorId String?
-  validadoPor   User?          @relation(fields: [validadoPorId], references: [id])
+  validadoPor   User?          @relation(fields: [validadoPorId], references: [id], onDelete: SetNull)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -144,7 +144,7 @@ model Documento {
 model Penalidade {
   id             String           @id @default(cuid())
   colaboradorId  String
-  colaborador    Colaborador      @relation(fields: [colaboradorId], references: [id])
+  colaborador    Colaborador      @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   tipo           String
   descricao      String
   dataOcorrencia DateTime
@@ -155,7 +155,7 @@ model Penalidade {
   notificacaoEnviada Boolean      @default(false)
 
   registroPontoId String?        @unique
-  registroPonto   RegistroPonto? @relation(fields: [registroPontoId], references: [id])
+  registroPonto   RegistroPonto? @relation(fields: [registroPontoId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -164,7 +164,7 @@ model Penalidade {
 model Premio {
   id            String       @id @default(cuid())
   colaboradorId String
-  colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id])
+  colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   tipo          String
   valorOriginal Float
   valorFinal    Float
@@ -172,7 +172,7 @@ model Premio {
   validadeAte    DateTime?
   status         String       @default("ATIVO")
   editadoPorId   String?
-  editadoPor     User?        @relation("EditadoPor", fields: [editadoPorId], references: [id])
+  editadoPor     User?        @relation("EditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
   observacao     String?
 
   createdAt DateTime @default(now())
@@ -181,7 +181,7 @@ model Premio {
 model RegistroPonto {
   id             String               @id @default(cuid())
   colaboradorId  String
-  colaborador    Colaborador          @relation(fields: [colaboradorId], references: [id])
+  colaborador    Colaborador          @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   data           DateTime
   tipo           String?
   justificativa  String?
@@ -193,7 +193,7 @@ model RegistroPonto {
   criadoPorId    String
   criadoPor      User                 @relation("CriadoPor", fields: [criadoPorId], references: [id])
   lojaId         String?
-  loja           Loja?                @relation(fields: [lojaId], references: [id])
+  loja           Loja?                @relation(fields: [lojaId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 }
@@ -201,7 +201,7 @@ model RegistroPonto {
 model ControleUniforme {
   id             String      @id @default(cuid())
   colaboradorId  String
-  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id])
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   item           String
   tamanho        String
   dataRecebimento DateTime
@@ -215,7 +215,7 @@ model ControleUniforme {
 model EstoqueUniforme {
   id      String @id @default(cuid())
   lojaId  String
-  loja    Loja   @relation(fields: [lojaId], references: [id])
+  loja    Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
   item    String
   tamanho String
   quantidade Int @default(0)

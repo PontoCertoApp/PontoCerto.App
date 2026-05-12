@@ -58,7 +58,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
     sendBoasVindas(result.user.email as string, {
       nomeUsuario: result.user.name || "Usuário",
       empresa: result.loja.nome,
-      loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://pontocertoapp-pontocertoapp.xyzjfn.easypanel.host"}/login`
+      loginUrl: `${process.env.NEXT_PUBLIC_APP_URL}/login`
     }).catch(err => console.error("[WELCOME_EMAIL_ERROR]:", err));
 
     return { 

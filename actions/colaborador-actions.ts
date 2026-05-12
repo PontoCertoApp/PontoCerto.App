@@ -121,7 +121,7 @@ export const createColaborador = createAction(
         sendBoasVindas(colaborador.email, {
           nomeUsuario: colaborador.nomeCompleto,
           empresa: loja?.nome ?? "PontoCerto",
-          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://pontocertoapp-pontocertoapp.xyzjfn.easypanel.host"}/login`,
+          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
         }).catch(() => {});
       }
 
@@ -191,6 +191,7 @@ export async function getColaboradores() {
     where,
     include: { funcao: true, loja: true, setor: true },
     orderBy: { createdAt: "desc" },
+    take: 500,
   });
 }
 
@@ -232,15 +233,12 @@ export const deleteColaborador = createAction(
   ["ADMIN", "HR_STAFF"],
   async (id) => {
     try {
-      await prisma.$transaction([
-        prisma.documento.deleteMany({ where: { colaboradorId: id } }),
-        prisma.penalidade.deleteMany({ where: { colaboradorId: id } }),
-        prisma.premio.deleteMany({ where: { colaboradorId: id } }),
-        prisma.controleUniforme.deleteMany({ where: { colaboradorId: id } }),
-        prisma.registroPonto.deleteMany({ where: { colaboradorId: id } }),
-        prisma.user.deleteMany({ where: { colaboradorId: id } }),
-        prisma.colaborador.delete({ where: { id } }),
-      ]);
+      await prisma.$transaction(async (tx) => {
+        // Delete user account first (has a non-nullable FK to other records that would block cascade)
+        await tx.user.deleteMany({ where: { colaboradorId: id } });
+        // Schema cascades handle: Documento, Penalidade, Premio, ControleUniforme, RegistroPonto
+        await tx.colaborador.delete({ where: { id } });
+      });
       revalidatePath("/colaboradores");
       return { success: true };
     } catch (error) {

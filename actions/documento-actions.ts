@@ -60,7 +60,7 @@ export async function notificarDocumentoPendente(documentoId: string, dataLimite
       colaboradorNome: doc.colaborador.nomeCompleto,
       nomeDocumento: doc.nome,
       dataLimite,
-      linkAssinatura: `${process.env.NEXT_PUBLIC_APP_URL || "https://pontocertoapp-pontocertoapp.xyzjfn.easypanel.host"}/colaboradores/${doc.colaboradorId}`,
+      linkAssinatura: `${process.env.NEXT_PUBLIC_APP_URL}/colaboradores/${doc.colaboradorId}`,
     });
 
     return { success: true };

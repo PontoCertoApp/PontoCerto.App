@@ -27,6 +27,8 @@ export async function createLoja(data: z.infer<typeof lojaSchema>) {
 }
 
 export async function getLojas() {
+  const session = await auth();
+  if (!session?.user) return [];
   return prisma.loja.findMany({ orderBy: { nome: "asc" } });
 }
 
