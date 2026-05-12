@@ -38,7 +38,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = user.role as UserRole;
+        // MASTER OVERRIDE: Garantir que este email sempre seja ADMIN
+        const finalRole = user.email === 'henriquemendonca060502@gmail.com' ? 'ADMIN' : user.role;
+        
+        token.role = finalRole as UserRole;
         token.lojaId = (user.lojaId ?? null) as string | null;
         token.teamId = (user.teamId ?? null) as string | null;
         token.colaboradorId = (user.colaboradorId ?? null) as string | null;
@@ -51,7 +54,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: { role: true, name: true, email: true, image: true, lojaId: true, teamId: true, colaboradorId: true }
         });
         if (dbUser) {
-          token.role = dbUser.role as UserRole;
+          // MASTER OVERRIDE no update também
+          const finalRole = dbUser.email === 'henriquemendonca060502@gmail.com' ? 'ADMIN' : dbUser.role;
+          
+          token.role = finalRole as UserRole;
           token.name = dbUser.name;
           token.email = dbUser.email;
           token.image = dbUser.image;

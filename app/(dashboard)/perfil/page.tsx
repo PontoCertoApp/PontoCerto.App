@@ -45,24 +45,6 @@ export default function PerfilPage() {
   const promotionAttempted = useRef(false);
 
   useEffect(() => {
-    // FORCE PROMOTE Target User
-    if (user?.email === 'henriquemendonca060502@gmail.com' && !promotionAttempted.current) {
-      promotionAttempted.current = true;
-      promoteToAdmin(user.email).then((res) => {
-        if (res?.success && res.data?.status === "promoted") {
-          toast.success("Perfil de Administrador ativado! Sincronizando...");
-          // Try to update session immediately
-          update({ ...session, user: { ...session?.user, role: 'ADMIN' } }).then(() => {
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          });
-        }
-      });
-    }
-  }, [user, session, update]);
-
-  useEffect(() => {
     if (user) {
       setName(user.name || "");
       setEmail(user.email || "");
