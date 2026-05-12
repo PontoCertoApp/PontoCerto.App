@@ -113,8 +113,9 @@ export default function UserManagementPage() {
       if (usersRes?.success) setUsers(usersRes.data || []);
       setLojas(lojasRes || []);
       setTimes(timesRes || []);
-    } catch (err) {
-      toast.error("Erro ao carregar dados");
+    } catch (err: any) {
+      console.error("ERRO NO FETCH DATA:", err);
+      toast.error(`Erro ao carregar dados: ${err?.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
     }

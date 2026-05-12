@@ -93,10 +93,16 @@ export const getUsers = createAction(
   z.undefined(),
   ["ADMIN"],
   async () => {
-    return prisma.user.findMany({
-      include: { loja: true, time: true },
-      orderBy: { createdAt: "desc" },
-    });
+    try {
+      const users = await prisma.user.findMany({
+        include: { loja: true, time: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return users;
+    } catch (err: any) {
+      console.error("ERRO EM getUsers:", err);
+      throw new Error(`Falha ao buscar usuários: ${err?.message || "Erro desconhecido"}`);
+    }
   }
 );
 

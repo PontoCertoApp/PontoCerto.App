@@ -74,9 +74,15 @@ export default function LojasPage() {
 
   async function loadLojas() {
     setIsLoading(true);
-    const data = await getLojas();
-    setLojas(data as Loja[]);
-    setIsLoading(false);
+    try {
+      const data = await getLojas();
+      setLojas(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error("ERRO AO CARREGAR LOJAS:", err);
+      toast.error(`Erro ao carregar unidades: ${err?.message || "Erro desconhecido"}`);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {

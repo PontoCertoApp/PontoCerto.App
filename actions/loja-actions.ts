@@ -29,7 +29,12 @@ export async function createLoja(data: z.infer<typeof lojaSchema>) {
 export async function getLojas() {
   const session = await auth();
   if (!session?.user) return [];
-  return prisma.loja.findMany({ orderBy: { nome: "asc" } });
+  try {
+    return await prisma.loja.findMany({ orderBy: { nome: "asc" } });
+  } catch (err: any) {
+    console.error("ERRO EM getLojas:", err);
+    return [];
+  }
 }
 
 export async function deleteLoja(id: string) {

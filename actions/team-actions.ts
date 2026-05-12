@@ -50,10 +50,15 @@ export async function getTimes(lojaId?: string) {
 export async function getTimesAll() {
   const session = await auth();
   if (!session?.user) return [];
-  return prisma.time.findMany({
-    include: { loja: true },
-    orderBy: [{ loja: { nome: "asc" } }, { nome: "asc" }],
-  });
+  try {
+    return await prisma.time.findMany({
+      include: { loja: true },
+      orderBy: [{ loja: { nome: "asc" } }, { nome: "asc" }],
+    });
+  } catch (err: any) {
+    console.error("ERRO EM getTimesAll:", err);
+    return [];
+  }
 }
 
 export async function updateTime(id: string, data: z.infer<typeof timeSchema>) {
