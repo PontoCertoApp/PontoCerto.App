@@ -123,8 +123,11 @@ function ComboboxField({
     // Delay so a click on a suggestion fires before the blur closes the list.
     setTimeout(() => {
       setShowSuggestions(false);
-      // Restore to confirmed selection name, or empty if nothing is selected.
-      setInputText(selectedName);
+      // Only sync text with the confirmed name if something is actually selected.
+      // If nothing is selected, keep whatever the user typed (don't wipe it).
+      if (selectedId) {
+        setInputText(selectedName);
+      }
     }, 150);
   }
 
