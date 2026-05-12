@@ -291,34 +291,45 @@ export default function UserManagementPage() {
                    />
                  </div>
                </div>
-
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="grid gap-2">
-                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Perfil</Label>
-                   <Select value={formData.role} onValueChange={val => setFormData({...formData, role: val})}>
-                     <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none focus:ring-0">
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                       <SelectItem value="ADMIN" className="rounded-lg h-10 font-bold text-primary">ADMINISTRADOR</SelectItem>
-                       <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-bold">RECURSOS HUMANOS (RH)</SelectItem>
-                       <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-bold">GESTOR DE UNIDADE</SelectItem>
-                       <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-bold">COLABORADOR PADRÃO</SelectItem>
-                     </SelectContent>
-                   </Select>
+               
+               <div className="grid gap-3">
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
+                 <div className="grid grid-cols-2 gap-3">
+                   {[
+                     { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary', bg: 'bg-primary/10' },
+                     { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                     { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                     { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                   ].map((role) => (
+                     <button
+                       key={role.id}
+                       type="button"
+                       onClick={() => setFormData({ ...formData, role: role.id })}
+                       className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all gap-2 h-24 ${
+                         formData.role === role.id 
+                         ? `border-primary bg-primary/5 scale-105 shadow-lg` 
+                         : 'border-transparent bg-muted/30 hover:bg-muted/50 grayscale opacity-70'
+                       }`}
+                     >
+                       <role.icon className={`size-6 ${role.color}`} />
+                       <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                         {role.label}
+                       </span>
+                     </button>
+                   ))}
                  </div>
-                 
-                 <div className="grid gap-2">
-                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
-                   <div className="relative">
-                     <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                     <Input 
-                       value={formData.unidade} 
-                       onChange={e => setFormData({...formData, unidade: e.target.value})}
-                       className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                       placeholder="Digite o nome da unidade"
-                     />
-                   </div>
+               </div>
+               
+               <div className="grid gap-2">
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
+                 <div className="relative">
+                   <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                   <Input 
+                     value={formData.unidade} 
+                     onChange={e => setFormData({...formData, unidade: e.target.value})}
+                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                     placeholder="Ex: Matriz Rio, Filial Centro..."
+                   />
                  </div>
                </div>
              </div>
@@ -564,52 +575,78 @@ export default function UserManagementPage() {
                />
              </div>
 
-             <div className="grid gap-4 md:grid-cols-2">
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Perfil / Cargo</Label>
-                 <Select value={formData.role} onValueChange={val => setFormData({...formData, role: val})}>
-                   <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                     <SelectItem value="ADMIN" className="rounded-lg h-10 font-bold text-primary">ADMINISTRADOR</SelectItem>
-                     <SelectItem value="HR_STAFF" className="rounded-lg h-10 font-bold">RECURSOS HUMANOS (RH)</SelectItem>
-                     <SelectItem value="STORE_MANAGER" className="rounded-lg h-10 font-bold">GESTOR DE UNIDADE</SelectItem>
-                     <SelectItem value="EMPLOYEE" className="rounded-lg h-10 font-bold">COLABORADOR PADRÃO</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
-               
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
-                 <div className="relative">
+            <div className="grid gap-6 py-6">
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Input 
+                    value={formData.name} 
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary' },
+                    { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500' },
+                    { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500' },
+                    { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500' },
+                  ].map((role) => (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: role.id })}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all gap-1.5 h-20 ${
+                        formData.role === role.id 
+                        ? `border-primary bg-primary/5 scale-105 shadow-md` 
+                        : 'border-transparent bg-muted/30 hover:bg-muted/50 opacity-60'
+                      }`}
+                    >
+                      <role.icon className={`size-5 ${role.color}`} />
+                      <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {role.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
+                  <div className="relative">
                     <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
                     <Input 
                       value={formData.unidade} 
                       onChange={e => setFormData({...formData, unidade: e.target.value})}
                       className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
                     />
-                 </div>
-               </div>
+                  </div>
+                </div>
 
-               <div className="grid gap-2 md:col-span-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
-                 <Select value={formData.teamId} onValueChange={val => setFormData({...formData, teamId: val})}>
-                   <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                     <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Nenhum Time</SelectItem>
-                     {times.map(t => (
-                       <SelectItem key={t.id} value={t.id} className="rounded-lg h-10 font-medium">
-                         {t.nome} {t.loja?.nome ? `(${t.loja.nome})` : ""}
-                       </SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-               </div>
-             </div>
-           </div>
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
+                  <Select value={formData.teamId} onValueChange={val => setFormData({...formData, teamId: val})}>
+                    <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-none shadow-2xl p-1">
+                      <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Nenhum Time</SelectItem>
+                      {times.map(t => (
+                        <SelectItem key={t.id} value={t.id} className="rounded-lg h-10 font-medium">
+                          {t.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
            
            <DialogFooter className="mt-4 gap-3 sm:gap-0">
              <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-xl h-12 font-bold">Cancelar</Button>
