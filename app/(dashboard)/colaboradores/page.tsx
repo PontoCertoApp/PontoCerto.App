@@ -283,29 +283,37 @@ export default function ColaboradoresPage() {
                     {StatusBadge(c.status)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem onClick={() => router.push(`/colaboradores/${c.id}`)}>
-                          <Eye className="mr-2 h-4 w-4" /> Ver Perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/colaboradores/${c.id}`)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          variant="destructive" 
-                          onClick={() => setColabToDelete(c)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        title="Ver Perfil"
+                        onClick={() => router.push(`/colaboradores/${c.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        title="Editar"
+                        onClick={() => router.push(`/colaboradores/${c.id}`)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        title="Excluir"
+                        onClick={() => setColabToDelete(c)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))
             )}
