@@ -7,6 +7,19 @@ export type ActionState<T> = {
   error?: string;
 };
 
+/**
+ * Normalizes legacy role strings to the new RBAC system.
+ * Ensures backward-compatibility for users created before the RBAC migration.
+ */
+function normalizeRole(role: string | undefined | null): string {
+  if (!role) return "";
+  const upper = role.toUpperCase();
+  if (upper === "RH") return "HR_STAFF";
+  if (upper === "GERENTE") return "STORE_MANAGER";
+  if (upper === "COLABORADOR") return "EMPLOYEE";
+  return upper;
+}
+
 export async function safeAction<T, S extends z.ZodType>(
   schema: S | null,
   handler: (data: z.infer<S>, session: any) => Promise<T>,
@@ -18,17 +31,12 @@ export async function safeAction<T, S extends z.ZodType>(
       return { success: false, error: "Não autorizado" };
     }
 
-    if (allowedRoles && !allowedRoles.includes(session.user.role as string)) {
+    const normalizedRole = normalizeRole(session.user.role as string);
+    if (allowedRoles && !allowedRoles.includes(normalizedRole)) {
       return { success: false, error: "Permissão insuficiente" };
     }
 
-    let validatedData = {} as any;
-    if (schema) {
-      const result = schema.safeParse(await schema.parseAsync({})); // This is a placeholder logic, usually we pass data to the wrapper
-      // For Next.js Server Actions, we usually wrap the handler
-    }
-
-    return { success: true }; // This wrapper needs to be more functional
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Erro desconhecido" };
   }
@@ -43,7 +51,11 @@ export const createAction = <T, S extends z.ZodType>(
   return async (data: z.infer<S>): Promise<ActionState<T>> => {
     const session = await auth();
     if (!session?.user) return { success: false, error: "Não autenticado" };
-    if (roles && !roles.includes(session.user.role as string)) {
+
+    // Normalize legacy roles before checking permissions
+    const normalizedRole = normalizeRole(session.user.role as string);
+
+    if (roles && !roles.includes(normalizedRole)) {
       return { success: false, error: "Permissão negada" };
     }
 
