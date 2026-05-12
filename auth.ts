@@ -40,6 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = user.role as UserRole;
         token.lojaId = (user.lojaId ?? null) as string | null;
+        token.teamId = (user.teamId ?? null) as string | null;
         token.colaboradorId = (user.colaboradorId ?? null) as string | null;
         token.name = user.name;
       }
@@ -52,6 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.role = (token.role ?? "EMPLOYEE") as UserRole;
         session.user.lojaId = (token.lojaId ?? null) as string | null;
+        session.user.teamId = (token.teamId ?? null) as string | null;
         session.user.colaboradorId = (token.colaboradorId ?? null) as string | null;
         session.user.name = token.name as string;
       }

@@ -46,6 +46,7 @@ import { getLojas } from "@/actions/loja-actions";
 import { getSetores } from "@/actions/setor-actions";
 import { getFuncoes } from "@/actions/funcao-actions";
 import { createColaborador } from "@/actions/colaborador-actions";
+import { getTimes } from "@/actions/team-actions";
 
 const steps = [
   { id: 1, title: "Dados Pessoais", icon: User },
@@ -63,6 +64,7 @@ const formSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   
   lojaId: z.string().optional(),
+  teamId: z.string().optional(),
   setorNome: z.string().min(1, "Obrigatório"),
   funcaoNome: z.string().min(1, "Obrigatório"),
   agenciaBB: z.string().min(4, "Agência inválida"),
@@ -88,6 +90,7 @@ export default function NovoColaboradorPage() {
   const [lojas, setLojas] = useState<any[]>([]);
   const [setores, setSetores] = useState<any[]>([]);
   const [funcoes, setFuncoes] = useState<any[]>([]);
+  const [times, setTimes] = useState<any[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -100,6 +103,7 @@ export default function NovoColaboradorPage() {
       telefoneSecundario: "",
       email: "",
       lojaId: "",
+      teamId: "",
       setorNome: "",
       funcaoNome: "",
       agenciaBB: "",
@@ -115,18 +119,29 @@ export default function NovoColaboradorPage() {
         getSetores(),
         getFuncoes()
       ]);
-      
+
       setLojas(lojasData);
       setSetores(setoresData);
       setFuncoes(funcoesData);
 
-      // Auto-select first loja if available
       if (lojasData.length > 0) {
-        form.setValue("lojaId", lojasData[0].id);
+        const firstLojaId = lojasData[0].id;
+        form.setValue("lojaId", firstLojaId);
+        const timesData = await getTimes(firstLojaId);
+        setTimes(timesData as any[]);
       }
     }
     loadData();
   }, []);
+
+  const watchedLojaId = form.watch("lojaId");
+  useEffect(() => {
+    if (!watchedLojaId) { setTimes([]); return; }
+    getTimes(watchedLojaId).then((data) => {
+      setTimes(data as any[]);
+      form.setValue("teamId", "");
+    });
+  }, [watchedLojaId]);
 
   const progress = (currentStep / steps.length) * 100;
 
@@ -349,6 +364,48 @@ export default function NovoColaboradorPage() {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="lojaId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Loja</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {lojas.map((l) => (
+                                    <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="teamId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Time</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={times.length === 0}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={times.length === 0 ? "Selecione a loja primeiro" : "Selecione o time"} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {times.map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         <FormField
                           control={form.control}
                           name="setorNome"

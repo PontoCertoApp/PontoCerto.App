@@ -6,6 +6,7 @@ import { PenalidadeStatus, PenalidadeTipo } from "@/lib/enums";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { sendPenalidadeAplicada } from "@/lib/email/send";
+import { getScope, viaColaboradorScope } from "@/lib/scope";
 
 const penalidadeSchema = z.object({
   colaboradorId: z.string(),
@@ -30,13 +31,12 @@ export async function createPenalidade(data: z.infer<typeof penalidadeSchema>) {
         tipo: data.tipo,
         descricao: data.motivo,
         dataOcorrencia: data.dataOcorrencia,
-        validadeAte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // Default 90 days validity
+        validadeAte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         geradoPorId: session.user.id,
         status: PenalidadeStatus.ATIVA,
       },
     });
 
-    // Notify collaborator via email
     if (colaborador?.email) {
       sendPenalidadeAplicada(colaborador.email, {
         colaboradorNome: colaborador.nomeCompleto,
@@ -56,51 +56,34 @@ export async function createPenalidade(data: z.infer<typeof penalidadeSchema>) {
 }
 
 export async function getPenalidades() {
-  const session = await auth();
-  if (!session?.user) return [];
+  const scope = await getScope();
+  if (!scope) return [];
 
-  const role = session.user.role?.toUpperCase();
-  const isRH = role === "ADMIN" || role === "HR_STAFF";
-  const filter = isRH ? {} : { colaborador: { lojaId: session.user.lojaId } };
+  const filter = viaColaboradorScope(scope);
 
-  return await prisma.penalidade.findMany({
+  return prisma.penalidade.findMany({
     where: filter,
-    include: {
-      colaborador: {
-        include: {
-          loja: true,
-        },
-      },
-      geradoPor: true,
-    },
+    include: { colaborador: { include: { loja: true, time: true } }, geradoPor: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function checkPenalidadeProgression(colaboradorId: string) {
   const history = await prisma.penalidade.findMany({
-    where: { 
-      colaboradorId, 
-      status: PenalidadeStatus.ATIVA,
-      tipo: { in: [PenalidadeTipo.ADVERTENCIA, PenalidadeTipo.SUSPENSAO] }
-    },
+    where: { colaboradorId, status: PenalidadeStatus.ATIVA, tipo: { in: [PenalidadeTipo.ADVERTENCIA, PenalidadeTipo.SUSPENSAO] } },
     orderBy: { createdAt: "desc" },
   });
 
-  const countAdvertencia = history.filter(p => p.tipo === PenalidadeTipo.ADVERTENCIA).length;
-  const countSuspensao = history.filter(p => p.tipo === PenalidadeTipo.SUSPENSAO).length;
+  const countAdvertencia = history.filter((p) => p.tipo === PenalidadeTipo.ADVERTENCIA).length;
+  const countSuspensao = history.filter((p) => p.tipo === PenalidadeTipo.SUSPENSAO).length;
 
   if (countSuspensao >= 1) return "Sugestão: Demissão por justa causa (Histórico crítico)";
   if (countAdvertencia >= 2) return "Sugestão: Suspensão (2 advertências ativas)";
   if (countAdvertencia === 1) return "Sugestão: Advertência (1 advertência ativa)";
-  
   return "Sugestão: Advertência inicial";
 }
 
 export async function updatePenalidadeStatus(id: string, status: PenalidadeStatus) {
-  await prisma.penalidade.update({
-    where: { id },
-    data: { status },
-  });
+  await prisma.penalidade.update({ where: { id }, data: { status } });
   revalidatePath("/penalidades");
 }

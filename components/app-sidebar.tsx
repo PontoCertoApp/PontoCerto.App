@@ -92,6 +92,7 @@ const items = [
     items: [
       { title: "Funções", url: "/config/funcoes", roles: ["ADMIN", "HR_STAFF"] },
       { title: "Lojas", url: "/config/lojas", roles: ["ADMIN"] },
+      { title: "Times", url: "/config/times", roles: ["ADMIN", "HR_STAFF"] },
       { title: "Setores", url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
     ],
   },

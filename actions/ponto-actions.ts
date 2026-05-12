@@ -6,7 +6,7 @@ import { z } from "zod";
 import { PontoStatus, PontoInconformidade, PenalidadeTipo, PenalidadeStatus } from "@/lib/enums";
 import { auth } from "@/auth";
 import { sendPontoNotification } from "@/lib/email/send";
-import { startOfDay, endOfDay } from "date-fns";
+import { getScope, pontoScope, colaboradorScope } from "@/lib/scope";
 
 const registroPontoSchema = z.object({
   colaboradorId: z.string(),
@@ -21,13 +21,10 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   const session = await auth();
   if (!session?.user) return { success: false, error: "Não autorizado" };
   const userId = session.user.id!;
-  
-  console.log("[PONTO_REG] User:", session.user.email, "Role:", session.user.role, "LojaId:", session.user.lojaId);
 
   try {
-    // A data vem como string YYYY-MM-DD do frontend agora
-    const dataISO = typeof data.data === 'string' ? data.data.split('T')[0] : data.data.toISOString().split('T')[0];
-    const dataPonto = new Date(`${dataISO}T12:00:00.000Z`); // Meio-dia UTC para evitar problemas de borda
+    const dataISO = typeof data.data === "string" ? (data.data as string).split("T")[0] : data.data.toISOString().split("T")[0];
+    const dataPonto = new Date(`${dataISO}T12:00:00.000Z`);
     const isManual = data.colaboradorId === "MANUAL";
     let colaborador = null;
     let lojaId = session.user.lojaId || null;
@@ -40,26 +37,21 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
       if (!colaborador) throw new Error("Colaborador não encontrado");
       lojaId = colaborador.lojaId;
     } else if (data.manualName) {
-      // Tenta encontrar por nome exato para evitar duplicidade de "Manual" vs "Existente"
       colaborador = await prisma.colaborador.findFirst({
         where: { nomeCompleto: { equals: data.manualName.trim(), mode: "insensitive" } },
         select: { id: true, nomeCompleto: true, email: true, lojaId: true },
       });
-      if (colaborador) {
-        lojaId = colaborador.lojaId;
-      }
+      if (colaborador) lojaId = colaborador.lojaId;
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // Se encontramos o colaborador (mesmo vindo como MANUAL), usamos o ID dele.
-      // Se NÃO encontramos, e a schema exige um ID, somos obrigados a usar o do criador (Admin).
       const finalColabId = colaborador ? colaborador.id : userId;
 
       const registro = await tx.registroPonto.create({
         data: {
           colaboradorId: finalColabId,
-          lojaId: lojaId,
-          data: dataPonto, // Usando a data normalizada
+          lojaId,
+          data: dataPonto,
           tipo: data.tipo,
           justificativa: !colaborador ? `[MANUAL: ${data.manualName}] ${data.justificativa || ""}` : data.justificativa,
           status: PontoStatus.INCONSISTENTE,
@@ -68,11 +60,8 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
         },
       });
 
-      // SÓ gera RAP se for um tipo negativo e o usuário explicitamente marcou
       const tiposNegativos = ["FALTA_INJUSTIFICADA", "ATRASO", "SAIDA_ANTECIPADA", "PONTO_NAO_REGISTRADO"];
-      const deveGerarRap = data.gerarRap && tiposNegativos.includes(data.tipo);
-
-      if (deveGerarRap) {
+      if (data.gerarRap && tiposNegativos.includes(data.tipo)) {
         await tx.penalidade.create({
           data: {
             colaboradorId: finalColabId,
@@ -90,7 +79,6 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
       return registro;
     });
 
-    // Fire-and-forget email notification
     if (colaborador?.email) {
       sendPontoNotification(colaborador.email, {
         colaboradorNome: colaborador.nomeCompleto,
@@ -112,27 +100,21 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
 
 export async function getInconformidadesDoDia(data: Date) {
   try {
-    const session = await auth();
-    if (!session?.user) return [];
+    const scope = await getScope();
+    if (!scope) return [];
 
-    // Se não passar data, traz os últimos 100 de sempre
-    const where: any = {};
+    const where: any = { ...pontoScope(scope) };
+
     if (data) {
-      const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
-      const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
-      const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
-      where.data = { gte: inicioDia, lte: fimDia };
+      const dataISO = typeof data === "string" ? (data as string).split("T")[0] : (data as any).toISOString().split("T")[0];
+      where.data = { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) };
     }
 
-    return await prisma.registroPonto.findMany({
+    return prisma.registroPonto.findMany({
       where,
-      include: {
-        colaborador: {
-          include: { loja: true, setor: true }
-        }
-      },
+      include: { colaborador: { include: { loja: true, setor: true, time: true } } },
       orderBy: { createdAt: "desc" },
-      take: 100
+      take: 100,
     });
   } catch (error) {
     console.error("Erro ao buscar registros do dia:", error);
@@ -142,29 +124,21 @@ export async function getInconformidadesDoDia(data: Date) {
 
 export async function getColaboradoresSemPontoNoDia(data: Date) {
   try {
-    // A data vem como string YYYY-MM-DD
-    const dataISO = typeof data === 'string' ? data.split('T')[0] : (data as any).toISOString().split('T')[0];
-    const inicioDia = new Date(`${dataISO}T00:00:00.000Z`);
-    const fimDia = new Date(`${dataISO}T23:59:59.999Z`);
+    const scope = await getScope();
+    if (!scope) return [];
 
+    const dataISO = typeof data === "string" ? (data as string).split("T")[0] : (data as any).toISOString().split("T")[0];
     const registrosNoDia = await prisma.registroPonto.findMany({
-      where: {
-        data: { gte: inicioDia, lte: fimDia }
-      },
+      where: { data: { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) } },
       select: { colaboradorId: true },
     });
 
     const idsRegistrados = registrosNoDia.map((r) => r.colaboradorId);
+    const baseFilter = colaboradorScope(scope);
 
-    return await prisma.colaborador.findMany({
-      where: {
-        id: { notIn: idsRegistrados },
-      },
-      include: {
-        loja: true,
-        funcao: true,
-        setor: true,
-      },
+    return prisma.colaborador.findMany({
+      where: { ...baseFilter, id: { notIn: idsRegistrados } },
+      include: { loja: true, funcao: true, setor: true, time: true },
       orderBy: { nomeCompleto: "asc" },
     });
   } catch (error) {
@@ -175,85 +149,58 @@ export async function getColaboradoresSemPontoNoDia(data: Date) {
 
 export async function getTotalAtivos() {
   try {
-    const session = await auth();
-    if (!session?.user) return 0;
-    
-    const role = (session.user.role || "").toUpperCase();
-    const isRH = role === "ADMIN" || role === "HR_STAFF";
-    const lojaId = session.user.lojaId;
-
-    const where: any = {};
-
-    if (!isRH) {
-      if (!lojaId) return 0;
-      where.lojaId = lojaId;
-    }
-    
-    return await prisma.colaborador.count({ where });
-  } catch (error) {
-    console.error("[GET_TOTAL_ATIVOS_ERROR]:", error);
+    const scope = await getScope();
+    if (!scope) return 0;
+    const where = colaboradorScope(scope);
+    return prisma.colaborador.count({ where });
+  } catch {
     return 0;
   }
 }
+
 export async function getLeaderboard() {
   try {
-    const session = await auth();
-    if (!session?.user) return [];
+    const scope = await getScope();
+    if (!scope) return [];
 
-    // Busca todos os registros do mês atual
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
 
+    const where: any = { data: { gte: inicioMes }, ...pontoScope(scope) };
+
     const registros = await prisma.registroPonto.findMany({
-      where: {
-        data: { gte: inicioMes }
-      },
+      where,
       select: {
         colaboradorId: true,
         tipo: true,
-        colaborador: {
-          select: {
-            nomeCompleto: true,
-            loja: { select: { nome: true } }
-          }
-        }
-      }
+        colaborador: { select: { nomeCompleto: true, loja: { select: { nome: true } }, time: { select: { nome: true } } } },
+      },
     });
 
-    // Tabela de valores de pontos
     const PONTOS_MAP: Record<string, number> = {
-      PONTO_POSITIVO: 10,
-      META_BATIDA: 50,
-      ELOGIO: 100,
-      PRESENCA_MANUAL: 5,
-      FALTA_INJUSTIFICADA: -50,
-      ATRASO: -10,
-      SAIDA_ANTECIPADA: -10,
-      PONTO_NAO_REGISTRADO: -20
+      PONTO_POSITIVO: 10, META_BATIDA: 50, ELOGIO: 100, PRESENCA_MANUAL: 5,
+      FALTA_INJUSTIFICADA: -50, ATRASO: -10, SAIDA_ANTECIPADA: -10, PONTO_NAO_REGISTRADO: -20,
     };
 
     const leaderboardMap: Record<string, any> = {};
-
-    registros.forEach(r => {
-      const colabId = r.colaboradorId;
-      if (!leaderboardMap[colabId]) {
-        leaderboardMap[colabId] = {
-          id: colabId,
+    registros.forEach((r) => {
+      if (!leaderboardMap[r.colaboradorId]) {
+        leaderboardMap[r.colaboradorId] = {
+          id: r.colaboradorId,
           nome: r.colaborador.nomeCompleto,
           loja: r.colaborador.loja?.nome || "Geral",
+          time: r.colaborador.time?.nome || null,
           pontos: 0,
-          vitorias: 0
+          vitorias: 0,
         };
       }
       const pts = PONTOS_MAP[r.tipo || ""] || 0;
-      leaderboardMap[colabId].pontos += pts;
-      if (pts > 0) leaderboardMap[colabId].vitorias += 1;
+      leaderboardMap[r.colaboradorId].pontos += pts;
+      if (pts > 0) leaderboardMap[r.colaboradorId].vitorias += 1;
     });
 
-    return Object.values(leaderboardMap)
-      .sort((a, b) => b.pontos - a.pontos)
-      .slice(0, 5); // Top 5
+    return Object.values(leaderboardMap).sort((a, b) => b.pontos - a.pontos).slice(0, 5);
   } catch (error) {
     console.error("Erro no Leaderboard:", error);
     return [];
@@ -264,12 +211,10 @@ export async function excluirInconformidade(id: string) {
   try {
     const session = await auth();
     if (!session?.user) return { success: false, error: "Não autorizado" };
-
     await prisma.registroPonto.delete({ where: { id } });
     revalidatePath("/ponto");
     return { success: true };
-  } catch (error) {
-    console.error("Erro ao excluir:", error);
+  } catch {
     return { success: false, error: "Erro ao excluir" };
   }
 }
@@ -278,20 +223,10 @@ export async function atualizarInconformidade(id: string, data: { tipo: string; 
   try {
     const session = await auth();
     if (!session?.user) return { success: false, error: "Não autorizado" };
-
-    await prisma.registroPonto.update({
-      where: { id },
-      data: {
-        tipo: data.tipo,
-        justificativa: data.justificativa,
-        rapGerado: data.gerarRap
-      }
-    });
-    
+    await prisma.registroPonto.update({ where: { id }, data: { tipo: data.tipo, justificativa: data.justificativa, rapGerado: data.gerarRap } });
     revalidatePath("/ponto");
     return { success: true };
-  } catch (error) {
-    console.error("Erro ao atualizar:", error);
+  } catch {
     return { success: false, error: "Erro ao atualizar" };
   }
 }

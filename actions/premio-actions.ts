@@ -6,8 +6,7 @@ import { z } from "zod";
 import { PremioStatus } from "@/lib/enums";
 import { auth } from "@/auth";
 import { sendPremiosConcedido } from "@/lib/email/send";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { getScope, viaColaboradorScope, colaboradorScope } from "@/lib/scope";
 
 const premioSchema = z.object({
   colaboradorId: z.string(),
@@ -24,17 +23,10 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
   if (!session?.user) return { success: false, error: "Não autorizado" };
 
   try {
-    // Check "Respeito" rule: Max 3 active prizes
     const activePrizesCount = await prisma.premio.count({
-      where: {
-        colaboradorId: data.colaboradorId,
-        status: PremioStatus.ATIVO,
-      },
+      where: { colaboradorId: data.colaboradorId, status: PremioStatus.ATIVO },
     });
-
-    if (activePrizesCount >= 3) {
-      return { success: false, error: "Regra Respeito: Colaborador já possui 3 prêmios ativos simultâneos." };
-    }
+    if (activePrizesCount >= 3) return { success: false, error: "Regra Respeito: Colaborador já possui 3 prêmios ativos simultâneos." };
 
     const colaborador = await prisma.colaborador.findUnique({
       where: { id: data.colaboradorId },
@@ -54,7 +46,6 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
       },
     });
 
-    // Fire-and-forget email notification
     if (colaborador?.email) {
       sendPremiosConcedido(colaborador.email, {
         colaboradorNome: colaborador.nomeCompleto,
@@ -66,53 +57,51 @@ export async function createPremio(data: z.infer<typeof premioSchema>) {
 
     revalidatePath("/premios");
     return { success: true, data: premio };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Erro ao criar prêmio" };
   }
 }
 
 export async function getPremios(status?: PremioStatus) {
-  return await prisma.premio.findMany({
-    where: status ? { status } : {},
-    include: {
-      colaborador: {
-        include: { loja: true, funcao: true },
-      },
-      editadoPor: true,
-    },
+  const scope = await getScope();
+  if (!scope) return [];
+
+  const scopeFilter = viaColaboradorScope(scope);
+
+  return prisma.premio.findMany({
+    where: { ...(status ? { status } : {}), ...scopeFilter },
+    include: { colaborador: { include: { loja: true, funcao: true, time: true } }, editadoPor: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function updatePremioStatus(id: string, status: PremioStatus) {
-  await prisma.premio.update({
-    where: { id },
-    data: { status },
-  });
+  await prisma.premio.update({ where: { id }, data: { status } });
   revalidatePath("/premios");
 }
 
 export async function getPremiosStats() {
+  const scope = await getScope();
+  if (!scope) return { totalPremiado: 0, pctComPremio: 0 };
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+  const colabFilter = colaboradorScope(scope);
+  const scopeFilter = viaColaboradorScope(scope);
+
   const [premiosDoMes, totalAtivos] = await Promise.all([
     prisma.premio.findMany({
-      where: {
-        status: PremioStatus.ATIVO,
-        dataReferencia: { gte: startOfMonth, lte: endOfMonth },
-      },
+      where: { status: PremioStatus.ATIVO, dataReferencia: { gte: startOfMonth, lte: endOfMonth }, ...scopeFilter },
       select: { colaboradorId: true, valorFinal: true },
     }),
-    prisma.colaborador.count({ where: { status: "ATIVO" } }),
+    prisma.colaborador.count({ where: { status: "ATIVO", ...colabFilter } }),
   ]);
 
   const totalPremiado = premiosDoMes.reduce((sum, p) => sum + p.valorFinal, 0);
   const colaboradoresComPremio = new Set(premiosDoMes.map((p) => p.colaboradorId)).size;
-  const pctComPremio = totalAtivos > 0
-    ? Math.round((colaboradoresComPremio / totalAtivos) * 100)
-    : 0;
+  const pctComPremio = totalAtivos > 0 ? Math.round((colaboradoresComPremio / totalAtivos) * 100) : 0;
 
   return { totalPremiado, pctComPremio };
 }

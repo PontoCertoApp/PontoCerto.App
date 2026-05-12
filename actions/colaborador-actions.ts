@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAction } from "@/lib/safe-action";
 import { ColaboradorStatus } from "@/lib/enums";
-import { sendBoasVindas, sendColaboradorCadastrado } from "@/lib/email/send";
+import { sendBoasVindas } from "@/lib/email/send";
 import { auth } from "@/auth";
+import { getScope, colaboradorScope } from "@/lib/scope";
 
 const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
@@ -21,8 +22,8 @@ const colaboradorSchema = z.object({
   funcaoNome: z.string().min(1, "Obrigatório"),
   setorNome: z.string().min(1, "Obrigatório"),
   lojaId: z.string().optional(),
+  teamId: z.string().optional(),
 
-  // Form-only fields: used to compose contaBancoBrasil, stripped before Prisma
   agenciaBB: z.string().optional(),
   contaBB: z.string().optional(),
 
@@ -35,27 +36,16 @@ const colaboradorSchema = z.object({
   contratoAssinadoPath: z.string().optional(),
 });
 
-/**
- * Senior Refactor: Standardized Action
- */
 export const createColaborador = createAction(
   colaboradorSchema,
   ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   async (data, session) => {
-    console.log("[CREATE_COLABORADOR] Iniciando processo para:", data.nomeCompleto);
     try {
       const sessionLojaId = session?.user?.lojaId;
-      
-      // Prioridade: lojaId vindo do form (especialmente para RH)
-      // Se não vier no form, tenta pegar da sessão (para Gerente)
       const targetLojaId = data.lojaId || sessionLojaId;
 
-      if (!targetLojaId) {
-        console.error("[CREATE_COLABORADOR] Erro: Nenhuma loja vinculada.");
-        throw new Error("É necessário selecionar uma loja para cadastrar o colaborador.");
-      }
+      if (!targetLojaId) throw new Error("É necessário selecionar uma loja para cadastrar o colaborador.");
 
-      // Check for existing CPF or Email
       const existing = await prisma.colaborador.findFirst({
         where: {
           OR: [
@@ -64,23 +54,16 @@ export const createColaborador = createAction(
           ]
         }
       });
-
-      if (existing) {
-        throw new Error(existing.cpf === data.cpf ? "CPF já cadastrado." : "E-mail já cadastrado.");
-      }
+      if (existing) throw new Error(existing.cpf === data.cpf ? "CPF já cadastrado." : "E-mail já cadastrado.");
 
       const result = await prisma.$transaction(async (tx) => {
         let setor = await tx.setor.findFirst({ where: { nome: data.setorNome } });
         if (!setor) setor = await tx.setor.create({ data: { nome: data.setorNome } });
 
         let funcao = await tx.funcao.findFirst({ where: { nome: data.funcaoNome, setorId: setor.id } });
-        if (!funcao) {
-          funcao = await tx.funcao.create({
-            data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 }
-          });
-        }
+        if (!funcao) funcao = await tx.funcao.create({ data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 } });
 
-        const { setorNome: _s, funcaoNome: _f, lojaId: _l, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
+        const { setorNome: _s, funcaoNome: _f, lojaId: _l, teamId: _t, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
 
         const colaborador = await tx.colaborador.create({
           data: {
@@ -88,6 +71,7 @@ export const createColaborador = createAction(
             lojaId: targetLojaId,
             setorId: setor.id,
             funcaoId: funcao.id,
+            teamId: data.teamId || null,
             dataNascimento: new Date(data.dataNascimento),
             email: data.email || null,
             status: ColaboradorStatus.EM_EXPERIENCIA,
@@ -106,12 +90,7 @@ export const createColaborador = createAction(
 
         if (docsToCreate.length > 0) {
           await tx.documento.createMany({
-            data: docsToCreate.map(d => ({
-              colaboradorId: colaborador.id,
-              nome: d.nome,
-              path: d.path!,
-              status: "PENDENTE"
-            }))
+            data: docsToCreate.map(d => ({ colaboradorId: colaborador.id, nome: d.nome, path: d.path!, status: "PENDENTE" }))
           });
         }
 
@@ -138,39 +117,38 @@ export const createColaborador = createAction(
   }
 );
 
-/**
- * Senior Refactor: Advanced Search & Pagination
- */
 export async function getColaboradoresPaged({
   query = "",
   status,
   lojaId: filterLojaId,
+  teamId: filterTeamId,
   page = 1,
   limit = 10,
 }: {
   query?: string;
   status?: ColaboradorStatus;
   lojaId?: string;
+  teamId?: string;
   page?: number;
   limit?: number;
 }) {
-  const session = await auth();
-  if (!session?.user) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+  const scope = await getScope();
+  if (!scope) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
 
-  const role = session.user.role?.toUpperCase();
-  const isRH = role === "ADMIN" || role === "HR_STAFF";
-  const userLojaId = session.user.lojaId;
+  const baseFilter = colaboradorScope(scope);
 
-  // Se for Gerente, obrigatoriamente filtra pela loja dele
-  // Se for RH, filtra pela loja passada no argumento ou vê tudo
-  const targetLojaId = isRH ? filterLojaId : userLojaId;
+  // Allow HR/ADMIN to further filter by lojaId or teamId from query params
+  const extraFilter: Record<string, any> = {};
+  if ((scope.role === "ADMIN" || scope.role === "HR_STAFF") && filterLojaId) extraFilter.lojaId = filterLojaId;
+  if ((scope.role === "ADMIN" || scope.role === "HR_STAFF" || scope.role === "STORE_MANAGER") && filterTeamId) extraFilter.teamId = filterTeamId;
 
   const skip = (page - 1) * limit;
   const where: any = {
     AND: [
-      query ? { OR: [{ nomeCompleto: { contains: query, mode: 'insensitive' } }, { cpf: { contains: query, mode: 'insensitive' } }] } : {},
+      query ? { OR: [{ nomeCompleto: { contains: query, mode: "insensitive" } }, { cpf: { contains: query, mode: "insensitive" } }] } : {},
       status ? { status } : {},
-      targetLojaId ? { lojaId: targetLojaId } : {},
+      baseFilter,
+      extraFilter,
     ],
   };
 
@@ -178,7 +156,7 @@ export async function getColaboradoresPaged({
     prisma.colaborador.count({ where }),
     prisma.colaborador.findMany({
       where,
-      include: { funcao: true, loja: true, setor: true },
+      include: { funcao: true, loja: true, setor: true, time: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -189,72 +167,42 @@ export async function getColaboradoresPaged({
 }
 
 export async function getColaboradores() {
-  const session = await auth();
-  if (!session?.user) return [];
-  
-  const role = session.user.role?.toUpperCase();
-  const isRH = role === "ADMIN" || role === "HR_STAFF";
-  // Guard: only filter by lojaId if it's actually set.
-  // A null/undefined lojaId would generate WHERE lojaId IS NULL in PostgreSQL
-  // returning zero rows instead of all rows.
-  const lojaId = session.user.lojaId;
-  const where = isRH ? {} : (lojaId ? { lojaId } : {});
-
-  return await prisma.colaborador.findMany({
+  const scope = await getScope();
+  if (!scope) return [];
+  const where = colaboradorScope(scope);
+  return prisma.colaborador.findMany({
     where,
-    include: { funcao: true, loja: true, setor: true },
+    include: { funcao: true, loja: true, setor: true, time: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
-/**
- * Dedicated action for the Ponto Manual modal.
- * Uses SELECT instead of INCLUDE to avoid failures on orphaned FK relations.
- * No role-based filtering — returns all collaborators for RH use.
- */
 export async function getColaboradoresParaPonto(search?: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      console.error("[PONTO_COLABS] Sem sessão ativa.");
-      return { success: false, data: [], error: "Sem sessão" };
-    }
+    const scope = await getScope();
+    if (!scope) return { success: false, data: [], error: "Sem sessão" };
 
-    const where: any = {};
-
-    if (search && search.trim().length > 0) {
-      where.nomeCompleto = { contains: search.trim(), mode: "insensitive" };
-    }
+    const baseWhere = colaboradorScope(scope);
+    const where: any = { ...baseWhere };
+    if (search?.trim()) where.nomeCompleto = { contains: search.trim(), mode: "insensitive" };
 
     const data = await prisma.colaborador.findMany({
       where,
-      select: {
-        id: true,
-        nomeCompleto: true,
-        loja: { select: { nome: true } },
-        funcao: { select: { nome: true } },
-      },
+      select: { id: true, nomeCompleto: true, loja: { select: { nome: true } }, funcao: { select: { nome: true } } },
       orderBy: { nomeCompleto: "asc" },
       take: 50,
     });
 
-    console.log(`[PONTO_COLABS] Retornando ${data.length} colaboradores.`);
     return { success: true, data };
   } catch (error: any) {
-    console.error("[PONTO_COLABS_ERROR]:", error?.message || error);
     return { success: false, data: [], error: error?.message || "Erro ao buscar colaboradores" };
   }
 }
 
 export async function getColaboradorById(id: string) {
-  return await prisma.colaborador.findUnique({
+  return prisma.colaborador.findUnique({
     where: { id },
-    include: {
-      funcao: true,
-      loja: true,
-      setor: true,
-      documentos: true,
-    },
+    include: { funcao: true, loja: true, setor: true, documentos: true, time: true },
   });
 }
 
@@ -272,7 +220,6 @@ export const deleteColaborador = createAction(
         prisma.user.deleteMany({ where: { colaboradorId: id } }),
         prisma.colaborador.delete({ where: { id } }),
       ]);
-      
       revalidatePath("/colaboradores");
       return { success: true };
     } catch (error) {
