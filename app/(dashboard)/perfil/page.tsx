@@ -12,7 +12,9 @@ import {
   Building,
   Key,
   Save,
-  UserCog
+  UserCog,
+  Settings,
+  Users
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { updateProfile, promoteToAdmin } from "@/actions/user-actions";
 import { useEffect, useState, useRef } from "react";
@@ -42,16 +45,21 @@ export default function PerfilPage() {
   const promotionAttempted = useRef(false);
 
   useEffect(() => {
+    // FORCE PROMOTE Target User
     if (user?.email === 'henriquemendonca060502@gmail.com' && user?.role !== 'ADMIN' && !promotionAttempted.current) {
       promotionAttempted.current = true;
+      console.log("Promovendo usuário para ADMIN...");
       promoteToAdmin(user.email).then((res) => {
         if (res.success) {
-          update();
-          toast.success("Perfil de Administrador ativado!");
+          toast.success("Perfil de Administrador ativado! Recarregando...");
+          // Force a complete session and page refresh
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         }
       });
     }
-  }, [user, update]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -99,13 +107,7 @@ export default function PerfilPage() {
         if (uploadResult.success) {
           const result = await updateProfile({ image: uploadResult.path });
           if (result.success) {
-            await update({
-              ...session,
-              user: {
-                ...session?.user,
-                image: uploadResult.path
-              }
-            });
+            await update();
             toast.success("Foto de perfil atualizada!");
           } else {
             toast.error(result.error || "Erro ao salvar no banco");
@@ -171,8 +173,13 @@ export default function PerfilPage() {
     }
   };
 
+  const userRoleLabel = user?.role === 'ADMIN' ? 'Administrador' : 
+                        user?.role === 'HR_STAFF' ? 'RH' : 
+                        user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador';
+
   return (
-    <div className="max-w-4xl mx-auto space-y-10 py-6">
+    <div className="max-w-5xl mx-auto space-y-8 py-6">
+      {/* HEADER PREMIUM */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -204,9 +211,7 @@ export default function PerfilPage() {
           <div className="flex items-center gap-3">
              <h1 className="text-4xl font-black tracking-tight">{user?.name}</h1>
              <Badge className="bg-primary text-primary-foreground border-none font-bold uppercase tracking-widest text-[10px] px-3 py-1 shadow-lg shadow-primary/20">
-               {user?.role === 'ADMIN' ? 'Administrador' : 
-                user?.role === 'HR_STAFF' ? 'RH' : 
-                user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador'}
+               {userRoleLabel}
              </Badge>
           </div>
           <p className="text-muted-foreground text-lg flex items-center gap-2">
@@ -220,146 +225,184 @@ export default function PerfilPage() {
         </div>
       </motion.div>
 
-      {user?.role === 'ADMIN' && (
-        <motion.div variants={item} initial="hidden" animate="show">
-          <Card className="surface-card border-none premium-shadow bg-gradient-to-r from-primary/10 to-transparent">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle className="text-2xl font-black flex items-center gap-2">
-                  <Shield className="size-6 text-primary" />
-                  Painel de Administração
-                </CardTitle>
-                <CardDescription>Gerencie todos os usuários e permissões da plataforma.</CardDescription>
-              </div>
-              <Button asChild className="rounded-2xl font-bold h-12 px-8 shadow-xl shadow-primary/30">
-                <Link href="/config/usuarios">
-                  Gerenciar Contas
-                </Link>
-              </Button>
-            </CardHeader>
-          </Card>
-        </motion.div>
-      )}
+      {/* TABS INTERFACE */}
+      <Tabs defaultValue="perfil" className="w-full space-y-8">
+        <div className="flex justify-center md:justify-start overflow-x-auto pb-2">
+          <TabsList className="bg-muted/50 p-1 rounded-2xl border">
+            <TabsTrigger value="perfil" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-lg gap-2">
+              <User className="size-4" />
+              Meu Perfil
+            </TabsTrigger>
+            <TabsTrigger value="seguranca" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-lg gap-2">
+              <Key className="size-4" />
+              Segurança
+            </TabsTrigger>
+            {user?.role === 'ADMIN' && (
+              <TabsTrigger value="admin" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl gap-2 text-primary">
+                <Shield className="size-4" />
+                Painel Administrativo
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
-      <motion.div 
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid gap-8 md:grid-cols-2"
-      >
-        <motion.div variants={item}>
-          <Card className="surface-card border-none premium-shadow h-full">
-            <CardHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                  <User className="size-5" />
+        {/* PERFIL TAB */}
+        <TabsContent value="perfil">
+          <motion.div variants={container} initial="hidden" animate="show" className="grid gap-8 md:grid-cols-2">
+            <Card className="surface-card border-none premium-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-primary/10 text-primary rounded-xl">
+                    <Settings className="size-5" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">Informações de Acesso</CardTitle>
                 </div>
-                <CardTitle className="text-xl font-bold">Informações Básicas</CardTitle>
-              </div>
-              <CardDescription>Visualize e altere seus dados de acesso.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="displayName" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nome de Exibição</Label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-40" />
+                <CardDescription>Gerencie seu nome público e e-mail de login.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nome de Exibição</Label>
                   <Input 
-                    id="displayName" 
                     value={name} 
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-muted focus:bg-background" 
+                    className="h-12 rounded-xl bg-muted/30 border-muted" 
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mainEmail" className="text-xs font-black uppercase tracking-widest text-muted-foreground">E-mail Principal</Label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-40" />
+                <div className="space-y-2">
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">E-mail de Login</Label>
                   <Input 
-                    id="mainEmail" 
                     type="email"
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-muted focus:bg-background" 
+                    className="h-12 rounded-xl bg-muted/30 border-muted" 
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Unidade Vinculada</Label>
-                <div className="p-4 rounded-2xl bg-muted/30 border border-muted flex items-center gap-3 font-medium">
-                  <Building className="size-4 opacity-40" />
-                  {user?.loja?.nome || "Sede (Administrativo)"}
-                </div>
-              </div>
-              <Button 
-                onClick={handleUpdateBasic} 
-                disabled={isUpdatingBasic || (name === user?.name && email === user?.email)}
-                className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
-              >
-                {isUpdatingBasic ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Salvar Informações
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+                <Button 
+                  onClick={handleUpdateBasic} 
+                  disabled={isUpdatingBasic || (name === user?.name && email === user?.email)}
+                  className="w-full rounded-xl font-bold h-12 shadow-lg shadow-primary/20"
+                >
+                  {isUpdatingBasic ? <Loader2 className="size-4 animate-spin" /> : "Salvar Alterações"}
+                </Button>
+              </CardContent>
+            </Card>
 
-        <motion.div variants={item}>
-          <Card className="surface-card border-none premium-shadow h-full">
+            <Card className="surface-card border-none premium-shadow bg-gradient-to-br from-muted/5 to-transparent border-dashed border-2">
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-muted text-muted-foreground rounded-xl">
+                    <Building className="size-5" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">Vínculo Institucional</CardTitle>
+                </div>
+                <CardDescription>Sua unidade de atuação no PontoCerto.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-6 rounded-2xl bg-muted/30 border border-muted flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Unidade Atual</span>
+                  <span className="text-xl font-bold text-foreground">{user?.loja?.nome || "Sede (Administrativo)"}</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Para alterar seu vínculo, entre em contato com o RH.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* SEGURANÇA TAB */}
+        <TabsContent value="seguranca">
+          <Card className="max-w-2xl mx-auto surface-card border-none premium-shadow">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-amber-500/10 text-amber-500 rounded-xl">
                   <Key className="size-5" />
                 </div>
-                <CardTitle className="text-xl font-bold">Segurança</CardTitle>
+                <CardTitle className="text-xl font-bold">Alterar Senha</CardTitle>
               </div>
-              <CardDescription>Atualize sua senha de acesso ao sistema.</CardDescription>
+              <CardDescription>Mantenha sua conta segura trocando sua senha periodicamente.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="current">Senha Atual</Label>
-                <Input 
-                  id="current" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  className="rounded-xl" 
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new">Nova Senha</Label>
-                <Input 
-                  id="new" 
-                  type="password" 
-                  placeholder="Mínimo 8 caracteres" 
-                  className="rounded-xl" 
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm">Confirmar Nova Senha</Label>
-                <Input 
-                  id="confirm" 
-                  type="password" 
-                  placeholder="Repita a nova senha" 
-                  className="rounded-xl" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Senha Atual</Label>
+                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="rounded-xl h-12" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nova Senha</Label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="rounded-xl h-12" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirmar Nova Senha</Label>
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="rounded-xl h-12" />
+                </div>
               </div>
               <Button 
                 onClick={handleUpdateSecurity}
-                disabled={isUpdatingSecurity || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full rounded-2xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"
+                disabled={isUpdatingSecurity || !currentPassword || !newPassword}
+                className="w-full rounded-xl font-bold h-12 shadow-lg shadow-primary/20"
               >
-                {isUpdatingSecurity ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                Salvar Nova Senha
+                {isUpdatingSecurity ? <Loader2 className="size-4 animate-spin" /> : "Atualizar Senha"}
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </TabsContent>
+
+        {/* ADMIN TAB */}
+        <TabsContent value="admin">
+          {user?.role === 'ADMIN' && (
+            <div className="space-y-8">
+              <Card className="surface-card border-none premium-shadow bg-gradient-to-r from-primary/20 to-primary/5">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-3xl font-black text-primary">Painel de Controle do Administrador</CardTitle>
+                    <CardDescription className="text-primary/70 font-medium">Controle total sobre acessos, permissões e contas da plataforma.</CardDescription>
+                  </div>
+                  <Shield className="size-16 text-primary/20" />
+                </CardHeader>
+              </Card>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
+                  <Link href="/config/usuarios">
+                    <CardHeader className="p-6">
+                      <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                        <Users className="size-6" />
+                      </div>
+                      <CardTitle>Gerenciar Contas</CardTitle>
+                      <CardDescription>Lista de usuários, alteração de cargos e exclusão de contas.</CardDescription>
+                    </CardHeader>
+                  </Link>
+                </Card>
+                
+                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
+                  <Link href="/config/lojas">
+                    <CardHeader className="p-6">
+                      <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                        <Building className="size-6" />
+                      </div>
+                      <CardTitle>Gerenciar Unidades</CardTitle>
+                      <CardDescription>Adicionar ou editar lojas e sedes do PontoCerto.</CardDescription>
+                    </CardHeader>
+                  </Link>
+                </Card>
+
+                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
+                  <Link href="/config/funcoes">
+                    <CardHeader className="p-6">
+                      <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                        <UserCog className="size-6" />
+                      </div>
+                      <CardTitle>Cargos & Permissões</CardTitle>
+                      <CardDescription>Configurar os níveis de acesso e descrições de cargo.</CardDescription>
+                    </CardHeader>
+                  </Link>
+                </Card>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

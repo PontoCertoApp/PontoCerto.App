@@ -209,7 +209,9 @@ export function AppSidebar() {
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden ml-2">
                   <span className="truncate font-bold text-foreground">{user?.name}</span>
                   <span className="truncate text-[10px] font-black uppercase text-primary/60">
-                    {user?.role}
+                    {user?.role === 'ADMIN' ? 'Administrador' : 
+                     user?.role === 'HR_STAFF' ? 'RH' : 
+                     user?.role === 'STORE_MANAGER' ? 'Gestor' : 'Colaborador'}
                   </span>
                 </div>
                 <MoreHorizontal className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-40 hover:opacity-100 transition-opacity" />
