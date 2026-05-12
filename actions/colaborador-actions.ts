@@ -7,7 +7,6 @@ import { createAction } from "@/lib/safe-action";
 import { ColaboradorStatus } from "@/lib/enums";
 import { sendBoasVindas } from "@/lib/email/send";
 import { auth } from "@/auth";
-import { getScope, colaboradorScope } from "@/lib/scope";
 
 const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
@@ -22,7 +21,6 @@ const colaboradorSchema = z.object({
   funcaoNome: z.string().min(1, "Obrigatório"),
   setorNome: z.string().min(1, "Obrigatório"),
   lojaId: z.string().optional(),
-  teamId: z.string().optional(),
 
   agenciaBB: z.string().optional(),
   contaBB: z.string().optional(),
@@ -35,6 +33,15 @@ const colaboradorSchema = z.object({
   fotoPerfilPath: z.string().optional(),
   contratoAssinadoPath: z.string().optional(),
 });
+
+function normalizeRole(role: string | undefined | null): string {
+  if (!role) return "";
+  const upper = role.toUpperCase();
+  if (upper === "RH") return "HR_STAFF";
+  if (upper === "GERENTE") return "STORE_MANAGER";
+  if (upper === "COLABORADOR") return "EMPLOYEE";
+  return upper;
+}
 
 export const createColaborador = createAction(
   colaboradorSchema,
@@ -63,7 +70,7 @@ export const createColaborador = createAction(
         let funcao = await tx.funcao.findFirst({ where: { nome: data.funcaoNome, setorId: setor.id } });
         if (!funcao) funcao = await tx.funcao.create({ data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 } });
 
-        const { setorNome: _s, funcaoNome: _f, lojaId: _l, teamId: _t, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
+        const { setorNome: _s, funcaoNome: _f, lojaId: _l, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
 
         const colaborador = await tx.colaborador.create({
           data: {
@@ -71,9 +78,7 @@ export const createColaborador = createAction(
             lojaId: targetLojaId,
             setorId: setor.id,
             funcaoId: funcao.id,
-            teamId: data.teamId || null,
             dataNascimento: (() => {
-              // Safe parsing: avoids timezone-shift bugs with "YYYY-MM-DD" strings
               const [year, month, day] = data.dataNascimento.split("-").map(Number);
               return new Date(year, month - 1, day, 12, 0, 0);
             })(),
@@ -125,34 +130,29 @@ export async function getColaboradoresPaged({
   query = "",
   status,
   lojaId: filterLojaId,
-  teamId: filterTeamId,
   page = 1,
   limit = 10,
 }: {
   query?: string;
   status?: ColaboradorStatus;
   lojaId?: string;
-  teamId?: string;
   page?: number;
   limit?: number;
 }) {
-  const scope = await getScope();
-  if (!scope) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+  const session = await auth();
+  if (!session?.user) return { items: [], metadata: { total: 0, page: 1, limit: 10, totalPages: 0 } };
 
-  const baseFilter = colaboradorScope(scope);
-
-  // Allow HR/ADMIN to further filter by lojaId or teamId from query params
-  const extraFilter: Record<string, any> = {};
-  if ((scope.role === "ADMIN" || scope.role === "HR_STAFF") && filterLojaId) extraFilter.lojaId = filterLojaId;
-  if ((scope.role === "ADMIN" || scope.role === "HR_STAFF" || scope.role === "STORE_MANAGER") && filterTeamId) extraFilter.teamId = filterTeamId;
+  const role = normalizeRole(session.user.role as string);
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
+  const userLojaId = session.user.lojaId;
+  const targetLojaId = isRH ? filterLojaId : userLojaId;
 
   const skip = (page - 1) * limit;
   const where: any = {
     AND: [
       query ? { OR: [{ nomeCompleto: { contains: query, mode: "insensitive" } }, { cpf: { contains: query, mode: "insensitive" } }] } : {},
       status ? { status } : {},
-      baseFilter,
-      extraFilter,
+      targetLojaId ? { lojaId: targetLojaId } : {},
     ],
   };
 
@@ -160,7 +160,7 @@ export async function getColaboradoresPaged({
     prisma.colaborador.count({ where }),
     prisma.colaborador.findMany({
       where,
-      include: { funcao: true, loja: true, setor: true, time: true },
+      include: { funcao: true, loja: true, setor: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -171,23 +171,30 @@ export async function getColaboradoresPaged({
 }
 
 export async function getColaboradores() {
-  const scope = await getScope();
-  if (!scope) return [];
-  const where = colaboradorScope(scope);
+  const session = await auth();
+  if (!session?.user) return [];
+
+  const role = normalizeRole(session.user.role as string);
+  const isRH = role === "ADMIN" || role === "HR_STAFF";
+  const lojaId = session.user.lojaId;
+  const where = isRH ? {} : (lojaId ? { lojaId } : {});
+
   return prisma.colaborador.findMany({
     where,
-    include: { funcao: true, loja: true, setor: true, time: true },
+    include: { funcao: true, loja: true, setor: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function getColaboradoresParaPonto(search?: string) {
   try {
-    const scope = await getScope();
-    if (!scope) return { success: false, data: [], error: "Sem sessão" };
+    const session = await auth();
+    if (!session?.user) return { success: false, data: [], error: "Sem sessão" };
 
-    const baseWhere = colaboradorScope(scope);
-    const where: any = { ...baseWhere };
+    const role = normalizeRole(session.user.role as string);
+    const isRH = role === "ADMIN" || role === "HR_STAFF";
+    const lojaId = session.user.lojaId;
+    const where: any = isRH ? {} : (lojaId ? { lojaId } : {});
     if (search?.trim()) where.nomeCompleto = { contains: search.trim(), mode: "insensitive" };
 
     const data = await prisma.colaborador.findMany({
@@ -206,7 +213,7 @@ export async function getColaboradoresParaPonto(search?: string) {
 export async function getColaboradorById(id: string) {
   return prisma.colaborador.findUnique({
     where: { id },
-    include: { funcao: true, loja: true, setor: true, documentos: true, time: true },
+    include: { funcao: true, loja: true, setor: true, documentos: true },
   });
 }
 
