@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { 
   User, 
   FileText, 
@@ -23,6 +23,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -55,7 +57,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { getColaboradorById } from "@/actions/colaborador-actions";
+import { getColaboradorById, updateColaborador } from "@/actions/colaborador-actions";
 import { updateLoja } from "@/actions/loja-actions";
 import { aprovarContratacao, iniciarDesligamento, reprovarExperiencia } from "@/actions/processo-actions";
 
@@ -68,6 +70,14 @@ export default function ColaboradorDetalhesPage() {
   const [editingLoja, setEditingLoja] = useState(false);
   const [lojaName, setLojaName] = useState("");
   const [isSavingLoja, setIsSavingLoja] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("edit") === "true") {
+      setShowEditDialog(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function loadData() {
@@ -373,6 +383,78 @@ export default function ColaboradorDetalhesPage() {
            Desvincular Colaborador (Demissão)
          </Button>
       </div>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Colaborador</DialogTitle>
+            <DialogDescription>Atualize os dados cadastrais de {colab.nomeCompleto}</DialogDescription>
+          </DialogHeader>
+          <form action={async (formData: FormData) => {
+            const data = {
+              id: colab.id,
+              nomeCompleto: formData.get("nomeCompleto") as string,
+              email: formData.get("email") as string,
+              telefonePrincipal: formData.get("telefonePrincipal") as string,
+              telefoneSecundario: formData.get("telefoneSecundario") as string,
+              contaBancoBrasil: formData.get("contaBancoBrasil") as string,
+              funcaoNome: formData.get("funcaoNome") as string,
+              setorNome: formData.get("setorNome") as string,
+              possuiFilhosMenores14: formData.get("possuiFilhosMenores14") === "on",
+            };
+
+            const res = await updateColaborador(data);
+            if (res.success) {
+              toast.success("Dados atualizados!");
+              setShowEditDialog(false);
+              const found = await getColaboradorById(id as string);
+              setColab(found);
+              router.replace(`/colaboradores/${id}`);
+            } else {
+              toast.error("Erro ao atualizar.");
+            }
+          }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nomeCompleto">Nome Completo</Label>
+                <Input id="nomeCompleto" name="nomeCompleto" defaultValue={colab.nomeCompleto} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" name="email" type="email" defaultValue={colab.email || ""} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefonePrincipal">Telefone Principal</Label>
+                <Input id="telefonePrincipal" name="telefonePrincipal" defaultValue={colab.telefonePrincipal} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefoneSecundario">Telefone Secundário</Label>
+                <Input id="telefoneSecundario" name="telefoneSecundario" defaultValue={colab.telefoneSecundario || ""} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="funcaoNome">Função</Label>
+                <Input id="funcaoNome" name="funcaoNome" defaultValue={colab.funcao?.nome} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="setorNome">Setor</Label>
+                <Input id="setorNome" name="setorNome" defaultValue={colab.setor?.nome} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contaBancoBrasil">Conta BB (Ag/Conta)</Label>
+                <Input id="contaBancoBrasil" name="contaBancoBrasil" defaultValue={colab.contaBancoBrasil} />
+              </div>
+              <div className="flex items-center gap-2 pt-8">
+                <input type="checkbox" id="possuiFilhosMenores14" name="possuiFilhosMenores14" defaultChecked={colab.possuiFilhosMenores14} className="h-4 w-4 rounded border-gray-300" />
+                <Label htmlFor="possuiFilhosMenores14">Possui filhos menores de 14 anos?</Label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => { setShowEditDialog(false); router.replace(`/colaboradores/${id}`); }}>Cancelar</Button>
+              <Button type="submit">Salvar Alterações</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

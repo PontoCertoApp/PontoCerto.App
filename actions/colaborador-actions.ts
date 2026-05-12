@@ -247,3 +247,44 @@ export const deleteColaborador = createAction(
     }
   }
 );
+
+const updateColaboradorSchema = z.object({
+  id: z.string(),
+  nomeCompleto: z.string().min(3, "Nome muito curto"),
+  telefonePrincipal: z.string().min(8, "Telefone inválido"),
+  telefoneSecundario: z.string().optional(),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  contaBancoBrasil: z.string().optional(),
+  funcaoNome: z.string().min(1, "Obrigatório"),
+  setorNome: z.string().min(1, "Obrigatório"),
+  possuiFilhosMenores14: z.boolean(),
+});
+
+export const updateColaborador = createAction(
+  updateColaboradorSchema,
+  ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
+  async (data) => {
+    const { id, funcaoNome, setorNome, ...rest } = data;
+
+    let setor = await prisma.setor.findFirst({ where: { nome: setorNome } });
+    if (!setor) setor = await prisma.setor.create({ data: { nome: setorNome } });
+
+    let funcao = await prisma.funcao.findFirst({ where: { nome: funcaoNome, setorId: setor.id } });
+    if (!funcao) funcao = await prisma.funcao.create({ data: { nome: funcaoNome, setorId: setor.id, salarioBase: 0 } });
+
+    const colaborador = await prisma.colaborador.update({
+      where: { id },
+      data: {
+        ...rest,
+        email: rest.email || null,
+        funcaoId: funcao.id,
+        setorId: setor.id,
+      },
+    });
+
+    revalidatePath(`/colaboradores/${id}`);
+    revalidatePath("/colaboradores");
+    return colaborador;
+  }
+);
+
