@@ -14,8 +14,6 @@ import {
   Trash2, 
   Loader2,
   CheckCircle2,
-  XCircle,
-  Briefcase,
   Store,
   Lock,
   Mail,
@@ -97,7 +95,7 @@ export default function UserManagementPage() {
     email: "",
     password: "",
     role: "EMPLOYEE",
-    unidade: "", // Changed from lojaId to unidade string
+    unidade: "",
     teamId: "none"
   });
 
@@ -147,7 +145,7 @@ export default function UserManagementPage() {
     try {
       const res = await createUserByAdmin({
         ...formData,
-        unidade: formData.unidade, // Pass unit name
+        unidade: formData.unidade,
         teamId: formData.teamId === "none" ? undefined : formData.teamId,
       });
 
@@ -175,7 +173,7 @@ export default function UserManagementPage() {
         userId: selectedUser.id,
         name: formData.name,
         role: formData.role,
-        unidade: formData.unidade, // Pass unit name
+        unidade: formData.unidade,
         teamId: formData.teamId === "none" ? null : formData.teamId,
       });
 
@@ -198,9 +196,9 @@ export default function UserManagementPage() {
     setFormData({
       name: user.name || "",
       email: user.email || "",
-      password: "", // Not used in edit
+      password: "",
       role: user.role || "EMPLOYEE",
-      unidade: user.loja?.nome || "", // Use store name
+      unidade: user.loja?.nome || "",
       teamId: user.teamId || "none"
     });
     setIsEditOpen(true);
@@ -220,6 +218,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen">
+      {/* HEADER SECTION */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -241,114 +240,114 @@ export default function UserManagementPage() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl p-8 overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
-             <DialogHeader>
-               <DialogTitle className="text-2xl font-black flex items-center gap-2">
-                 <UserPlus className="size-6 text-primary" />
-                 Novo Usuário
-               </DialogTitle>
-               <DialogDescription className="font-medium text-muted-foreground">Preencha os dados básicos para criar o acesso.</DialogDescription>
-             </DialogHeader>
-             
-             <div className="grid gap-6 py-4 relative z-10">
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
-                 <div className="relative">
-                   <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                   <Input 
-                     value={formData.name} 
-                     onChange={e => setFormData({...formData, name: e.target.value})}
-                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                     placeholder="Ex: João Silva"
-                   />
-                 </div>
-               </div>
-               
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail de Login</Label>
-                 <div className="relative">
-                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                   <Input 
-                     type="email"
-                     value={formData.email} 
-                     onChange={e => setFormData({...formData, email: e.target.value})}
-                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                     placeholder="exemplo@email.com"
-                   />
-                 </div>
-               </div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                <UserPlus className="size-6 text-primary" />
+                Novo Usuário
+              </DialogTitle>
+              <DialogDescription className="font-medium text-muted-foreground">Preencha os dados básicos para criar o acesso.</DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-6 py-4 relative z-10">
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Input 
+                    value={formData.name} 
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                    placeholder="Ex: João Silva"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail de Login</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Input 
+                    type="email"
+                    value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                    placeholder="exemplo@email.com"
+                  />
+                </div>
+              </div>
 
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Senha Inicial</Label>
-                 <div className="relative">
-                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                   <Input 
-                     type="password"
-                     value={formData.password} 
-                     onChange={e => setFormData({...formData, password: e.target.value})}
-                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                     placeholder="Mínimo 6 caracteres"
-                   />
-                 </div>
-               </div>
-               
-               <div className="grid gap-3">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
-                 <div className="grid grid-cols-2 gap-3">
-                   {[
-                     { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary', bg: 'bg-primary/10' },
-                     { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                     { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                     { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                   ].map((role) => (
-                     <button
-                       key={role.id}
-                       type="button"
-                       onClick={() => setFormData({ ...formData, role: role.id })}
-                       className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all gap-2 h-24 ${
-                         formData.role === role.id 
-                         ? `border-primary bg-primary/5 scale-105 shadow-lg` 
-                         : 'border-transparent bg-muted/30 hover:bg-muted/50 grayscale opacity-70'
-                       }`}
-                     >
-                       <role.icon className={`size-6 ${role.color}`} />
-                       <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
-                         {role.label}
-                       </span>
-                     </button>
-                   ))}
-                 </div>
-               </div>
-               
-               <div className="grid gap-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
-                 <div className="relative">
-                   <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                   <Input 
-                     value={formData.unidade} 
-                     onChange={e => setFormData({...formData, unidade: e.target.value})}
-                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                     placeholder="Ex: Matriz Rio, Filial Centro..."
-                   />
-                 </div>
-               </div>
-             </div>
-             
-             <DialogFooter className="mt-8">
-               <Button 
-                onClick={handleCreateUser} 
-                disabled={isSubmitting}
-                className="w-full rounded-2xl h-14 font-black text-lg gap-2 shadow-2xl shadow-primary/30"
-               >
-                 {isSubmitting ? <Loader2 className="size-6 animate-spin" /> : <Plus className="size-6" />}
-                 Criar Usuário Agora
-               </Button>
-             </DialogFooter>
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Senha Inicial</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Input 
+                    type="password"
+                    value={formData.password} 
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary' },
+                    { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500' },
+                    { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500' },
+                    { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500' },
+                  ].map((role) => (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: role.id })}
+                      className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all gap-2 h-24 ${
+                        formData.role === role.id 
+                        ? `border-primary bg-primary/5 scale-105 shadow-lg` 
+                        : 'border-transparent bg-muted/30 hover:bg-muted/50 grayscale opacity-70'
+                      }`}
+                    >
+                      <role.icon className={`size-6 ${role.color}`} />
+                      <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {role.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
+                <div className="relative">
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Input 
+                    value={formData.unidade} 
+                    onChange={e => setFormData({...formData, unidade: e.target.value})}
+                    className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                    placeholder="Ex: Matriz Rio, Filial Centro..."
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-8">
+              <Button 
+               onClick={handleCreateUser} 
+               disabled={isSubmitting}
+               className="w-full rounded-2xl h-14 font-black text-lg gap-2 shadow-2xl shadow-primary/30"
+              >
+                {isSubmitting ? <Loader2 className="size-6 animate-spin" /> : <Plus className="size-6" />}
+                Criar Usuário Agora
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </motion.div>
 
-      {/* STATS CARDS */}
+      {/* STATS SECTION */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -373,7 +372,7 @@ export default function UserManagementPage() {
         ))}
       </motion.div>
 
-      {/* MAIN TABLE SECTION */}
+      {/* TABLE SECTION */}
       <Card className="surface-card border-none shadow-2xl overflow-hidden border-t-8 border-t-primary">
         <CardHeader className="border-b bg-muted/10 pb-6 pt-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
@@ -552,110 +551,110 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
-      {/* EDIT MODAL */}
+      {/* EDIT MODAL SECTION */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl p-8">
-           <DialogHeader>
-             <DialogTitle className="text-2xl font-black flex items-center gap-2">
-               <Edit className="size-6 text-primary" />
-               Editar Permissões
-             </DialogTitle>
-             <DialogDescription className="font-medium text-muted-foreground">
-               Ajustando acesso para: <span className="text-foreground font-bold">{selectedUser?.name}</span>
-             </DialogDescription>
-           </DialogHeader>
-           
-            <div className="grid gap-6 py-6">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black flex items-center gap-2">
+              <Edit className="size-6 text-primary" />
+              Editar Permissões
+            </DialogTitle>
+            <DialogDescription className="font-medium text-muted-foreground">
+              Ajustando acesso para: <span className="text-foreground font-bold">{selectedUser?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                <Input 
+                  value={formData.name} 
+                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary' },
+                  { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500' },
+                  { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500' },
+                  { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500' },
+                ].map((role) => (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: role.id })}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all gap-1.5 h-20 ${
+                      formData.role === role.id 
+                      ? `border-primary bg-primary/5 scale-105 shadow-md` 
+                      : 'border-transparent bg-muted/30 hover:bg-muted/50 opacity-60'
+                    }`}
+                  >
+                    <role.icon className={`size-5 ${role.color}`} />
+                    <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {role.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
                   <Input 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    value={formData.unidade} 
+                    onChange={e => setFormData({...formData, unidade: e.target.value})}
                     className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso (Perfil)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'ADMIN', label: 'ADMINISTRADOR', icon: Shield, color: 'text-primary' },
-                    { id: 'HR_STAFF', label: 'RH', icon: Users, color: 'text-indigo-500' },
-                    { id: 'STORE_MANAGER', label: 'GESTOR', icon: Building2, color: 'text-amber-500' },
-                    { id: 'EMPLOYEE', label: 'COLABORADOR', icon: User, color: 'text-emerald-500' },
-                  ].map((role) => (
-                    <button
-                      key={role.id}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, role: role.id })}
-                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all gap-1.5 h-20 ${
-                        formData.role === role.id 
-                        ? `border-primary bg-primary/5 scale-105 shadow-md` 
-                        : 'border-transparent bg-muted/30 hover:bg-muted/50 opacity-60'
-                      }`}
-                    >
-                      <role.icon className={`size-5 ${role.color}`} />
-                      <span className={`text-[10px] font-black tracking-tight ${formData.role === role.id ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {role.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
-                  <div className="relative">
-                    <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4 opacity-30" />
-                    <Input 
-                      value={formData.unidade} 
-                      onChange={e => setFormData({...formData, unidade: e.target.value})}
-                      className="rounded-xl h-12 pl-12 bg-muted/30 border-none focus:bg-background transition-all" 
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
-                  <Select value={formData.teamId} onValueChange={val => setFormData({...formData, teamId: val})}>
-                    <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-none shadow-2xl p-1">
-                      <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Nenhum Time</SelectItem>
-                      {times.map(t => (
-                        <SelectItem key={t.id} value={t.id} className="rounded-lg h-10 font-medium">
-                          {t.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
+                <Select value={formData.teamId} onValueChange={val => setFormData({...formData, teamId: val})}>
+                  <SelectTrigger className="rounded-xl h-12 bg-muted/30 border-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-none shadow-2xl p-1">
+                    <SelectItem value="none" className="rounded-lg h-10 italic opacity-50">Nenhum Time</SelectItem>
+                    {times.map(t => (
+                      <SelectItem key={t.id} value={t.id} className="rounded-lg h-10 font-medium">
+                        {t.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-           
-           <DialogFooter className="mt-4 gap-3 sm:gap-0">
-             <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-xl h-12 font-bold">Cancelar</Button>
-             <Button 
-              onClick={handleUpdateUser} 
-              disabled={isSubmitting}
-              className="flex-1 rounded-2xl h-12 font-black gap-2 shadow-xl shadow-primary/20"
-             >
-               {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
-               Aplicar Alterações
-             </Button>
-           </DialogFooter>
+          </div>
+          
+          <DialogFooter className="mt-4 gap-3 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-xl h-12 font-bold">Cancelar</Button>
+            <Button 
+             onClick={handleUpdateUser} 
+             disabled={isSubmitting}
+             className="flex-1 rounded-2xl h-12 font-black gap-2 shadow-xl shadow-primary/20"
+            >
+              {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
+              Aplicar Alterações
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
 
-// Helper icon missing from lucide-react standard imports in this environment
+// Helper icon component
 function Save(props: any) {
   return (
     <svg
@@ -674,5 +673,5 @@ function Save(props: any) {
       <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
       <path d="M7 3v4a1 1 0 0 0 1 1h7" />
     </svg>
-  )
+  );
 }
