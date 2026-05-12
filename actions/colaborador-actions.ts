@@ -12,7 +12,7 @@ const colaboradorSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome muito curto"),
   cpf: z.string().length(11, "CPF deve ter 11 dígitos"),
   rg: z.string().min(5),
-  dataNascimento: z.string(),
+  dataNascimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato AAAA-MM-DD"),
   telefonePrincipal: z.string(),
   telefoneSecundario: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
@@ -70,7 +70,18 @@ export const createColaborador = createAction(
         let funcao = await tx.funcao.findFirst({ where: { nome: data.funcaoNome, setorId: setor.id } });
         if (!funcao) funcao = await tx.funcao.create({ data: { nome: data.funcaoNome, setorId: setor.id, salarioBase: 0 } });
 
-        const { setorNome: _s, funcaoNome: _f, lojaId: _l, agenciaBB: _ag, contaBB: _cb, ...rest } = data;
+        // Exclude all non-Prisma fields from rest (including dataNascimento to prevent raw string leak)
+        const { setorNome: _s, funcaoNome: _f, lojaId: _l, agenciaBB: _ag, contaBB: _cb, dataNascimento: _dn, ...rest } = data;
+
+        // Robust date parsing — avoids timezone shift with YYYY-MM-DD strings
+        const [year, month, day] = data.dataNascimento.split("-").map(Number);
+        if (!year || !month || !day || year < 1900 || year > new Date().getFullYear()) {
+          throw new Error(`Data de nascimento inválida: ${data.dataNascimento}`);
+        }
+        const parsedDate = new Date(year, month - 1, day, 12, 0, 0);
+        if (isNaN(parsedDate.getTime())) {
+          throw new Error(`Data de nascimento inválida: ${data.dataNascimento}`);
+        }
 
         const colaborador = await tx.colaborador.create({
           data: {
@@ -78,10 +89,7 @@ export const createColaborador = createAction(
             lojaId: targetLojaId,
             setorId: setor.id,
             funcaoId: funcao.id,
-            dataNascimento: (() => {
-              const [year, month, day] = data.dataNascimento.split("-").map(Number);
-              return new Date(year, month - 1, day, 12, 0, 0);
-            })(),
+            dataNascimento: parsedDate,
             email: data.email || null,
             status: ColaboradorStatus.EM_EXPERIENCIA,
           },
