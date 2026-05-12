@@ -14,8 +14,6 @@ export const updateProfile = createAction(
   updateProfileSchema,
   null, // Any logged in user
   async (data, session) => {
-    console.log("[UPDATE_PROFILE] Atualizando usuário:", session.user.id);
-    
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {

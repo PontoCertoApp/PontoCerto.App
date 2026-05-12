@@ -78,7 +78,12 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
   }
 }
 
-export async function loginUser(data: any) {
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export async function loginUser(data: z.infer<typeof loginSchema>) {
   try {
     await signIn("credentials", {
       email: data.email,

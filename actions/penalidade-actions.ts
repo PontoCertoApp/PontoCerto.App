@@ -69,6 +69,9 @@ export async function getPenalidades() {
 }
 
 export async function checkPenalidadeProgression(colaboradorId: string) {
+  const session = await auth();
+  if (!session?.user) return "Sem permissão";
+
   const history = await prisma.penalidade.findMany({
     where: { colaboradorId, status: PenalidadeStatus.ATIVA, tipo: { in: [PenalidadeTipo.ADVERTENCIA, PenalidadeTipo.SUSPENSAO] } },
     orderBy: { createdAt: "desc" },
@@ -84,6 +87,9 @@ export async function checkPenalidadeProgression(colaboradorId: string) {
 }
 
 export async function updatePenalidadeStatus(id: string, status: PenalidadeStatus) {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Não autorizado" };
   await prisma.penalidade.update({ where: { id }, data: { status } });
   revalidatePath("/penalidades");
+  return { success: true };
 }

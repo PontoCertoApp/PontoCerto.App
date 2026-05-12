@@ -93,22 +93,25 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
     revalidatePath("/ponto");
     return { success: true, data: result };
   } catch (error) {
-    console.error(error);
+    console.error("[REGISTRAR_INCONFORMIDADE_ERROR]:", error);
     return { success: false, error: "Erro ao registrar ponto" };
   }
 }
 
-export async function getInconformidadesDoDia(data: Date) {
+function toDateISO(value: Date | string): string {
+  return typeof value === "string" ? value.split("T")[0] : value.toISOString().split("T")[0];
+}
+
+export async function getInconformidadesDoDia(data: Date | string) {
   try {
     const scope = await getScope();
     if (!scope) return [];
 
-    const where: any = { ...pontoScope(scope) };
-
-    if (data) {
-      const dataISO = typeof data === "string" ? (data as string).split("T")[0] : (data as any).toISOString().split("T")[0];
-      where.data = { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) };
-    }
+    const dataISO = toDateISO(data);
+    const where = {
+      ...pontoScope(scope),
+      data: { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) },
+    };
 
     return prisma.registroPonto.findMany({
       where,
@@ -122,12 +125,12 @@ export async function getInconformidadesDoDia(data: Date) {
   }
 }
 
-export async function getColaboradoresSemPontoNoDia(data: Date) {
+export async function getColaboradoresSemPontoNoDia(data: Date | string) {
   try {
     const scope = await getScope();
     if (!scope) return [];
 
-    const dataISO = typeof data === "string" ? (data as string).split("T")[0] : (data as any).toISOString().split("T")[0];
+    const dataISO = toDateISO(data);
     const registrosNoDia = await prisma.registroPonto.findMany({
       where: { data: { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) } },
       select: { colaboradorId: true },
@@ -167,7 +170,7 @@ export async function getLeaderboard() {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
 
-    const where: any = { data: { gte: inicioMes }, ...pontoScope(scope) };
+    const where = { data: { gte: inicioMes }, ...pontoScope(scope) };
 
     const registros = await prisma.registroPonto.findMany({
       where,
@@ -183,7 +186,8 @@ export async function getLeaderboard() {
       FALTA_INJUSTIFICADA: -50, ATRASO: -10, SAIDA_ANTECIPADA: -10, PONTO_NAO_REGISTRADO: -20,
     };
 
-    const leaderboardMap: Record<string, any> = {};
+    type LeaderboardEntry = { id: string; nome: string; loja: string; time: string | null; pontos: number; vitorias: number };
+    const leaderboardMap: Record<string, LeaderboardEntry> = {};
     registros.forEach((r) => {
       if (!leaderboardMap[r.colaboradorId]) {
         leaderboardMap[r.colaboradorId] = {

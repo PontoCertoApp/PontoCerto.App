@@ -219,6 +219,8 @@ export async function getColaboradoresParaPonto(search?: string) {
 }
 
 export async function getColaboradorById(id: string) {
+  const session = await auth();
+  if (!session?.user) return null;
   return prisma.colaborador.findUnique({
     where: { id },
     include: { funcao: true, loja: true, setor: true, documentos: true },

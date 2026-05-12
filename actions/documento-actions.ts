@@ -43,6 +43,8 @@ export async function validarDocumento(id: string, status: DocumentStatus, obser
 }
 
 export async function getDocumentosPorColaborador(colaboradorId: string) {
+  const session = await auth();
+  if (!session?.user) return [];
   return prisma.documento.findMany({ where: { colaboradorId }, orderBy: { createdAt: "desc" } });
 }
 
