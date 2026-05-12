@@ -565,16 +565,6 @@ export default function UserManagementPage() {
              </DialogDescription>
            </DialogHeader>
            
-           <div className="grid gap-6 py-6">
-             <div className="grid gap-2">
-               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome de Exibição</Label>
-               <Input 
-                 value={formData.name} 
-                 onChange={e => setFormData({...formData, name: e.target.value})}
-                 className="rounded-xl h-12 bg-muted/30 border-none focus:bg-background" 
-               />
-             </div>
-
             <div className="grid gap-6 py-6">
               <div className="grid gap-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
