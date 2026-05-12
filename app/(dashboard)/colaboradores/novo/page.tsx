@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type Resolver } from "react-hook-form";
@@ -15,7 +15,6 @@ import {
   FileText,
   Building2,
   Loader2,
-  ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,104 +73,104 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Inline combobox — shows text input with a filtered dropdown of suggestions.
-// `value` is the hidden id; `displayValue` is the visible name text.
+/**
+ * Combobox: plain text input + floating suggestion list.
+ *
+ * - Dropdown opens ONLY while the user is typing (not on focus/click).
+ * - On blur without selecting, restores `selectedName` (the last confirmed name).
+ * - `selectedId` is the hidden value stored in the form; `selectedName` is the
+ *   matching display text derived by the parent from the items list.
+ */
 function ComboboxField({
-  label,
   placeholder,
   items,
-  value,
-  displayValue,
+  selectedId,
+  selectedName,
   onSelect,
   onClear,
   disabled,
 }: {
-  label: string;
   placeholder: string;
   items: { id: string; nome: string }[];
-  value: string;
-  displayValue: string;
+  selectedId: string;
+  selectedName: string;
   onSelect: (id: string, nome: string) => void;
   onClear: () => void;
   disabled?: boolean;
 }) {
-  const [text, setText] = useState(displayValue);
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [inputText, setInputText] = useState(selectedName);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Sync external display value (e.g. when loja clears time)
+  // Sync display text when the confirmed selection changes externally
+  // (e.g. time field reset when loja changes).
   useEffect(() => {
-    setText(displayValue);
-  }, [displayValue]);
+    setInputText(selectedName);
+  }, [selectedName]);
 
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        // If user typed but didn't pick a match, restore last confirmed name or clear
-        if (!value) setText("");
-        else setText(items.find((i) => i.id === value)?.nome ?? "");
-      }
-    }
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [value, items]);
-
-  const suggestions = items.filter((i) =>
-    i.nome.toLowerCase().includes(text.toLowerCase())
-  );
+  const suggestions =
+    inputText.trim().length > 0
+      ? items.filter((i) => i.nome.toLowerCase().includes(inputText.toLowerCase()))
+      : [];
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
-    setText(val);
-    setOpen(true);
+    setInputText(val);
+    setShowSuggestions(val.length > 0);
     if (!val) onClear();
   }
 
+  function handleBlur() {
+    // Delay so a click on a suggestion fires before the blur closes the list.
+    setTimeout(() => {
+      setShowSuggestions(false);
+      // Restore to confirmed selection name, or empty if nothing is selected.
+      setInputText(selectedName);
+    }, 150);
+  }
+
   function handleSelect(item: { id: string; nome: string }) {
-    setText(item.nome);
-    setOpen(false);
+    setInputText(item.nome);
+    setShowSuggestions(false);
     onSelect(item.id, item.nome);
   }
 
   return (
-    <div ref={containerRef} className="relative">
-      <div className="relative">
-        <Input
-          placeholder={placeholder}
-          value={text}
-          disabled={disabled}
-          onChange={handleChange}
-          onFocus={() => setOpen(true)}
-          className="pr-8"
-          autoComplete="off"
-        />
-        <ChevronsUpDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-40" />
-      </div>
-      {open && suggestions.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-md max-h-48 overflow-y-auto">
-          {suggestions.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left transition-colors"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleSelect(item)}
-            >
-              <Check
-                className={`h-3.5 w-3.5 shrink-0 text-primary transition-opacity ${
-                  value === item.id ? "opacity-100" : "opacity-0"
-                }`}
-              />
-              {item.nome}
-            </button>
-          ))}
-        </div>
-      )}
-      {open && !disabled && suggestions.length === 0 && text.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
-          Nenhum resultado encontrado.
-        </div>
+    <div className="relative">
+      <Input
+        placeholder={placeholder}
+        value={inputText}
+        disabled={disabled}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        autoComplete="off"
+      />
+      {showSuggestions && !disabled && (
+        <>
+          {suggestions.length > 0 ? (
+            <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-md max-h-48 overflow-y-auto">
+              {suggestions.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left transition-colors"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelect(item)}
+                >
+                  <Check
+                    className={`h-3.5 w-3.5 shrink-0 text-primary transition-opacity ${
+                      selectedId === item.id ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  {item.nome}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
+              Nenhum resultado encontrado.
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -185,10 +184,6 @@ export default function NovoColaboradorPage() {
   const [setores, setSetores] = useState<any[]>([]);
   const [funcoes, setFuncoes] = useState<any[]>([]);
   const [times, setTimes] = useState<{ id: string; nome: string }[]>([]);
-
-  // Separate display text for the comboboxes (id lives in the form)
-  const [lojaDisplayValue, setLojaDisplayValue] = useState("");
-  const [timeDisplayValue, setTimeDisplayValue] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -210,6 +205,12 @@ export default function NovoColaboradorPage() {
     },
   });
 
+  // Derive display names from the loaded lists — no separate display-text state needed.
+  const currentLojaId = form.watch("lojaId") ?? "";
+  const currentTeamId = form.watch("teamId") ?? "";
+  const selectedLojaName = lojas.find((l) => l.id === currentLojaId)?.nome ?? "";
+  const selectedTimeName = times.find((t) => t.id === currentTeamId)?.nome ?? "";
+
   useEffect(() => {
     async function loadData() {
       const [lojasData, setoresData, funcoesData] = await Promise.all([
@@ -224,32 +225,25 @@ export default function NovoColaboradorPage() {
     loadData();
   }, []);
 
-  async function handleLojaSelect(id: string, nome: string) {
+  async function handleLojaSelect(id: string) {
     form.setValue("lojaId", id);
-    setLojaDisplayValue(nome);
-    // Reset time when loja changes
     form.setValue("teamId", "");
-    setTimeDisplayValue("");
     const timesData = await getTimes(id);
     setTimes(timesData as { id: string; nome: string }[]);
   }
 
   function handleLojaClear() {
     form.setValue("lojaId", "");
-    setLojaDisplayValue("");
     form.setValue("teamId", "");
-    setTimeDisplayValue("");
     setTimes([]);
   }
 
-  function handleTimeSelect(id: string, nome: string) {
+  function handleTimeSelect(id: string) {
     form.setValue("teamId", id);
-    setTimeDisplayValue(nome);
   }
 
   function handleTimeClear() {
     form.setValue("teamId", "");
-    setTimeDisplayValue("");
   }
 
   const progress = (currentStep / steps.length) * 100;
@@ -298,7 +292,10 @@ export default function NovoColaboradorPage() {
       const promise = fetch("/api/upload", { method: "POST", body: formData }).then(
         async (res) => {
           const data = await res.json();
-          if (data.success) { form.setValue(fieldName, data.path); return data; }
+          if (data.success) {
+            form.setValue(fieldName, data.path);
+            return data;
+          }
           throw new Error(data.error || "Erro no upload");
         }
       );
@@ -344,7 +341,11 @@ export default function NovoColaboradorPage() {
               >
                 <step.icon className="h-5 w-5" />
               </div>
-              <span className={`text-xs font-medium ${currentStep >= step.id ? "text-primary" : "text-muted-foreground"}`}>
+              <span
+                className={`text-xs font-medium ${
+                  currentStep >= step.id ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
                 {step.title}
               </span>
             </div>
@@ -459,12 +460,11 @@ export default function NovoColaboradorPage() {
                               <FormLabel>Loja</FormLabel>
                               <FormControl>
                                 <ComboboxField
-                                  label="Loja"
                                   placeholder="Digite o nome da loja..."
                                   items={lojas}
-                                  value={form.watch("lojaId") ?? ""}
-                                  displayValue={lojaDisplayValue}
-                                  onSelect={handleLojaSelect}
+                                  selectedId={currentLojaId}
+                                  selectedName={selectedLojaName}
+                                  onSelect={(id) => handleLojaSelect(id)}
                                   onClear={handleLojaClear}
                                 />
                               </FormControl>
@@ -473,7 +473,7 @@ export default function NovoColaboradorPage() {
                           )}
                         />
 
-                        {/* Time — combobox filtrado pela loja selecionada */}
+                        {/* Time — combobox, filtrado pela loja */}
                         <FormField
                           control={form.control}
                           name="teamId"
@@ -482,16 +482,15 @@ export default function NovoColaboradorPage() {
                               <FormLabel>Time</FormLabel>
                               <FormControl>
                                 <ComboboxField
-                                  label="Time"
                                   placeholder={
                                     times.length === 0
                                       ? "Selecione a loja primeiro"
                                       : "Digite o nome do time..."
                                   }
                                   items={times}
-                                  value={form.watch("teamId") ?? ""}
-                                  displayValue={timeDisplayValue}
-                                  onSelect={handleTimeSelect}
+                                  selectedId={currentTeamId}
+                                  selectedName={selectedTimeName}
+                                  onSelect={(id) => handleTimeSelect(id)}
                                   onClear={handleTimeClear}
                                   disabled={times.length === 0}
                                 />
@@ -584,7 +583,9 @@ export default function NovoColaboradorPage() {
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, "");
                                     field.onChange(
-                                      val.length <= 4 ? val : `${val.slice(0, 4)}-${val.slice(4, 5)}`
+                                      val.length <= 4
+                                        ? val
+                                        : `${val.slice(0, 4)}-${val.slice(4, 5)}`
                                     );
                                   }}
                                 />
@@ -610,7 +611,9 @@ export default function NovoColaboradorPage() {
                                   onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, "");
                                     field.onChange(
-                                      val.length <= 5 ? val : `${val.slice(0, -1)}-${val.slice(-1)}`
+                                      val.length <= 5
+                                        ? val
+                                        : `${val.slice(0, -1)}-${val.slice(-1)}`
                                     );
                                   }}
                                 />
@@ -635,7 +638,8 @@ export default function NovoColaboradorPage() {
                               Possui filhos menores de 14 anos?
                             </FormLabel>
                             <FormDescription className="text-xs">
-                              Se ativado, habilitará o campo de Certidão de Nascimento na próxima etapa.
+                              Se ativado, habilitará o campo de Certidão de Nascimento na próxima
+                              etapa.
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -656,7 +660,9 @@ export default function NovoColaboradorPage() {
                     className="grid grid-cols-1 md:grid-cols-2 gap-6"
                   >
                     <div className="space-y-4 md:col-span-2">
-                      <h3 className="text-lg font-medium">Upload de Documentos, Foto e Contrato</h3>
+                      <h3 className="text-lg font-medium">
+                        Upload de Documentos, Foto e Contrato
+                      </h3>
                       <p className="text-sm text-muted-foreground">
                         Formatos aceitos: PDF e Imagens (PNG/JPG)
                       </p>
@@ -699,7 +705,9 @@ export default function NovoColaboradorPage() {
 
                     {form.watch("possuiFilhosMenores14") && (
                       <div className="flex flex-col gap-2 p-4 border border-amber-200 rounded-lg bg-amber-50 dark:bg-amber-900/10 md:col-span-2">
-                        <span className="text-sm font-medium">Certidão de Nascimento (Filhos)</span>
+                        <span className="text-sm font-medium">
+                          Certidão de Nascimento (Filhos)
+                        </span>
                         <Button
                           type="button"
                           variant={form.watch("certidaoFilhosPath") ? "default" : "outline"}
@@ -715,7 +723,9 @@ export default function NovoColaboradorPage() {
                           ) : (
                             <Upload className="mr-2 h-4 w-4" />
                           )}
-                          {form.watch("certidaoFilhosPath") ? "Certidão Enviada" : "Upload Certidão"}
+                          {form.watch("certidaoFilhosPath")
+                            ? "Certidão Enviada"
+                            : "Upload Certidão"}
                         </Button>
                       </div>
                     )}
