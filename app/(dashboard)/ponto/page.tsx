@@ -118,7 +118,7 @@ export default function PontoPage() {
     setIsLoading(true);
     try {
       const [registros, topPerformers] = await Promise.all([
-        getInconformidadesDoDia(undefined as any),
+        getInconformidadesDoDia(new Date()),
         getLeaderboard()
       ]);
       setTratados(registros);

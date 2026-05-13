@@ -98,7 +98,8 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
   }
 }
 
-function toDateISO(value: Date | string): string {
+function toDateISO(value: Date | string | undefined | null): string {
+  if (!value) return new Date().toISOString().split("T")[0];
   return typeof value === "string" ? value.split("T")[0] : value.toISOString().split("T")[0];
 }
 
