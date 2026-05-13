@@ -114,14 +114,15 @@ export async function getInconformidadesDoDia(data: Date | string) {
       data: { gte: new Date(`${dataISO}T00:00:00.000Z`), lte: new Date(`${dataISO}T23:59:59.999Z`) },
     };
 
-    return prisma.registroPonto.findMany({
+    const registros = await prisma.registroPonto.findMany({
       where,
       include: { colaborador: { include: { loja: true, setor: true, time: true } } },
       orderBy: { createdAt: "desc" },
       take: 100,
     });
+    return registros;
   } catch (error) {
-    console.error("Erro ao buscar registros do dia:", error);
+    console.error("[GET_INCONFORMIDADES_DO_DIA_ERROR]:", error);
     return [];
   }
 }
@@ -193,9 +194,9 @@ export async function getLeaderboard() {
       if (!leaderboardMap[r.colaboradorId]) {
         leaderboardMap[r.colaboradorId] = {
           id: r.colaboradorId,
-          nome: r.colaborador.nomeCompleto,
-          loja: r.colaborador.loja?.nome || "Geral",
-          time: r.colaborador.time?.nome || null,
+          nome: r.colaborador?.nomeCompleto || "Desconhecido",
+          loja: r.colaborador?.loja?.nome || "Geral",
+          time: r.colaborador?.time?.nome || null,
           pontos: 0,
           vitorias: 0,
         };
@@ -207,7 +208,7 @@ export async function getLeaderboard() {
 
     return Object.values(leaderboardMap).sort((a, b) => b.pontos - a.pontos).slice(0, 5);
   } catch (error) {
-    console.error("Erro no Leaderboard:", error);
+    console.error("[GET_LEADERBOARD_ERROR]:", error);
     return [];
   }
 }
