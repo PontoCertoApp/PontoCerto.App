@@ -72,23 +72,23 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
   HR_STAFF: "RH",
   STORE_MANAGER: "Gestor de Loja",
-  EMPLOYEE: "Colaborador",
+  COLABORADOR: "Colaborador",
 };
 
 const ROLE_BADGE_CLASS: Record<string, string> = {
   ADMIN: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   HR_STAFF: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   STORE_MANAGER: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  EMPLOYEE: "bg-muted text-muted-foreground",
+  COLABORADOR: "bg-muted text-muted-foreground",
 };
 
 const EMPTY_CREATE = {
   name: "",
   email: "",
   password: "",
-  role: "EMPLOYEE",
-  lojaId: "",
-  teamId: "",
+  role: "COLABORADOR",
+  unidade: "",
+  team: "",
 };
 
 export default function UsuariosConfigPage() {
@@ -105,7 +105,7 @@ export default function UsuariosConfigPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
-  const [editData, setEditData] = useState({ role: "", lojaId: "", teamId: "" });
+  const [editData, setEditData] = useState({ role: "", unidade: "", team: "" });
   const [editLoading, setEditLoading] = useState(false);
 
   const filteredUsers = useMemo(
@@ -157,8 +157,8 @@ export default function UsuariosConfigPage() {
       email: createData.email,
       password: createData.password,
       role: createData.role,
-      lojaId: createData.lojaId || undefined,
-      teamId: createData.teamId || undefined,
+      unidade: createData.unidade || undefined,
+      team: createData.team || undefined,
     });
     if (res.success) {
       toast.success("Usuário criado com sucesso!");
@@ -174,9 +174,9 @@ export default function UsuariosConfigPage() {
   function openEdit(user: any) {
     setEditUser(user);
     setEditData({
-      role: user.role || "EMPLOYEE",
-      lojaId: user.lojaId || "",
-      teamId: user.teamId || "",
+      role: user.role || "COLABORADOR",
+      unidade: user.loja?.nome || "",
+      team: user.time?.nome || "",
     });
     setEditOpen(true);
   }
@@ -187,8 +187,8 @@ export default function UsuariosConfigPage() {
     const res = await updateUserDetails({
       userId: editUser.id,
       role: editData.role,
-      lojaId: editData.lojaId || null,
-      teamId: editData.teamId || null,
+      unidade: editData.unidade || null,
+      team: editData.team || null,
     });
     if (res.success) {
       toast.success("Usuário atualizado!");
@@ -319,7 +319,7 @@ export default function UsuariosConfigPage() {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ROLE_BADGE_CLASS[user.role] || ROLE_BADGE_CLASS.EMPLOYEE}`}
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ROLE_BADGE_CLASS[user.role] || ROLE_BADGE_CLASS.COLABORADOR}`}
                       >
                         {ROLE_LABELS[user.role] || user.role}
                       </span>
@@ -438,60 +438,25 @@ export default function UsuariosConfigPage() {
                   <SelectItem value="ADMIN">Administrador</SelectItem>
                   <SelectItem value="HR_STAFF">RH</SelectItem>
                   <SelectItem value="STORE_MANAGER">Gestor de Loja</SelectItem>
-                  <SelectItem value="EMPLOYEE">Colaborador</SelectItem>
+                  <SelectItem value="COLABORADOR">Colaborador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-1.5">
               <Label>Unidade</Label>
-              <Select
-                value={createData.lojaId || "_none"}
-                onValueChange={(v) =>
-                  setCreateData((p) => ({
-                    ...p,
-                    lojaId: !v || v === "_none" ? "" : v,
-                    teamId: "",
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sem unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sem unidade</SelectItem>
-                  {lojas.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={createData.unidade}
+                onChange={(e) => setCreateData((p) => ({ ...p, unidade: e.target.value }))}
+                placeholder="Nome da Unidade"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Time</Label>
-              <Select
-                value={createData.teamId || "_none"}
-                onValueChange={(v) =>
-                  setCreateData((p) => ({ ...p, teamId: !v || v === "_none" ? "" : v }))
-                }
-                disabled={!createData.lojaId}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      createData.lojaId ? "Selecione o time" : "Selecione a unidade primeiro"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sem time</SelectItem>
-                  {createTimes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={createData.team}
+                onChange={(e) => setCreateData((p) => ({ ...p, team: e.target.value }))}
+                placeholder="Nome do Time (opcional)"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -531,60 +496,25 @@ export default function UsuariosConfigPage() {
                   <SelectItem value="ADMIN">Administrador</SelectItem>
                   <SelectItem value="HR_STAFF">RH</SelectItem>
                   <SelectItem value="STORE_MANAGER">Gestor de Loja</SelectItem>
-                  <SelectItem value="EMPLOYEE">Colaborador</SelectItem>
+                  <SelectItem value="COLABORADOR">Colaborador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-1.5">
               <Label>Unidade</Label>
-              <Select
-                value={editData.lojaId || "_none"}
-                onValueChange={(v) =>
-                  setEditData((p) => ({
-                    ...p,
-                    lojaId: !v || v === "_none" ? "" : v,
-                    teamId: "",
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sem unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sem unidade</SelectItem>
-                  {lojas.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={editData.unidade}
+                onChange={(e) => setEditData((p) => ({ ...p, unidade: e.target.value }))}
+                placeholder="Nome da Unidade"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Time</Label>
-              <Select
-                value={editData.teamId || "_none"}
-                onValueChange={(v) =>
-                  setEditData((p) => ({ ...p, teamId: !v || v === "_none" ? "" : v }))
-                }
-                disabled={!editData.lojaId}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      editData.lojaId ? "Selecione o time" : "Selecione a unidade primeiro"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">Sem time</SelectItem>
-                  {editTimes.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={editData.team}
+                onChange={(e) => setEditData((p) => ({ ...p, team: e.target.value }))}
+                placeholder="Nome do Time (opcional)"
+              />
             </div>
           </div>
           <DialogFooter>

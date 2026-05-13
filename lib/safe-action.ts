@@ -16,7 +16,8 @@ function normalizeRole(role: string | undefined | null): string {
   const upper = role.toUpperCase();
   if (upper === "RH") return "HR_STAFF";
   if (upper === "GERENTE") return "STORE_MANAGER";
-  if (upper === "COLABORADOR") return "EMPLOYEE";
+  if (upper === "EMPLOYEE") return "COLABORADOR";
+  if (upper === "COLABORADOR") return "COLABORADOR";
   return upper;
 }
 

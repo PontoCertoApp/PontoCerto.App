@@ -11,7 +11,7 @@ export async function getScope(): Promise<UserScope | null> {
   const session = await auth();
   if (!session?.user) return null;
   return {
-    role: (session.user.role || "EMPLOYEE").toUpperCase(),
+    role: (session.user.role || "COLABORADOR").toUpperCase(),
     lojaId: session.user.lojaId ?? null,
     teamId: session.user.teamId ?? null,
   };
@@ -31,7 +31,7 @@ export function colaboradorScope(scope: UserScope): Record<string, any> {
       return {};
     case "STORE_MANAGER":
       return scope.lojaId ? { lojaId: scope.lojaId } : {};
-    case "EMPLOYEE":
+    case "COLABORADOR":
       return scope.teamId ? { teamId: scope.teamId } : { id: "__deny__" };
     default:
       return {};
@@ -59,7 +59,7 @@ export function pontoScope(scope: UserScope): Record<string, any> {
       return {};
     case "STORE_MANAGER":
       return scope.lojaId ? { lojaId: scope.lojaId } : {};
-    case "EMPLOYEE":
+    case "COLABORADOR":
       // For ponto, employee sees only their own team via colaborador
       return scope.teamId ? { colaborador: { teamId: scope.teamId } } : { id: "__deny__" };
     default:

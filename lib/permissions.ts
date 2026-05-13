@@ -2,7 +2,7 @@ export const ROLES = {
   ADMIN: 'ADMIN',
   STORE_MANAGER: 'STORE_MANAGER',
   HR_STAFF: 'HR_STAFF',
-  EMPLOYEE: 'EMPLOYEE',
+  COLABORADOR: 'COLABORADOR',
 } as const;
 
 export type Role = keyof typeof ROLES;
@@ -43,7 +43,8 @@ export function canAccess(role: string | undefined, path: string): boolean {
 
   if (userRole === 'RH') userRole = ROLES.HR_STAFF;
   if (userRole === 'GERENTE') userRole = ROLES.STORE_MANAGER;
-  if (userRole === 'COLABORADOR') userRole = ROLES.EMPLOYEE;
+  if (userRole === 'EMPLOYEE') userRole = ROLES.COLABORADOR;
+  if (userRole === 'COLABORADOR') userRole = ROLES.COLABORADOR;
 
   if (userRole === ROLES.ADMIN) return true;
 

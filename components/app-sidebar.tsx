@@ -60,7 +60,7 @@ const items = [
     title: "Documentação",
     url: "/documentos",
     icon: FileText,
-    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF", "EMPLOYEE"],
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF", "COLABORADOR"],
   },
   {
     title: "Pontuação de Equipe",
@@ -123,7 +123,7 @@ export function AppSidebar() {
       ADMIN: "ADMINISTRADOR",
       STORE_MANAGER: "GESTOR DE UNIDADE",
       HR_STAFF: "RECURSOS HUMANOS (RH)",
-      EMPLOYEE: "COLABORADOR PADRÃO",
+      COLABORADOR: "COLABORADOR PADRÃO",
     };
     
     // UI-LEVEL FORCE: Mestre sempre é Administrador
@@ -162,7 +162,7 @@ export function AppSidebar() {
               // Legacy mapping for compatibility
               if (userRole === "RH") userRole = "HR_STAFF";
               if (userRole === "GERENTE") userRole = "STORE_MANAGER";
-              if (userRole === "COLABORADOR") userRole = "EMPLOYEE";
+              if (userRole === "COLABORADOR") userRole = "COLABORADOR";
 
               // ADMIN has access to everything
               if (userRole === "ADMIN") {

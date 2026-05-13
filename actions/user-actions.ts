@@ -113,7 +113,7 @@ export const createUserByAdmin = createAction(
     password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     role: z.string(),
     unidade: z.string().optional(),
-    teamId: z.string().optional(),
+    team: z.string().optional(),
   }),
   ["ADMIN"],
   async (data) => {
@@ -134,6 +134,24 @@ export const createUserByAdmin = createAction(
       }
     }
 
+    let teamId = null;
+    if (data.team && data.team.trim() !== "" && data.team !== "none") {
+      const tName = data.team.trim();
+      if (lojaId) {
+        const existingTeam = await prisma.time.findFirst({
+          where: { nome: { equals: tName }, lojaId }
+        });
+        if (existingTeam) {
+          teamId = existingTeam.id;
+        } else {
+          const newTeam = await prisma.time.create({
+            data: { nome: tName, lojaId }
+          });
+          teamId = newTeam.id;
+        }
+      }
+    }
+
     const hashed = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
       data: {
@@ -142,7 +160,7 @@ export const createUserByAdmin = createAction(
         password: hashed,
         role: data.role,
         lojaId: lojaId,
-        teamId: data.teamId || null,
+        teamId: teamId,
       },
     });
 
@@ -159,7 +177,7 @@ export const updateUserDetails = createAction(
     name: z.string().optional(),
     role: z.string().optional(),
     unidade: z.string().nullable().optional(),
-    teamId: z.string().nullable().optional(),
+    team: z.string().nullable().optional(),
   }),
   ["ADMIN"],
   async (data) => {
@@ -167,10 +185,9 @@ export const updateUserDetails = createAction(
     const updateData: Record<string, unknown> = {};
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.role !== undefined) updateData.role = updates.role;
-    if (updates.teamId !== undefined) updateData.teamId = updates.teamId;
 
     if (updates.unidade !== undefined) {
-      if (!updates.unidade || updates.unidade.trim() === "") {
+      if (!updates.unidade || updates.unidade.trim() === "" || updates.unidade === "none") {
         updateData.lojaId = null;
       } else {
         const name = updates.unidade.trim();
@@ -183,6 +200,32 @@ export const updateUserDetails = createAction(
           const newLoja = await prisma.loja.create({ data: { nome: name } });
           updateData.lojaId = newLoja.id;
         }
+      }
+    }
+
+    // Determine effective lojaId for team creation
+    const currentLojaId = (updateData.lojaId !== undefined) 
+      ? (updateData.lojaId as string | null)
+      : (await prisma.user.findUnique({ where: { id: userId }, select: { lojaId: true } }))?.lojaId;
+
+    if (updates.team !== undefined) {
+      if (!updates.team || updates.team.trim() === "" || updates.team === "none") {
+        updateData.teamId = null;
+      } else if (currentLojaId) {
+        const tName = updates.team.trim();
+        const existingTeam = await prisma.time.findFirst({
+          where: { nome: { equals: tName }, lojaId: currentLojaId }
+        });
+        if (existingTeam) {
+          updateData.teamId = existingTeam.id;
+        } else {
+          const newTeam = await prisma.time.create({
+            data: { nome: tName, lojaId: currentLojaId }
+          });
+          updateData.teamId = newTeam.id;
+        }
+      } else {
+        updateData.teamId = null;
       }
     }
 

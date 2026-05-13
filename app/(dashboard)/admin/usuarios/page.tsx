@@ -106,9 +106,9 @@ export default function UserManagementPage() {
     name: "",
     email: "",
     password: "",
-    role: "EMPLOYEE",
-    unidadeId: "none",
-    teamId: "none"
+    role: "COLABORADOR",
+    unidade: "",
+    team: ""
   });
 
   const fetchData = async () => {
@@ -202,18 +202,14 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     try {
-      // Find loja name for backward compatibility in the action
-      const selectedLoja = lojas.find(l => l.id === formData.unidadeId);
       const res = await createUserByAdmin({
         ...formData,
-        unidade: selectedLoja?.nome || undefined,
-        teamId: formData.teamId === "none" ? undefined : formData.teamId,
       });
 
       if (res?.success) {
         toast.success("Usuário criado com sucesso!");
         setIsCreateOpen(false);
-        setFormData({ name: "", email: "", password: "", role: "EMPLOYEE", unidadeId: "none", teamId: "none" });
+        setFormData({ name: "", email: "", password: "", role: "COLABORADOR", unidade: "", team: "" });
         fetchData();
       } else {
         toast.error(res?.error || "Erro ao criar usuário");
@@ -230,13 +226,12 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     try {
-      const selectedLoja = lojas.find(l => l.id === formData.unidadeId);
       const res = await updateUserDetails({
         userId: selectedUser.id,
         name: formData.name,
         role: formData.role,
-        unidade: selectedLoja?.nome || null,
-        teamId: formData.teamId === "none" ? null : formData.teamId,
+        unidade: formData.unidade,
+        team: formData.team,
       });
 
       if (res?.success) {
@@ -259,9 +254,9 @@ export default function UserManagementPage() {
       name: user.name || "",
       email: user.email || "",
       password: "",
-      role: user.role || "EMPLOYEE",
-      unidadeId: user.lojaId || "none",
-      teamId: user.teamId || "none"
+      role: user.role || "COLABORADOR",
+      unidade: user.loja?.nome || "",
+      team: user.time?.nome || ""
     });
     setIsEditOpen(true);
   };
@@ -270,14 +265,14 @@ export default function UserManagementPage() {
     ADMIN: "ADMINISTRADOR",
     STORE_MANAGER: "GESTOR DE UNIDADE",
     HR_STAFF: "RECURSOS HUMANOS (RH)",
-    EMPLOYEE: "COLABORADOR PADRÃO",
+    COLABORADOR: "COLABORADOR PADRÃO",
   };
 
   const roleColor: Record<string, string> = {
     ADMIN: "bg-primary text-primary-foreground",
     STORE_MANAGER: "bg-amber-500 text-white",
     HR_STAFF: "bg-indigo-500 text-white",
-    EMPLOYEE: "bg-muted text-muted-foreground",
+    COLABORADOR: "bg-muted text-muted-foreground",
   };
 
   return (
@@ -382,7 +377,7 @@ export default function UserManagementPage() {
                   <SelectItem value="ADMIN">Administrador</SelectItem>
                   <SelectItem value="HR_STAFF">RH (Recursos Humanos)</SelectItem>
                   <SelectItem value="STORE_MANAGER">Gestor de Unidade</SelectItem>
-                  <SelectItem value="EMPLOYEE">Colaborador Padrão</SelectItem>
+                  <SelectItem value="COLABORADOR">Colaborador Padrão</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -690,19 +685,26 @@ export default function UserManagementPage() {
                          <SelectItem value="ADMIN">Administrador</SelectItem>
                          <SelectItem value="HR_STAFF">RH</SelectItem>
                          <SelectItem value="STORE_MANAGER">Gestor</SelectItem>
-                         <SelectItem value="EMPLOYEE">Colaborador</SelectItem>
+                         <SelectItem value="COLABORADOR">Colaborador</SelectItem>
                       </SelectContent>
                     </Select>
 
-                    <Select value={formData.unidadeId} onValueChange={v => setFormData({...formData, unidadeId: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl bg-muted/40 border-none font-bold uppercase text-[10px] tracking-widest">
-                        <SelectValue placeholder="Unidade" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl">
-                         <SelectItem value="none">Sede Adm</SelectItem>
-                         {lojas.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Input 
+                      value={formData.unidade} 
+                      onChange={e => setFormData({...formData, unidade: e.target.value})}
+                      className="h-14 rounded-2xl bg-muted/40 border-none font-bold placeholder:text-muted-foreground/30" 
+                      placeholder="Unidade / Loja"
+                    />
+                 </div>
+                 
+                 <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
+                    <Input 
+                      value={formData.team} 
+                      onChange={e => setFormData({...formData, team: e.target.value})}
+                      className="h-14 rounded-2xl bg-muted/40 border-none font-bold placeholder:text-muted-foreground/30" 
+                      placeholder="Nome do Time"
+                    />
                  </div>
                </div>
             </div>
@@ -759,36 +761,30 @@ export default function UserManagementPage() {
                          <SelectItem value="ADMIN">Administrador</SelectItem>
                          <SelectItem value="HR_STAFF">RH</SelectItem>
                          <SelectItem value="STORE_MANAGER">Gestor</SelectItem>
-                         <SelectItem value="EMPLOYEE">Colaborador</SelectItem>
+                         <SelectItem value="COLABORADOR">Colaborador</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Unidade / Loja</Label>
-                    <Select value={formData.unidadeId} onValueChange={v => setFormData({...formData, unidadeId: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-black uppercase text-[10px] tracking-widest">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl">
-                         <SelectItem value="none">Sede Adm</SelectItem>
-                         {lojas.map(l => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Input 
+                      value={formData.unidade} 
+                      onChange={e => setFormData({...formData, unidade: e.target.value})}
+                      className="h-14 rounded-2xl bg-muted/30 border-none font-black" 
+                      placeholder="Digite a Unidade"
+                    />
                   </div>
                </div>
 
                <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Time (Opcional)</Label>
-                  <Select value={formData.teamId} onValueChange={v => setFormData({...formData, teamId: v})}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-black uppercase text-[10px] tracking-widest">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                       <SelectItem value="none">Nenhum Time</SelectItem>
-                       {times.map(t => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input 
+                    value={formData.team} 
+                    onChange={e => setFormData({...formData, team: e.target.value})}
+                    className="h-14 rounded-2xl bg-muted/30 border-none font-black" 
+                    placeholder="Digite o Time"
+                  />
                </div>
             </div>
 

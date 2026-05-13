@@ -1,6 +1,6 @@
 import { DefaultSession, DefaultJWT } from "next-auth";
 
-export type UserRole = "ADMIN" | "STORE_MANAGER" | "HR_STAFF" | "EMPLOYEE";
+export type UserRole = "ADMIN" | "STORE_MANAGER" | "HR_STAFF" | "COLABORADOR";
 
 declare module "next-auth" {
   interface Session {
