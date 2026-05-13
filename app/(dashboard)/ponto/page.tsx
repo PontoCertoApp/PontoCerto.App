@@ -605,7 +605,7 @@ export default function PontoPage() {
                   <SelectItem value="META_BATIDA" className="rounded-xl h-12 font-black text-green-600 mb-1">Meta Batida (+50)</SelectItem>
                   <SelectItem value="ELOGIO" className="rounded-xl h-12 font-black text-purple-600 mb-1">Elogio Master (+100)</SelectItem>
                   <SelectItem value="PRESENCA_MANUAL" className="rounded-xl h-12 font-bold mb-1">Presença Confirmada (+5)</SelectItem>
-                  <DropdownMenuSeparator className="my-2" />
+                  <div className="my-2 h-px bg-border/50" />
                   <SelectItem value="FALTA_INJUSTIFICADA" className="rounded-xl h-12 font-black text-red-600 mb-1">Falta Injustificada (-50)</SelectItem>
                   <SelectItem value="ATRASO" className="rounded-xl h-12 font-black text-amber-600 mb-1">Atraso Operacional (-10)</SelectItem>
                   <SelectItem value="SAIDA_ANTECIPADA" className="rounded-xl h-12 font-black text-orange-600">Saída Antecipada (-10)</SelectItem>
