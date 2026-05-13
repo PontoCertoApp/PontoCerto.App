@@ -47,7 +47,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -503,22 +502,15 @@ export default function UserManagementPage() {
                         </TableCell>
                         <TableCell className="pr-10 text-right">
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="rounded-2xl size-12 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreVertical className="size-6" />
-                              </Button>
+                            <DropdownMenuTrigger
+                              className="inline-flex items-center justify-center rounded-2xl size-12 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20 focus:outline-none cursor-pointer"
+                            >
+                              <MoreVertical className="size-6" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuContent 
-                                align="end" 
-                                onCloseAutoFocus={(e) => e.preventDefault()}
-                                className="w-72 rounded-[2rem] p-3 shadow-2xl border-none bg-card/95 backdrop-blur-2xl z-[100]"
-                              >
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-72 rounded-[2rem] p-3 shadow-2xl border-none bg-card/95 backdrop-blur-2xl z-[100]"
+                            >
                                 <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 pt-4 pb-2 flex items-center gap-2">
                                   <Shield className="size-3" />
                                   Ações Administrativas
@@ -586,10 +578,16 @@ export default function UserManagementPage() {
                                   className="rounded-2xl h-14 px-4 gap-4 font-bold cursor-pointer text-destructive hover:bg-destructive/10 transition-all focus:bg-destructive/10 focus:text-destructive"
                                   onClick={async () => {
                                     if (confirm(`Deseja realmente EXCLUIR o usuário ${user?.name}? Esta ação é IRREVERSÍVEL.`)) {
-                                      const res = await deleteUser(user.id);
-                                      if (res?.success) {
-                                        toast.success("Usuário removido com sucesso");
-                                        fetchData();
+                                      try {
+                                        const res = await deleteUser(user.id);
+                                        if (res?.success) {
+                                          toast.success("Usuário removido com sucesso");
+                                          fetchData();
+                                        } else {
+                                          toast.error(res?.error || "Erro ao excluir usuário");
+                                        }
+                                      } catch {
+                                        toast.error("Erro ao excluir usuário");
                                       }
                                     }
                                   }}
@@ -603,7 +601,6 @@ export default function UserManagementPage() {
                                   </div>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
-                            </DropdownMenuPortal>
                           </DropdownMenu>
                         </TableCell>
                       </motion.tr>
