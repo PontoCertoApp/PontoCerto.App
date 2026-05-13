@@ -242,8 +242,9 @@ export default function UserManagementPage() {
       } else {
         toast.error(res?.error || "Erro ao atualizar");
       }
-    } catch (err) {
-      toast.error("Erro inesperado");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Erro inesperado");
     } finally {
       setIsSubmitting(false);
     }

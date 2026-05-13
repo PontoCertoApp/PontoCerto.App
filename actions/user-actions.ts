@@ -236,7 +236,7 @@ export const updateUserDetails = createAction(
     revalidatePath("/config/usuarios");
     revalidatePath("/admin/usuarios");
     revalidatePath("/config/lojas");
-    return user;
+    return { id: user.id };
   }
 );
 
