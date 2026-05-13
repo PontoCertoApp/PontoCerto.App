@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   Building2,
   UserCog,
+  Shield,
 } from "lucide-react";
 
 import {
