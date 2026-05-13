@@ -337,6 +337,17 @@ export default function PontoPage() {
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-150 transition-transform duration-700">
                    {idx === 0 ? <Medal className="size-32" /> : <Award className="size-32" />}
                 </div>
+
+                <div className="absolute top-6 left-6 z-20">
+                  <Badge className={cn(
+                    "font-black tracking-widest uppercase text-[10px] px-3 py-1 shadow-2xl border-none",
+                    idx === 0 ? "bg-yellow-500 text-black" : 
+                    idx === 1 ? "bg-slate-400 text-black" : 
+                    "bg-orange-600 text-white"
+                  )}>
+                    {idx + 1}º LUGAR
+                  </Badge>
+                </div>
                 
                 <CardContent className="pt-8 pb-8 flex flex-col gap-6 relative z-10">
                   <div className="flex items-center gap-5">
@@ -548,11 +559,21 @@ export default function PontoPage() {
                   </AnimatePresence>
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-40 text-center">
-                       <div className="flex flex-col items-center justify-center gap-4 opacity-20">
-                          <Activity className="size-16" />
-                          <h3 className="text-2xl font-black uppercase tracking-widest">Silêncio no Ponto</h3>
-                          <p className="text-sm font-bold">Nenhum mérito ou atraso registrado hoje.</p>
+                    <TableCell colSpan={5} className="py-32 text-center">
+                       <div className="flex flex-col items-center justify-center gap-6 max-w-sm mx-auto">
+                          <div className="relative">
+                            <Activity className="size-20 text-muted-foreground/20 animate-pulse" />
+                            <Sparkles className="size-6 text-primary absolute -top-2 -right-2 opacity-50" />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-3xl font-black uppercase tracking-tighter text-foreground/40 leading-none">
+                              Silêncio no Ponto
+                            </h3>
+                            <p className="text-sm font-medium text-muted-foreground/60 italic">
+                              Ainda não há registros de mérito ou inconformidade para o dia de hoje.
+                            </p>
+                          </div>
+                          <div className="h-px w-24 bg-gradient-to-r from-transparent via-border to-transparent" />
                        </div>
                     </TableCell>
                   </TableRow>
