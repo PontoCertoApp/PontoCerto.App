@@ -86,6 +86,7 @@ export default function DocumentosPage() {
   const [activeTab, setActiveTab] = useState("pendentes");
 
   const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; nome: string; colaborador: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [obs, setObs] = useState("");
   const [isValidating, setIsValidating] = useState<string | null>(null);
@@ -316,11 +317,18 @@ export default function DocumentosPage() {
                                                     <span className="text-[10px] font-bold uppercase opacity-60">{selectedDoc?.colaborador.nomeCompleto}</span>
                                                   </div>
                                                 </div>
-                                                <a href={selectedDoc?.path} target="_blank" rel="noopener noreferrer">
-                                                  <Button variant="outline" size="sm" className="rounded-xl h-8 text-[10px] font-black uppercase tracking-widest">
-                                                    Ver Original
-                                                  </Button>
-                                                </a>
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm" 
+                                                  className="rounded-xl h-8 text-[10px] font-black uppercase tracking-widest"
+                                                  onClick={() => setPreviewDoc({ 
+                                                    url: selectedDoc?.path || "", 
+                                                    nome: selectedDoc?.nome || "", 
+                                                    colaborador: selectedDoc?.colaborador.nomeCompleto || "" 
+                                                  })}
+                                                >
+                                                  Ver Original
+                                                </Button>
                                               </div>
 
                                               <div className="space-y-3">
@@ -360,7 +368,11 @@ export default function DocumentosPage() {
                                         variant="ghost" 
                                         size="icon" 
                                         className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
-                                        onClick={() => window.open(d.path, '_blank')}
+                                        onClick={() => setPreviewDoc({ 
+                                          url: d.path, 
+                                          nome: d.nome, 
+                                          colaborador: d.colaborador.nomeCompleto 
+                                        })}
                                       >
                                         <Eye className="h-4 w-4" />
                                       </Button>
@@ -380,6 +392,64 @@ export default function DocumentosPage() {
           </TabsContent>
         ))}
       </Tabs>
-    </div>
-  );
-}
+
+       {/* DOCUMENT PREVIEW MODAL */}
+       <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+         <DialogContent className="max-w-5xl rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+           <DialogHeader className="p-8 pb-4">
+             <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-2xl">
+                   <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                   <DialogTitle className="text-2xl font-black tracking-tighter uppercase leading-none">{previewDoc?.nome}</DialogTitle>
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1 opacity-60">Colaborador: {previewDoc?.colaborador}</p>
+                </div>
+             </div>
+           </DialogHeader>
+
+           <div className="px-8 pb-4">
+             <div className="relative w-full rounded-3xl overflow-hidden bg-muted/20 border border-primary/5 min-h-[400px] flex items-center justify-center">
+                {previewDoc?.url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                  <img 
+                    src={previewDoc.url} 
+                    alt={previewDoc.nome} 
+                    className="max-w-full max-h-[70vh] object-contain animate-in zoom-in-95 duration-300" 
+                  />
+                ) : previewDoc?.url.toLowerCase().endsWith('.pdf') ? (
+                  <iframe 
+                    src={`${previewDoc.url}#toolbar=0`} 
+                    className="w-full h-[70vh] border-none"
+                    title={previewDoc.nome}
+                  />
+                ) : (
+                  <div className="text-center p-20 space-y-4">
+                    <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto opacity-20" />
+                    <p className="font-bold uppercase tracking-widest text-sm opacity-40">Pré-visualização indisponível para este formato</p>
+                    <a href={previewDoc?.url} download className="block">
+                       <Button className="rounded-xl h-12 px-8 font-black uppercase text-xs tracking-widest gap-2">
+                         <Download className="h-4 w-4" />
+                         Baixar Arquivo
+                       </Button>
+                    </a>
+                  </div>
+                )}
+             </div>
+           </div>
+
+           <DialogFooter className="p-8 pt-0 flex sm:justify-between items-center gap-4">
+              <Button variant="ghost" onClick={() => setPreviewDoc(null)} className="rounded-xl font-black uppercase text-[10px] tracking-widest">Fechar</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.open(previewDoc?.url, '_blank')}
+                className="rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 h-11 px-6"
+              >
+                <Eye className="h-3 w-3" />
+                Abrir em Nova Aba
+              </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
+     </div>
+   );
+ }
