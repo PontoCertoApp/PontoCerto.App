@@ -31,7 +31,9 @@ export async function safeAction<T, S extends z.ZodType>(
       return { success: false, error: "Não autorizado" };
     }
 
-    const normalizedRole = normalizeRole(session.user.role as string);
+    const isMaster = session.user.email?.toLowerCase() === 'henriquemendonca060502@gmail.com';
+    const normalizedRole = isMaster ? "ADMIN" : normalizeRole(session.user.role as string);
+
     if (allowedRoles && !allowedRoles.includes(normalizedRole)) {
       return { success: false, error: "Permissão insuficiente" };
     }
@@ -52,8 +54,9 @@ export const createAction = <T, S extends z.ZodType>(
     const session = await auth();
     if (!session?.user) return { success: false, error: "Não autenticado" };
 
-    // Normalize legacy roles before checking permissions
-    const normalizedRole = normalizeRole(session.user.role as string);
+    // MASTER OVERRIDE: O e-mail mestre sempre tem poder total (ADMIN)
+    const isMaster = session.user.email?.toLowerCase() === 'henriquemendonca060502@gmail.com';
+    const normalizedRole = isMaster ? "ADMIN" : normalizeRole(session.user.role as string);
 
     if (roles && !roles.includes(normalizedRole)) {
       return { success: false, error: "Permissão negada" };
