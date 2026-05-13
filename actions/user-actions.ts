@@ -239,3 +239,19 @@ export const deleteUser = createAction(
     return { success: true };
   }
 );
+
+export const adminResetPassword = createAction(
+  z.object({
+    userId: z.string(),
+    newPassword: z.string().min(6, "Mínimo 6 caracteres"),
+  }),
+  ["ADMIN"],
+  async (data) => {
+    const hashed = await bcrypt.hash(data.newPassword, 10);
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { password: hashed },
+    });
+    return { success: true };
+  }
+);
