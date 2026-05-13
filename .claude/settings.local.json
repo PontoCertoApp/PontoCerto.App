@@ -27,7 +27,10 @@
       "PowerShell(Get-ChildItem \"D:\\\\Proejtos\\\\PontoCerto\" -Name | Where-Object { $_ -match \"docker|compose|Dockerfile\" })",
       "Bash(Get-ChildItem -Path \"D:\\\\Proejtos\\\\PontoCerto\" -Recurse -Directory)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Bash(xargs grep -l \"user\\\\|usuario\")",
+      "Bash(xargs grep -l \"usuario\\\\|User\")",
+      "Bash(xargs grep -l \"admin/usuarios\")"
     ]
   }
 }

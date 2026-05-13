@@ -57,6 +57,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -106,7 +107,7 @@ export default function UserManagementPage() {
     name: "",
     email: "",
     password: "",
-    role: "COLABORADOR",
+    role: "",
     unidade: "",
     team: ""
   });
@@ -254,7 +255,7 @@ export default function UserManagementPage() {
       name: user.name || "",
       email: user.email || "",
       password: "",
-      role: user.role || "COLABORADOR",
+      role: user.role || "",
       unidade: user.loja?.nome || "",
       team: user.time?.nome || ""
     });
@@ -677,9 +678,9 @@ export default function UserManagementPage() {
                <div className="grid gap-4">
                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Lotação & Hierarquia</Label>
                  <div className="grid grid-cols-2 gap-4">
-                    <Select value={formData.role} onValueChange={v => setFormData({...formData, role: v})}>
+                    <Select value={formData.role || undefined} onValueChange={v => setFormData({...formData, role: v})}>
                       <SelectTrigger className="h-14 rounded-2xl bg-muted/40 border-none font-bold uppercase text-[10px] tracking-widest">
-                        <SelectValue placeholder="Perfil" />
+                        <SelectValue placeholder="Selecionar acesso" />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
                          <SelectItem value="ADMIN">Administrador</SelectItem>
@@ -753,9 +754,9 @@ export default function UserManagementPage() {
                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso</Label>
-                    <Select value={formData.role} onValueChange={v => setFormData({...formData, role: v})}>
+                    <Select value={formData.role || undefined} onValueChange={v => setFormData({...formData, role: v})}>
                       <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-black uppercase text-[10px] tracking-widest">
-                        <SelectValue />
+                        <SelectValue placeholder="Selecionar acesso" />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
                          <SelectItem value="ADMIN">Administrador</SelectItem>
@@ -840,7 +841,10 @@ export default function UserManagementPage() {
 
       {/* VIEW USER MODAL */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-[3.5rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+        <DialogContent showCloseButton={false} className="sm:max-w-[500px] rounded-[3.5rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+           <DialogClose className="absolute right-8 top-8 z-50 flex size-8 items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-all outline-none">
+             <X className="size-4" />
+           </DialogClose>
            <div className="h-32 w-full bg-muted/30 relative flex items-center px-10">
               <div className="flex items-center gap-6 relative z-10">
                  <Avatar className="size-20 border-4 border-background shadow-2xl">
