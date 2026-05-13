@@ -111,16 +111,7 @@ export default async function DashboardPage() {
       />
     );
   } catch (error) {
-    console.error("Dashboard Critical Error:", error);
-    // Fallback UI em caso de erro catastrófico
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <h1 className="text-2xl font-bold">Ocorreu um erro ao carregar o Dashboard</h1>
-        <p className="text-muted-foreground text-center max-w-md">
-          Não foi possível conectar ao banco de dados ou processar as informações no momento. 
-          Por favor, recarregue a página.
-        </p>
-      </div>
-    );
+    console.error('=== DASHBOARD CRASH ===', error);
+    throw error;
   }
 }

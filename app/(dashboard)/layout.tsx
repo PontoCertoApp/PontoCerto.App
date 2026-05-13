@@ -16,9 +16,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('=== LAYOUT AUTH CRASH ===', error);
+    throw error;
+  }
 
-  if (!session) {
+  if (!session?.user) {
     redirect("/login");
   }
 
@@ -30,7 +36,6 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            {/* Breadcrumbs can be added here */}
           </div>
           <div className="flex items-center gap-4 px-4">
             <ModeToggle />
