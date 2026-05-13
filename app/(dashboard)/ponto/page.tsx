@@ -74,7 +74,7 @@ import {
   atualizarInconformidade,
   getPontoStats
 } from "@/actions/ponto-actions";
-import { TipoInconformidade } from "@/lib/enums";
+import { PontoInconformidade } from "@/lib/enums";
 
 export default function PontoPage() {
   const [tratados, setTratados] = useState<any[]>([]);
@@ -89,7 +89,7 @@ export default function PontoPage() {
   // Estados para edição
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [tipo, setTipo] = useState<TipoInconformidade>("PONTO_POSITIVO");
+  const [tipo, setTipo] = useState<PontoInconformidade>("PONTO_POSITIVO");
   const [justificativa, setJustificativa] = useState("");
   const [gerarRap, setGerarRap] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -165,7 +165,7 @@ export default function PontoPage() {
       } else {
         const res = await registrarInconformidade({
           colaboradorId: selectedColab?.id || "MANUAL",
-          nomeManual: selectedColab ? undefined : searchTerm,
+          manualName: selectedColab ? undefined : searchTerm,
           data: new Date(),
           tipo,
           justificativa,
@@ -226,7 +226,7 @@ export default function PontoPage() {
     return t.replaceAll("_", " ");
   };
 
-  const getPointsValue = (t: TipoInconformidade) => {
+  const getPointsValue = (t: PontoInconformidade) => {
     const values: Record<string, number> = {
       PONTO_POSITIVO: 10,
       META_BATIDA: 50,
@@ -239,7 +239,7 @@ export default function PontoPage() {
     return values[t] || 0;
   };
 
-  const InconformidadeBadge = (t: TipoInconformidade) => {
+  const InconformidadeBadge = (t: PontoInconformidade) => {
     const colors: Record<string, string> = {
       PONTO_POSITIVO: "bg-blue-500/20 text-blue-400 border-blue-500/30",
       META_BATIDA: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -382,7 +382,7 @@ export default function PontoPage() {
                       className="w-full rounded-2xl bg-primary/10 border-primary/20 hover:bg-primary hover:text-white transition-all font-black text-xs uppercase group h-12 shadow-lg shadow-primary/10"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = `/premios?colabId=${player.id}&tipo=RESGATE_PONTOS`;
+                        window.location.href = `/premios?colaboradorId=${player.id}&tipo=RESGATE_PONTOS`;
                       }}
                     >
                       <Gift className="h-5 w-5 mr-2 group-hover:animate-bounce" />

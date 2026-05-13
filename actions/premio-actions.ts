@@ -78,9 +78,14 @@ export async function getPremios(status?: PremioStatus) {
 export async function updatePremioStatus(id: string, status: PremioStatus) {
   const session = await auth();
   if (!session?.user) return { success: false, error: "Não autorizado" };
-  await prisma.premio.update({ where: { id }, data: { status } });
-  revalidatePath("/premios");
-  return { success: true };
+  try {
+    await prisma.premio.update({ where: { id }, data: { status } });
+    revalidatePath("/premios");
+    return { success: true };
+  } catch (error) {
+    console.error("[UPDATE_PREMIO_STATUS_ERROR]:", error);
+    return { success: false, error: "Erro ao atualizar status do prêmio" };
+  }
 }
 
 export async function getPremiosStats() {

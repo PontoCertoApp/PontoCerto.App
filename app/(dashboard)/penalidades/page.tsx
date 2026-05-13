@@ -159,9 +159,17 @@ export default function PenalidadesPage() {
   };
 
   async function handleStatusUpdate(id: string, status: PenalidadeStatus) {
-    await updatePenalidadeStatus(id, status);
-    toast.success("Status atualizado!");
-    loadData();
+    try {
+      const res = await updatePenalidadeStatus(id, status);
+      if (res.success) {
+        toast.success("Status atualizado!");
+        loadData();
+      } else {
+        toast.error(res.error || "Erro ao atualizar status");
+      }
+    } catch {
+      toast.error("Erro ao atualizar status");
+    }
   }
 
   async function handleSubmit() {

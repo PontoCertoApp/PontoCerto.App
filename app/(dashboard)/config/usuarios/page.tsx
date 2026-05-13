@@ -119,13 +119,13 @@ export default function UsuariosConfigPage() {
   );
 
   const createTimes = useMemo(
-    () => allTimes.filter((t) => !createData.lojaId || t.lojaId === createData.lojaId),
-    [allTimes, createData.lojaId]
+    () => allTimes.filter((t) => !createData.unidade || t.loja?.nome === createData.unidade),
+    [allTimes, createData.unidade]
   );
 
   const editTimes = useMemo(
-    () => allTimes.filter((t) => !editData.lojaId || t.lojaId === editData.lojaId),
-    [allTimes, editData.lojaId]
+    () => allTimes.filter((t) => !editData.unidade || t.loja?.nome === editData.unidade),
+    [allTimes, editData.unidade]
   );
 
   async function loadAll() {

@@ -89,7 +89,12 @@ export async function checkPenalidadeProgression(colaboradorId: string) {
 export async function updatePenalidadeStatus(id: string, status: PenalidadeStatus) {
   const session = await auth();
   if (!session?.user) return { success: false, error: "Não autorizado" };
-  await prisma.penalidade.update({ where: { id }, data: { status } });
-  revalidatePath("/penalidades");
-  return { success: true };
+  try {
+    await prisma.penalidade.update({ where: { id }, data: { status } });
+    revalidatePath("/penalidades");
+    return { success: true };
+  } catch (error) {
+    console.error("[UPDATE_PENALIDADE_STATUS_ERROR]:", error);
+    return { success: false, error: "Erro ao atualizar status" };
+  }
 }
