@@ -71,7 +71,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message };
+      return { success: false, error: error.issues[0]?.message ?? "Dados inválidos" };
     }
     console.error("Registration error:", error);
     return { success: false, error: "Ocorreu um erro ao processar seu cadastro." };

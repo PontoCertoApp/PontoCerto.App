@@ -13,7 +13,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "RH") {
+    if (!session?.user || session.user.role !== "HR_STAFF") {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 

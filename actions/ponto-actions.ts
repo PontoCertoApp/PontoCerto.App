@@ -38,7 +38,7 @@ export async function registrarInconformidade(data: z.infer<typeof registroPonto
       lojaId = colaborador.lojaId;
     } else if (data.manualName) {
       colaborador = await prisma.colaborador.findFirst({
-        where: { nomeCompleto: { equals: data.manualName.trim(), mode: "insensitive" } },
+        where: { nomeCompleto: data.manualName.trim() },
         select: { id: true, nomeCompleto: true, email: true, lojaId: true },
       });
       if (colaborador) lojaId = colaborador.lojaId;
@@ -258,7 +258,7 @@ export async function getPontoStats() {
       prisma.colaborador.count({ where: colaboradorScope(scope) }),
     ]);
 
-    const calcularTotal = (regs: { tipo: string }[]) => regs.reduce((acc, curr) => acc + (PONTOS_MAP[curr.tipo] || 0), 0);
+    const calcularTotal = (regs: { tipo: string | null }[]) => regs.reduce((acc, curr) => acc + (PONTOS_MAP[curr.tipo ?? ""] || 0), 0);
 
     const totalAtual = calcularTotal(registrosAtual);
     const totalPassado = calcularTotal(registrosPassado);

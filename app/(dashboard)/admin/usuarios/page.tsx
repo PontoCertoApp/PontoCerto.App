@@ -116,7 +116,7 @@ export default function UserManagementPage() {
     setLoading(true);
     try {
       const [usersRes, lojasRes, timesRes] = await Promise.all([
-        getUsers(),
+        getUsers(undefined),
         getLojas(),
         getTimesAll()
       ]);

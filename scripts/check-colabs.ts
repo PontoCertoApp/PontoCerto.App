@@ -37,7 +37,7 @@ async function main() {
   // 4. Busca por nome
   try {
     const busca = await prisma.colaborador.findMany({
-      where: { nomeCompleto: { contains: "Henrique", mode: "insensitive" } },
+      where: { nomeCompleto: { contains: "Henrique" } },
       select: { id: true, nomeCompleto: true },
     });
     console.log('\nBusca por "Henrique":');

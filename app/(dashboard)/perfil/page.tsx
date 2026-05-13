@@ -291,7 +291,7 @@ export default function PerfilPage() {
               <CardContent className="space-y-6">
                 <div className="p-6 rounded-2xl bg-muted/30 border border-muted flex flex-col gap-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Unidade Atual</span>
-                  <span className="text-xl font-bold text-foreground">{user?.loja?.nome || "Sede (Administrativo)"}</span>
+                  <span className="text-xl font-bold text-foreground">{(user as any)?.loja?.nome || "Sede (Administrativo)"}</span>
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
                   Para alterar seu vínculo, entre em contato com o RH.
@@ -354,8 +354,8 @@ export default function PerfilPage() {
               </Card>
 
               <div className="grid gap-6 md:grid-cols-3">
-                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
-                  <Link href="/admin/usuarios">
+                <Link href="/admin/usuarios" className="block hover:scale-[1.02] transition-transform">
+                  <Card className="surface-card border-none premium-shadow cursor-pointer h-full">
                     <CardHeader className="p-6">
                       <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                         <Users className="size-6" />
@@ -363,11 +363,11 @@ export default function PerfilPage() {
                       <CardTitle>Gerenciar Contas</CardTitle>
                       <CardDescription>Lista de usuários, alteração de cargos e exclusão de contas.</CardDescription>
                     </CardHeader>
-                  </Link>
-                </Card>
-                
-                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
-                  <Link href="/config/lojas">
+                  </Card>
+                </Link>
+
+                <Link href="/config/lojas" className="block hover:scale-[1.02] transition-transform">
+                  <Card className="surface-card border-none premium-shadow cursor-pointer h-full">
                     <CardHeader className="p-6">
                       <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                         <Building className="size-6" />
@@ -375,11 +375,11 @@ export default function PerfilPage() {
                       <CardTitle>Gerenciar Unidades</CardTitle>
                       <CardDescription>Adicionar ou editar lojas e sedes do PontoCerto.</CardDescription>
                     </CardHeader>
-                  </Link>
-                </Card>
+                  </Card>
+                </Link>
 
-                <Card className="surface-card border-none premium-shadow hover:scale-[1.02] transition-transform cursor-pointer" asChild>
-                  <Link href="/config/funcoes">
+                <Link href="/config/funcoes" className="block hover:scale-[1.02] transition-transform">
+                  <Card className="surface-card border-none premium-shadow cursor-pointer h-full">
                     <CardHeader className="p-6">
                       <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                         <UserCog className="size-6" />
@@ -387,8 +387,8 @@ export default function PerfilPage() {
                       <CardTitle>Cargos & Permissões</CardTitle>
                       <CardDescription>Configurar os níveis de acesso e descrições de cargo.</CardDescription>
                     </CardHeader>
-                  </Link>
-                </Card>
+                  </Card>
+                </Link>
               </div>
             </div>
           )}

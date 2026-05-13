@@ -23,18 +23,18 @@ export async function POST(
 
     switch (template) {
       case "penalidade":
-        if (session.user.role !== "RH") return NextResponse.json({ error: "Permissão negada" }, { status: 403 });
+        if (session.user.role !== "HR_STAFF") return NextResponse.json({ error: "Permissão negada" }, { status: 403 });
         result = await emailService.sendPenalidadeAplicada(to, body.dados);
         break;
       case "premio":
-        if (session.user.role !== "RH") return NextResponse.json({ error: "Permissão negada" }, { status: 403 });
+        if (session.user.role !== "HR_STAFF") return NextResponse.json({ error: "Permissão negada" }, { status: 403 });
         result = await emailService.sendPremiosConcedido(to, body.dados);
         break;
       case "documento":
         result = await emailService.sendDocumentoPendente(to, body.dados);
         break;
       case "relatorio":
-        if (session.user.role !== "RH" && session.user.role !== "GERENTE") {
+        if (session.user.role !== "HR_STAFF" && session.user.role !== "STORE_MANAGER") {
            return NextResponse.json({ error: "Permissão negada" }, { status: 403 });
         }
         result = await emailService.sendRelatorioSemanal(to, body.dados);

@@ -293,11 +293,9 @@ export default function ColaboradorDetalhesPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
-                            <Button variant="ghost" size="icon" asChild>
-                              <a href={doc.path} download={doc.nome}>
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
+                            <a href={doc.path} download={doc.nome} className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted/50 transition-colors text-muted-foreground">
+                              <Download className="h-4 w-4" />
+                            </a>
                           </div>
                         </div>
                         <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background">

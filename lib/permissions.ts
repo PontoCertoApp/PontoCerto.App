@@ -18,7 +18,7 @@ interface NavItem {
 export const PERMISSIONS: NavItem[] = [
   { title: "Dashboard",           url: "/dashboard",   roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF] },
   { title: "Colaboradores",       url: "/colaboradores", roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF] },
-  { title: "Documentação",        url: "/documentos",  roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF, ROLES.EMPLOYEE] },
+  { title: "Documentação",        url: "/documentos",  roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF, ROLES.COLABORADOR] },
   { title: "Pontuação de Equipe", url: "/ponto",       roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF] },
   { title: "Penalidades (RAP)",   url: "/penalidades", roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF] },
   { title: "Prêmios & Benefícios", url: "/premios",   roles: [ROLES.ADMIN, ROLES.STORE_MANAGER, ROLES.HR_STAFF] },
