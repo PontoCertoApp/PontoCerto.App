@@ -42,6 +42,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -488,45 +489,47 @@ export default function UserManagementPage() {
                               <MoreVertical className="size-5" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-64 rounded-3xl p-2 shadow-2xl border-none surface-card bg-background/95 backdrop-blur-xl">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 pt-3 pb-2">Central do Admin</DropdownMenuLabel>
-                            <DropdownMenuItem 
-                              className="rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer hover:bg-primary/10 hover:text-primary transition-all"
-                              onClick={() => openEditModal(user)}
-                            >
-                              <div className="p-2 bg-primary/10 rounded-xl">
-                                <Edit className="size-4 text-primary" />
-                              </div>
-                              Editar Permissões
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className={`rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer transition-all ${user.ativo ? 'text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
-                              onClick={() => handleToggleStatus(user.id)}
-                            >
-                              <div className={`p-2 rounded-xl ${user.ativo ? 'bg-amber-500/10' : 'bg-emerald-500/10'}`}>
-                                <Power className="size-4" />
-                              </div>
-                              {user.ativo ? "Suspender Acesso" : "Liberar Acesso"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-2 bg-border/50 mx-2" />
-                            <DropdownMenuItem 
-                              className="rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer text-destructive hover:bg-destructive/10 transition-all focus:bg-destructive/10 focus:text-destructive"
-                              onClick={async () => {
-                                if (confirm(`Deseja realmente EXCLUIR o usuário ${user.name}? Esta ação é IRREVERSÍVEL.`)) {
-                                  const res = await deleteUser(user.id);
-                                  if (res?.success) {
-                                    toast.success("Usuário removido com sucesso");
-                                    fetchData();
+                          <DropdownMenuPortal>
+                            <DropdownMenuContent align="end" className="w-64 rounded-3xl p-2 shadow-2xl border-none bg-background/95 backdrop-blur-xl z-[100]">
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 pt-3 pb-2">Central do Admin</DropdownMenuLabel>
+                              <DropdownMenuItem 
+                                className="rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer hover:bg-primary/10 hover:text-primary transition-all"
+                                onClick={() => openEditModal(user)}
+                              >
+                                <div className="p-2 bg-primary/10 rounded-xl">
+                                  <Edit className="size-4 text-primary" />
+                                </div>
+                                Editar Permissões
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className={`rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer transition-all ${user?.ativo ? 'text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                                onClick={() => handleToggleStatus(user.id)}
+                              >
+                                <div className={`p-2 rounded-xl ${user?.ativo ? 'bg-amber-500/10' : 'bg-emerald-500/10'}`}>
+                                  <Power className="size-4" />
+                                </div>
+                                {user?.ativo ? "Suspender Acesso" : "Liberar Acesso"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="my-2 bg-border/50 mx-2" />
+                              <DropdownMenuItem 
+                                className="rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer text-destructive hover:bg-destructive/10 transition-all focus:bg-destructive/10 focus:text-destructive"
+                                onClick={async () => {
+                                  if (confirm(`Deseja realmente EXCLUIR o usuário ${user?.name}? Esta ação é IRREVERSÍVEL.`)) {
+                                    const res = await deleteUser(user.id);
+                                    if (res?.success) {
+                                      toast.success("Usuário removido com sucesso");
+                                      fetchData();
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              <div className="p-2 bg-destructive/10 rounded-xl">
-                                <Trash2 className="size-4" />
-                              </div>
-                              Excluir Conta
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                                }}
+                              >
+                                <div className="p-2 bg-destructive/10 rounded-xl">
+                                  <Trash2 className="size-4" />
+                                </div>
+                                Excluir Conta
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenuPortal>
                         </DropdownMenu>
                       </TableCell>
                     </motion.tr>
