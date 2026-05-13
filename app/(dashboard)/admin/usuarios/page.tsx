@@ -502,10 +502,14 @@ export default function UserManagementPage() {
                         </TableCell>
                         <TableCell className="pr-10 text-right">
                           <DropdownMenu>
-                            <DropdownMenuTrigger
-                              className="inline-flex items-center justify-center rounded-2xl size-12 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20 focus:outline-none cursor-pointer"
-                            >
-                              <MoreVertical className="size-6" />
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-2xl size-12 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+                              >
+                                <MoreVertical className="size-6" />
+                              </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
