@@ -417,7 +417,6 @@ export default function UserManagementPage() {
                 <AnimatePresence mode="popLayout">
                   {filteredUsers.map((user) => (
                     <motion.tr 
-                      layout
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
@@ -485,12 +484,21 @@ export default function UserManagementPage() {
                       <TableCell className="pr-10 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-xl size-10 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="rounded-xl size-10 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <MoreVertical className="size-5" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuPortal>
-                            <DropdownMenuContent align="end" className="w-64 rounded-3xl p-2 shadow-2xl border-none bg-background/95 backdrop-blur-xl z-[100]">
+                            <DropdownMenuContent 
+                              align="end" 
+                              onCloseAutoFocus={(e) => e.preventDefault()}
+                              className="w-64 rounded-3xl p-2 shadow-2xl border-none bg-background/95 backdrop-blur-xl z-[100]"
+                            >
                               <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 pt-3 pb-2">Central do Admin</DropdownMenuLabel>
                               <DropdownMenuItem 
                                 className="rounded-2xl h-12 px-4 gap-4 font-bold cursor-pointer hover:bg-primary/10 hover:text-primary transition-all"

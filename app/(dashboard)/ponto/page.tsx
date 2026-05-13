@@ -65,7 +65,8 @@ import {
   getInconformidadesDoDia, 
   getLeaderboard,
   excluirInconformidade,
-  atualizarInconformidade
+  atualizarInconformidade,
+  getPontoStats
 } from "@/actions/ponto-actions";
 import { TipoInconformidade } from "@/lib/enums";
 
@@ -86,6 +87,7 @@ export default function PontoPage() {
   const [justificativa, setJustificativa] = useState("");
   const [gerarRap, setGerarRap] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stats, setStats] = useState({ media: 0, crescimento: 0 });
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,12 +119,14 @@ export default function PontoPage() {
   async function loadData() {
     setIsLoading(true);
     try {
-      const [registros, topPerformers] = await Promise.all([
+      const [registros, topPerformers, realStats] = await Promise.all([
         getInconformidadesDoDia(new Date()),
-        getLeaderboard()
+        getLeaderboard(),
+        getPontoStats()
       ]);
       setTratados(registros);
       setLeaderboard(topPerformers);
+      setStats(realStats);
     } catch (error) {
       console.error("[PONTO_LOAD_ERROR]:", error);
     } finally {
@@ -268,14 +272,14 @@ export default function PontoPage() {
               <Star className="h-4 w-4 text-primary fill-primary" />
               <div className="leading-tight">
                 <p className="text-[9px] uppercase font-bold text-muted-foreground">Média</p>
-                <p className="text-sm font-black">94.2</p>
+                <p className="text-sm font-black">{stats.media}</p>
               </div>
            </Card>
            <Card className="bg-green-500/5 border-green-500/20 shadow-sm px-3 py-1.5 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-500" />
               <div className="leading-tight">
                 <p className="text-[9px] uppercase font-bold text-muted-foreground">Crescimento</p>
-                <p className="text-sm font-black">+12%</p>
+                <p className="text-sm font-black">{stats.crescimento > 0 ? `+${stats.crescimento}%` : `${stats.crescimento}%`}</p>
               </div>
            </Card>
         </div>
@@ -447,10 +451,10 @@ export default function PontoPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(r)} className="h-7 w-7 rounded-full hover:text-primary">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(r); }} className="h-7 w-7 rounded-full hover:text-primary">
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)} className="h-7 w-7 rounded-full hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }} className="h-7 w-7 rounded-full hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

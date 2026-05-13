@@ -235,3 +235,48 @@ export async function atualizarInconformidade(id: string, data: { tipo: string; 
     return { success: false, error: "Erro ao atualizar" };
   }
 }
+
+export async function getPontoStats() {
+  try {
+    const scope = await getScope();
+    if (!scope) return { media: 0, crescimento: 0 };
+
+    const now = new Date();
+    const inicioMesAtual = new Date(now.getFullYear(), now.getMonth(), 1);
+    const inicioMesPassado = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const fimMesPassado = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const PONTOS_MAP: Record<string, number> = {
+      PONTO_POSITIVO: 10, META_BATIDA: 50, ELOGIO: 100, PRESENCA_MANUAL: 5,
+      FALTA_INJUSTIFICADA: -50, ATRASO: -10, SAIDA_ANTECIPADA: -10, PONTO_NAO_REGISTRADO: -20,
+    };
+
+    const [registrosAtual, registrosPassado, totalColaboradores] = await Promise.all([
+      prisma.registroPonto.findMany({ where: { data: { gte: inicioMesAtual }, ...pontoScope(scope) }, select: { tipo: true } }),
+      prisma.registroPonto.findMany({ where: { data: { gte: inicioMesPassado, lte: fimMesPassado }, ...pontoScope(scope) }, select: { tipo: true } }),
+      prisma.colaborador.count({ where: colaboradorScope(scope) }),
+    ]);
+
+    const calcularTotal = (regs: { tipo: string }[]) => regs.reduce((acc, curr) => acc + (PONTOS_MAP[curr.tipo] || 0), 0);
+
+    const totalAtual = calcularTotal(registrosAtual);
+    const totalPassado = calcularTotal(registrosPassado);
+
+    const media = totalColaboradores > 0 ? totalAtual / totalColaboradores : 0;
+    
+    let crescimento = 0;
+    if (totalPassado > 0) {
+      crescimento = ((totalAtual - totalPassado) / totalPassado) * 100;
+    } else if (totalAtual > 0) {
+      crescimento = 100;
+    }
+
+    return {
+      media: Number(media.toFixed(1)),
+      crescimento: Number(crescimento.toFixed(1))
+    };
+  } catch (error) {
+    console.error("Erro ao buscar stats de ponto:", error);
+    return { media: 0, crescimento: 0 };
+  }
+}
