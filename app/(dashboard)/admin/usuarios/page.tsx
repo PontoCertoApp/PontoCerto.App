@@ -97,6 +97,7 @@ export default function UserManagementPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   
   // Form state
@@ -526,14 +527,27 @@ export default function UserManagementPage() {
                                 
                                 <DropdownMenuItem 
                                   className="rounded-2xl h-14 px-4 gap-4 font-bold cursor-pointer hover:bg-primary/10 hover:text-primary transition-all mb-1"
+                                  onClick={() => { setSelectedUser(user); setIsViewOpen(true); }}
+                                >
+                                  <div className="p-3 bg-primary/10 rounded-2xl">
+                                    <Users className="size-5 text-primary" />
+                                  </div>
+                                  <div>
+                                     <p className="text-sm">Visualizar Dados</p>
+                                     <p className="text-[9px] font-bold uppercase opacity-50">Ver ficha completa do usuário</p>
+                                  </div>
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem 
+                                  className="rounded-2xl h-14 px-4 gap-4 font-bold cursor-pointer hover:bg-primary/10 hover:text-primary transition-all mb-1"
                                   onClick={() => openEditModal(user)}
                                 >
                                   <div className="p-3 bg-primary/10 rounded-2xl">
                                     <Edit className="size-5 text-primary" />
                                   </div>
                                   <div>
-                                     <p className="text-sm">Configurar Acesso</p>
-                                     <p className="text-[9px] font-bold uppercase opacity-50">Editar permissões e unidade</p>
+                                     <p className="text-sm">Editar Acesso</p>
+                                     <p className="text-[9px] font-bold uppercase opacity-50">Alterar permissões e lotação</p>
                                   </div>
                                 </DropdownMenuItem>
 
@@ -821,6 +835,75 @@ export default function UserManagementPage() {
                   className="flex-[2] rounded-xl font-black bg-amber-500 hover:bg-amber-600 text-white uppercase text-[10px] shadow-lg shadow-amber-500/20"
                  >
                    {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Confirmar Reset"}
+                 </Button>
+              </div>
+           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* VIEW USER MODAL */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-[3.5rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+           <div className="h-32 w-full bg-muted/30 relative flex items-center px-10">
+              <div className="flex items-center gap-6 relative z-10">
+                 <Avatar className="size-20 border-4 border-background shadow-2xl">
+                    <AvatarImage src={selectedUser?.image} className="object-cover" />
+                    <AvatarFallback className="bg-primary text-white font-black text-2xl">{selectedUser?.name?.charAt(0)}</AvatarFallback>
+                 </Avatar>
+                 <div>
+                    <h2 className="text-2xl font-black tracking-tighter uppercase leading-none">{selectedUser?.name}</h2>
+                    <Badge variant="outline" className="mt-2 bg-primary/5 text-primary border-primary/20 text-[9px] uppercase font-black tracking-widest">
+                       {roleLabel[selectedUser?.role || ""]}
+                    </Badge>
+                 </div>
+              </div>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 blur-3xl" />
+           </div>
+
+           <div className="p-10 space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">E-mail de Acesso</p>
+                    <p className="font-bold text-sm flex items-center gap-2">
+                       <Mail className="size-4 text-primary" />
+                       {selectedUser?.email}
+                    </p>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Status da Conta</p>
+                    <div className="flex items-center gap-2">
+                       <div className={cn("size-2 rounded-full", selectedUser?.ativo ? "bg-emerald-500 animate-pulse" : "bg-destructive")} />
+                       <p className={cn("font-black text-[10px] uppercase tracking-widest", selectedUser?.ativo ? "text-emerald-600" : "text-destructive")}>
+                          {selectedUser?.ativo ? "Habilitado" : "Bloqueado"}
+                       </p>
+                    </div>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Unidade de Lotação</p>
+                    <p className="font-bold text-sm flex items-center gap-2 uppercase">
+                       <Building2 className="size-4 text-primary" />
+                       {selectedUser?.loja?.nome || "Sede Administrativa"}
+                    </p>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Time / Equipe</p>
+                    <p className="font-bold text-sm flex items-center gap-2 uppercase">
+                       <LayoutGrid className="size-4 text-primary" />
+                       {selectedUser?.time?.nome || "Nenhum time"}
+                    </p>
+                 </div>
+              </div>
+
+              <div className="pt-6 border-t border-border/50 flex flex-col gap-4">
+                 <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
+                    <span>Criado em:</span>
+                    <span>{selectedUser?.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('pt-BR') : '---'}</span>
+                 </div>
+                 <Button 
+                   onClick={() => setIsViewOpen(false)}
+                   className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20"
+                 >
+                    Fechar Visualização
                  </Button>
               </div>
            </div>
