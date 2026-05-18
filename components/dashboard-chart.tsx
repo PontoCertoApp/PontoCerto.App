@@ -17,14 +17,14 @@ interface DashboardChartProps {
 export function DashboardChart({ data = [] }: DashboardChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-[350px] w-full items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
+      <div className="flex h-[260px] w-full items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
         Aguardando dados reais...
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
+    <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
         <XAxis

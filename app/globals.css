@@ -175,6 +175,21 @@
   .dark .premium-shadow {
     box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
   }
+
+  /* Systematic layout density adjustments - keeps layouts standard and compact */
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse))) !important; /* 20px instead of 32px */
+    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse)) !important;
+  }
+  .space-y-12 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.75rem * calc(1 - var(--tw-space-y-reverse))) !important; /* 28px instead of 48px */
+    margin-bottom: calc(1.75rem * var(--tw-space-y-reverse)) !important;
+  }
+  .gap-8 {
+    gap: 1.25rem !important; /* 20px instead of 32px */
+  }
 }
 
 ::selection {

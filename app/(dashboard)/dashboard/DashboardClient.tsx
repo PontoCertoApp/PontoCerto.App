@@ -131,7 +131,7 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
   };
 
   return (
-    <div className="relative min-h-screen pb-20 overflow-hidden">
+    <div className="relative pb-6 overflow-hidden">
       {/* BACKGROUND DECORATION */}
       <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -140,74 +140,74 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
         variants={container}
         initial="hidden"
         animate="show"
-        className="space-y-12"
+        className="space-y-6"
       >
         {/* TOP BAR / GREETING */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <motion.div variants={item} className="space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <motion.div variants={item} className="space-y-1.5">
             <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl", greeting.color)}>
-                <greeting.Icon className="size-6" />
+              <div className={cn("p-1.5 rounded-lg bg-white/5 backdrop-blur-md border border-white/10 shadow-lg", greeting.color)}>
+                <greeting.Icon className="size-5" />
               </div>
-              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] uppercase font-black tracking-widest px-3">
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] uppercase font-black tracking-widest px-2.5">
                 Live System Dashboard
               </Badge>
             </div>
-            <div className="space-y-1">
-              <h1 className="text-5xl lg:text-6xl font-black tracking-tighter text-foreground uppercase">
+            <div className="space-y-0.5">
+              <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-foreground uppercase">
                 {greeting.text}, <span className="text-primary">{userName.split(' ')[0]}</span>
               </h1>
-              <p className="text-muted-foreground text-lg max-w-xl font-medium opacity-70 italic">
+              <p className="text-muted-foreground text-sm max-w-xl font-medium opacity-70 italic">
                 Sua central de comando estratégico para gestão de pessoas e resultados.
               </p>
             </div>
           </motion.div>
           
           <motion.div variants={item} className="flex items-center gap-4">
-             <div className="glass-card p-6 rounded-[2rem] flex items-center gap-6 shadow-2xl border-primary/10">
+             <div className="glass-card p-4 rounded-2xl flex items-center gap-4 shadow-xl border-primary/10">
                 <div className="flex flex-col items-end">
-                  <span className="text-[10px] uppercase font-black text-primary tracking-[0.2em]">Data & Hora</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black tracking-tighter">
+                  <span className="text-[9px] uppercase font-black text-primary tracking-[0.15em]">Data & Hora</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xl font-black tracking-tighter">
                       {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <span className="text-xs font-bold opacity-40">
+                    <span className="text-[10px] font-bold opacity-40">
                       {currentTime.toLocaleTimeString('pt-BR', { second: '2-digit' })}
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                     {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(currentTime)}
                   </span>
                 </div>
-                <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner border border-primary/20">
-                  <Clock className="size-8" />
+                <div className="h-11 w-11 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner border border-primary/20">
+                  <Clock className="size-6" />
                 </div>
              </div>
           </motion.div>
         </div>
 
         {/* METRICS GRID */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, idx) => (
-            <motion.div key={stat.title} variants={item} whileHover={{ y: -8, scale: 1.02 }} className="group">
-              <Card className="glass-card overflow-hidden h-full relative border-none shadow-2xl group-hover:shadow-primary/10 transition-all duration-500">
+            <motion.div key={stat.title} variants={item} whileHover={{ y: -4, scale: 1.01 }} className="group">
+              <Card className="glass-card overflow-hidden h-full relative border-none shadow-xl group-hover:shadow-primary/10 transition-all duration-500 rounded-2xl">
                 <div className={cn("absolute top-0 right-0 w-32 h-32 opacity-10 -mr-8 -mt-8 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700", stat.bg)} />
-                <CardHeader className="flex flex-row items-center justify-between pb-3 relative z-10">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+                  <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
                     {stat.title}
                   </span>
-                  <div className={cn("p-3 rounded-2xl shadow-xl transition-all group-hover:rotate-12", stat.bg, stat.color)}>
-                    <stat.icon size={24} strokeWidth={2.5} />
+                  <div className={cn("p-2 rounded-xl shadow-md transition-all group-hover:rotate-12", stat.bg, stat.color)}>
+                    <stat.icon size={20} strokeWidth={2.5} />
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-5xl font-black tracking-tighter">{stat.value}</span>
-                    <Badge variant="secondary" className="bg-primary/5 text-primary border-none px-3 py-1 font-black text-[10px] tracking-widest uppercase">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl lg:text-4xl font-black tracking-tighter">{stat.value}</span>
+                    <Badge variant="secondary" className="bg-primary/5 text-primary border-none px-2 py-0.5 font-black text-[9px] tracking-widest uppercase">
                       {stat.trend}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-3 font-bold uppercase tracking-tight opacity-60">
+                  <p className="text-[11px] text-muted-foreground mt-1.5 font-bold uppercase tracking-tight opacity-60">
                     {stat.description}
                   </p>
                 </CardContent>
@@ -217,30 +217,30 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
         </div>
 
         {/* CENTER CONTENT: CHART & ACTIVITIES */}
-        <div className="grid gap-8 lg:grid-cols-5">
+        <div className="grid gap-4 lg:grid-cols-5">
           <motion.div variants={item} className="lg:col-span-3">
-            <Card className="surface-card h-full border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between p-10 pb-4">
-                <div className="space-y-1">
-                  <CardTitle className="text-3xl font-black tracking-tighter uppercase">Evolução de Equipe</CardTitle>
-                  <CardDescription className="text-sm font-bold uppercase tracking-widest opacity-50">Crescimento mensal de colaboradores ativos</CardDescription>
+            <Card className="surface-card h-full border-none shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xl font-black tracking-tight uppercase">Evolução de Equipe</CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-50">Crescimento mensal de colaboradores ativos</CardDescription>
                 </div>
-                <div className="h-14 w-14 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
-                  <TrendingUp className="size-8" />
+                <div className="h-11 w-11 flex items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                  <TrendingUp className="size-6" />
                 </div>
               </CardHeader>
-              <CardContent className="p-10 pt-0">
+              <CardContent className="p-6 pt-0">
                 <DashboardChart data={chartData} />
               </CardContent>
             </Card>
           </motion.div>
           
           <motion.div variants={item} className="lg:col-span-2">
-            <Card className="surface-card h-full border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between p-10 pb-4">
-                <div className="space-y-1">
-                  <CardTitle className="text-3xl font-black tracking-tighter uppercase">Atividades</CardTitle>
-                  <CardDescription className="text-sm font-bold uppercase tracking-widest opacity-50">Fluxo operacional em tempo real</CardDescription>
+            <Card className="surface-card h-full border-none shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xl font-black tracking-tight uppercase">Atividades</CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-50">Fluxo operacional em tempo real</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                    <div className="size-2 bg-emerald-500 rounded-full animate-ping" />
@@ -249,31 +249,31 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="px-10 pb-10">
-                <div className="space-y-6">
+              <CardContent className="px-6 pb-6">
+                <div className="space-y-3">
                   {activities.length > 0 ? (
                     activities.map((act) => {
                       const { Icon, color } = ACTIVITY_ICON_MAP[act.type];
                       return (
                       <motion.div
                         key={act.id}
-                        className="flex items-center gap-5 group p-4 -mx-4 rounded-[1.5rem] hover:bg-muted/40 transition-all cursor-pointer"
-                        whileHover={{ x: 8 }}
+                        className="flex items-center gap-3.5 group p-2.5 -mx-2.5 rounded-xl hover:bg-muted/40 transition-all cursor-pointer"
+                        whileHover={{ x: 4 }}
                       >
-                        <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-lg transition-transform group-hover:scale-110", color)}>
-                          <Icon className="h-7 w-7" strokeWidth={2.5} />
+                        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-md transition-transform group-hover:scale-105", color)}>
+                          <Icon className="h-5 w-5" strokeWidth={2.5} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-base font-black truncate leading-tight uppercase tracking-tight">
+                          <p className="text-sm font-black truncate leading-tight uppercase tracking-tight">
                             {act.title}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1 truncate font-bold uppercase opacity-60">
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate font-bold uppercase opacity-60">
                             {act.type === "DOC" ? "Colaborador: " : "Alvo: "} 
                             <span className="text-foreground">{act.target}</span>
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                           <span className="text-[10px] font-black uppercase text-primary tracking-widest">
+                           <span className="text-[9px] font-black uppercase text-primary tracking-widest">
                             {act.time}
                           </span>
                           <ArrowRight className="size-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0" />
@@ -282,15 +282,15 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
                       );
                     })
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-30 gap-4">
+                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground opacity-30 gap-4">
                       <Activity className="size-12" />
                       <p className="text-sm font-black uppercase tracking-widest">Aguardando Movimentações...</p>
                     </div>
                   )}
                   <Link href="/relatorios" className="contents">
-                    <Button className="w-full h-16 mt-4 rounded-2xl bg-muted/50 hover:bg-primary text-foreground hover:text-primary-foreground text-xs font-black uppercase tracking-[0.2em] transition-all group border-none shadow-none">
+                    <Button className="w-full h-11 mt-2 rounded-xl bg-muted/50 hover:bg-primary text-foreground hover:text-primary-foreground text-xs font-black uppercase tracking-[0.2em] transition-all group border-none shadow-none">
                       Ver Log Completo
-                      <ArrowRight className="size-4 ml-2 transition-transform group-hover:translate-x-2" />
+                      <ArrowRight className="size-3.5 ml-2 transition-transform group-hover:translate-x-1.5" />
                     </Button>
                   </Link>
                 </div>
@@ -300,7 +300,7 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
         </div>
 
         {/* QUICK ACCESS ACTIONS */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {[
             { 
               title: "Tratamento de Ponto", 
@@ -330,23 +330,23 @@ export function DashboardClient({ userName, stats: dbStats, activities, chartDat
             <motion.div 
               key={feature.title}
               variants={item}
-              whileHover={{ y: -12, scale: 1.02 }}
-              className={cn("p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group min-h-[280px] flex flex-col justify-between", feature.color)}
+              whileHover={{ y: -6, scale: 1.01 }}
+              className={cn("p-6 rounded-3xl shadow-xl relative overflow-hidden group min-h-[200px] flex flex-col justify-between", feature.color)}
             >
-              <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-150 transition-transform duration-700">
-                 <feature.icon className="size-32" />
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                 <feature.icon className="size-24" />
               </div>
               <div className="relative z-10">
-                <Badge className="bg-white/10 text-white border-none mb-4 uppercase font-black text-[9px] tracking-widest">Módulo Prioritário</Badge>
-                <h3 className="text-3xl font-black tracking-tighter uppercase mb-3 leading-tight">{feature.title}</h3>
-                <p className="opacity-80 font-bold text-sm leading-snug max-w-[80%]">{feature.desc}</p>
+                <Badge className="bg-white/10 text-white border-none mb-2 uppercase font-black text-[9px] tracking-widest">Módulo Prioritário</Badge>
+                <h3 className="text-xl font-black tracking-tight uppercase mb-1 leading-snug">{feature.title}</h3>
+                <p className="opacity-80 font-bold text-xs leading-normal max-w-[85%]">{feature.desc}</p>
               </div>
               <Link 
                 href={feature.href}
-                className="w-full py-5 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all flex items-center justify-center gap-3 relative z-10"
+                className="w-full py-3 px-6 mt-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all flex items-center justify-center gap-2 relative z-10"
               >
                 {feature.cta}
-                <ArrowUpRight className="size-5" />
+                <ArrowUpRight className="size-4" />
               </Link>
             </motion.div>
           ))}
