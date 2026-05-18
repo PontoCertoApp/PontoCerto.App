@@ -15,6 +15,12 @@ import {
   Building2,
   UserCog,
   Shield,
+  Briefcase,
+  Stethoscope,
+  DollarSign,
+  Upload,
+  ShieldAlert,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -57,6 +63,12 @@ const items = [
     roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
+    title: "Vagas",
+    url: "/vagas",
+    icon: Briefcase,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
+  },
+  {
     title: "Documentação",
     url: "/documentos",
     icon: FileText,
@@ -66,6 +78,18 @@ const items = [
     title: "Pontuação de Equipe",
     url: "/ponto",
     icon: Clock,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
+  },
+  {
+    title: "Exames Médicos",
+    url: "/exames",
+    icon: Stethoscope,
+    roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
+  },
+  {
+    title: "Gestão Disciplinar",
+    url: "/disciplinar",
+    icon: ShieldAlert,
     roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
@@ -87,15 +111,26 @@ const items = [
     roles: ["ADMIN", "STORE_MANAGER", "HR_STAFF"],
   },
   {
+    title: "RH Central",
+    url: "/rh",
+    icon: UserCog,
+    roles: ["ADMIN", "HR_STAFF"],
+    items: [
+      { title: "Benefícios",     url: "/rh/beneficios",  roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Banco de Horas", url: "/rh/banco-horas", roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Upload Docs",    url: "/rh/upload",      roles: ["ADMIN", "HR_STAFF", "UPLOAD_OPERATOR"] },
+    ],
+  },
+  {
     title: "Funções & Lojas",
     url: "/config",
     icon: Building2,
     roles: ["ADMIN", "HR_STAFF"],
     items: [
-      { title: "Funções", url: "/config/funcoes", roles: ["ADMIN", "HR_STAFF"] },
-      { title: "Lojas", url: "/config/lojas", roles: ["ADMIN"] },
-      { title: "Times", url: "/config/times", roles: ["ADMIN", "HR_STAFF"] },
-      { title: "Setores", url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Funções",  url: "/config/funcoes", roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Lojas",    url: "/config/lojas",   roles: ["ADMIN"] },
+      { title: "Times",    url: "/config/times",   roles: ["ADMIN", "HR_STAFF"] },
+      { title: "Setores",  url: "/config/setores", roles: ["ADMIN", "HR_STAFF"] },
     ],
   },
   {
@@ -112,34 +147,54 @@ const items = [
   },
 ];
 
+// Item especial apenas para UPLOAD_OPERATOR
+const uploadOperatorItems = [
+  {
+    title: "Envio de Documentos",
+    url: "/rh/upload",
+    icon: Upload,
+    roles: ["UPLOAD_OPERATOR"],
+  },
+];
+
 export function AppSidebar() {
   const { data: session } = useSession();
-  const { theme } = useTheme();
   const pathname = usePathname();
   const user = session?.user;
 
+  const userRole = (user?.role || "").toUpperCase();
+  const isUploadOperator = userRole === "UPLOAD_OPERATOR";
+
   function getRoleLabel(role?: string | null, email?: string | null): string {
     const roleLabel: Record<string, string> = {
-      ADMIN: "ADMINISTRADOR",
-      STORE_MANAGER: "GESTOR DE UNIDADE",
-      HR_STAFF: "RECURSOS HUMANOS (RH)",
-      COLABORADOR: "COLABORADOR PADRÃO",
+      ADMIN:           "ADMINISTRADOR",
+      STORE_MANAGER:   "GESTOR DE UNIDADE",
+      HR_STAFF:        "RECURSOS HUMANOS (RH)",
+      COLABORADOR:     "COLABORADOR PADRÃO",
+      UPLOAD_OPERATOR: "OPERADOR DE UPLOAD",
     };
-    
-    // UI-LEVEL FORCE: Mestre sempre é Administrador
-    if (email?.toLowerCase() === 'henriquemendonca060502@gmail.com') {
-      return "ADMINISTRADOR";
-    }
 
+    if (email?.toLowerCase() === "henriquemendonca060502@gmail.com") return "ADMINISTRADOR";
     const r = (role || "").toUpperCase();
     return roleLabel[r] || "COLABORADOR PADRÃO";
   }
+
+  function canSeeItem(item: { roles?: string[] }) {
+    if (!item.roles) return true;
+    if (userRole === "ADMIN") return true;
+    return item.roles.includes(userRole);
+  }
+
+  const navItems = isUploadOperator ? uploadOperatorItems : items;
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r-0 shadow-xl bg-background/95 backdrop-blur-md">
       <SidebarHeader className="h-20 flex justify-center px-6 group-data-[collapsible=icon]:px-0 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent opacity-50" />
-        <Link href="/dashboard" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center relative z-10 hover:opacity-80 transition-opacity">
+        <Link
+          href={isUploadOperator ? "/rh/upload" : "/dashboard"}
+          className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center relative z-10 hover:opacity-80 transition-opacity"
+        >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <span className="font-black text-lg italic">PC</span>
           </div>
@@ -156,26 +211,13 @@ export function AppSidebar() {
             Menu Principal
           </SidebarGroupLabel>
           <SidebarMenu className="gap-1">
-            {items.map((item) => {
-              let userRole = user?.role?.toUpperCase() || "";
-              
-              // Legacy mapping for compatibility
-              if (userRole === "RH") userRole = "HR_STAFF";
-              if (userRole === "GERENTE") userRole = "STORE_MANAGER";
-              if (userRole === "COLABORADOR") userRole = "COLABORADOR";
-
-              // ADMIN has access to everything
-              if (userRole === "ADMIN") {
-                // proceed
-              } else if (item.roles && !item.roles.includes(userRole)) {
-                return null;
-              }
-
+            {navItems.map((item) => {
+              if (!canSeeItem(item)) return null;
               const isActive = pathname.startsWith(item.url);
 
               return (
                 <SidebarMenuItem key={item.title}>
-                  {item.items ? (
+                  {(item as any).items ? (
                     <>
                       <SidebarMenuButton
                         tooltip={item.title}
@@ -186,18 +228,21 @@ export function AppSidebar() {
                         <span>{item.title}</span>
                       </SidebarMenuButton>
                       <SidebarMenuSub className="border-l-2 ml-6 border-primary/10">
-                        {item.items.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <Link href={subItem.url} className="contents">
-                              <SidebarMenuSubButton
-                                isActive={pathname === subItem.url}
-                                className={`h-8 text-xs font-medium ${pathname === subItem.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                              >
-                                {subItem.title}
-                              </SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        ))}
+                        {(item as any).items.map((sub: any) => {
+                          if (!canSeeItem(sub)) return null;
+                          return (
+                            <SidebarMenuSubItem key={sub.title}>
+                              <Link href={sub.url} className="contents">
+                                <SidebarMenuSubButton
+                                  isActive={pathname === sub.url}
+                                  className={`h-8 text-xs font-medium ${pathname === sub.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  {sub.title}
+                                </SidebarMenuSubButton>
+                              </Link>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
                       </SidebarMenuSub>
                     </>
                   ) : (
@@ -253,14 +298,14 @@ export function AppSidebar() {
                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                 </div>
-                <DropdownMenuItem
-                  className="rounded-lg h-10 cursor-pointer flex items-center gap-2 p-0"
-                >
-                  <Link href="/perfil" className="flex items-center gap-2 w-full h-full px-2">
-                    <Settings className="size-4 opacity-70" />
-                    <span>Configurações da Conta</span>
-                  </Link>
-                </DropdownMenuItem>
+                {!isUploadOperator && (
+                  <DropdownMenuItem className="rounded-lg h-10 cursor-pointer flex items-center gap-2 p-0">
+                    <Link href="/perfil" className="flex items-center gap-2 w-full h-full px-2">
+                      <Settings className="size-4 opacity-70" />
+                      <span>Configurações da Conta</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive rounded-lg h-10 cursor-pointer flex items-center gap-2"
                   onClick={async () => {

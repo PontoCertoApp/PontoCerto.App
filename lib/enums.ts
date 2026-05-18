@@ -43,6 +43,53 @@ export const PontoStatus = {
 } as const;
 export type PontoStatus = (typeof PontoStatus)[keyof typeof PontoStatus];
 
+export const ItemTipo = {
+  UNIFORME: "UNIFORME",
+  EPI: "EPI",
+} as const;
+export type ItemTipo = (typeof ItemTipo)[keyof typeof ItemTipo];
+
+export const EntregaTipo = {
+  GRATUITO: "GRATUITO",
+  VENDA: "VENDA",
+} as const;
+export type EntregaTipo = (typeof EntregaTipo)[keyof typeof EntregaTipo];
+
+export const AssinaturaStatus = {
+  PENDENTE: "PENDENTE",
+  ASSINADO: "ASSINADO",
+} as const;
+export type AssinaturaStatus = (typeof AssinaturaStatus)[keyof typeof AssinaturaStatus];
+
+export const ExameStatus = {
+  VALIDO: "VALIDO",
+  VENCIDO: "VENCIDO",
+  PENDENTE: "PENDENTE",
+} as const;
+export type ExameStatus = (typeof ExameStatus)[keyof typeof ExameStatus];
+
+export const VagaStatus = {
+  ABERTA: "ABERTA",
+  PREENCHIDA: "PREENCHIDA",
+  CANCELADA: "CANCELADA",
+} as const;
+export type VagaStatus = (typeof VagaStatus)[keyof typeof VagaStatus];
+
+export const ApuracaoStatus = {
+  ABERTA: "ABERTA",
+  FECHADA: "FECHADA",
+  EXPORTADA: "EXPORTADA",
+} as const;
+export type ApuracaoStatus = (typeof ApuracaoStatus)[keyof typeof ApuracaoStatus];
+
+export const MotivoCategorias = {
+  INCONSISTENCIA_PONTO: "INCONSISTENCIA_PONTO",
+  TERMO_CONDUTA: "TERMO_CONDUTA",
+  ADVERTENCIA: "ADVERTENCIA",
+  SUSPENSAO: "SUSPENSAO",
+} as const;
+export type MotivoCategorias = (typeof MotivoCategorias)[keyof typeof MotivoCategorias];
+
 export const PontoInconformidade = {
   FALTA_INJUSTIFICADA: "FALTA_INJUSTIFICADA",
   ATRASO: "ATRASO",

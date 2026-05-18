@@ -9,92 +9,118 @@ datasource db {
 }
 
 // Enums converted to Strings for maximum compatibility and to avoid production cast errors
-// Role: ADMIN | STORE_MANAGER | HR_STAFF | COLABORADOR
+// Role: ADMIN | STORE_MANAGER | HR_STAFF | COLABORADOR | UPLOAD_OPERATOR
 // ColaboradorStatus: ATIVO | INATIVO | DESLIGADO | EM_EXPERIENCIA
 // DocumentStatus: PENDENTE | ENVIADO | VALIDADO | REJEITADO
 // PenalidadeStatus: ATIVA | VENCIDA | CANCELADA
-// PenalidadeTipo: INCONSISTENCIA_PONTO | QUEDA_CONDUTA | ADVERTENCIA | SUSPENSAO
+// PenalidadeTipo: INCONSISTENCIA_PONTO | QUEDA_CONDUTA | ADVERTENCIA | SUSPENSAO | JUSTA_CAUSA
 // PremioStatus: ATIVO | PAGO | CANCELADO
 // PontoStatus: PENDENTE | VALIDADO | INCONSISTENTE
-// PontoInconformidade: FALTA_INJUSTIFICADA | ATRASO | SAIDA_ANTECIPADA | PONTO_NAO_REGISTRADO
+// ItemTipo: UNIFORME | EPI
+// EntregaTipo: GRATUITO | VENDA
+// AssinaturaStatus: PENDENTE | ASSINADO
+// ExameStatus: VALIDO | VENCIDO | PENDENTE
+// VagaStatus: ABERTA | PREENCHIDA | CANCELADA
+// ApuracaoStatus: ABERTA | FECHADA | EXPORTADA
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String       @unique
   image         String?
   password      String
-  role          String    @default("COLABORADOR")
+  role          String       @default("COLABORADOR")
   lojaId        String?
-  loja          Loja?     @relation(fields: [lojaId], references: [id])
+  loja          Loja?        @relation(fields: [lojaId], references: [id])
   teamId        String?
-  time          Time?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  colaboradorId String?   @unique
+  time          Time?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  colaboradorId String?      @unique
   colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id], onDelete: SetNull)
-  ativo         Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  ativo         Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  createdPenalidades  Penalidade[] @relation("GeradoPor")
-  editedPremios       Premio[]     @relation("EditadoPor")
-  pontoValidado       RegistroPonto[] @relation("CriadoPor")
+  createdPenalidades  Penalidade[]      @relation("GeradoPor")
+  editedPremios       Premio[]          @relation("EditadoPor")
+  pontoValidado       RegistroPonto[]   @relation("CriadoPor")
   documentosAssinados Documento[]
+  entregasGestor      EntregaUniforme[] @relation("GestorEntrega")
 }
 
 model Colaborador {
-  id                      String            @id @default(cuid())
+  id                      String   @id @default(cuid())
   nomeCompleto            String
-  cpf                     String            @unique
+  cpf                     String   @unique
   rg                      String
   dataNascimento          DateTime
   enderecoComprovantePath String?
   telefonePrincipal       String
   telefoneSecundario      String?
-  email                   String?           @unique
-  pisFotoPath            String?
+  email                   String?  @unique
+  pisFotoPath             String?
   historicoEscolarPath    String?
-  ctpsDigitalPath        String?
-  contaBancoBrasil       String
-  possuiFilhosMenores14  Boolean           @default(false)
-  certidaoFilhosPath     String?
-  fotoPerfilPath         String?
-  contratoAssinadoPath   String?
-  status                  String            @default("EM_EXPERIENCIA")
+  ctpsDigitalPath         String?
+  contaBancoBrasil        String
+  agenciaBancoBrasil      String?
+  possuiFilhosMenores14   Boolean  @default(false)
+  certidaoFilhosPath      String?
+  cpfFilhos               String[] @default([])
+  cartaoVacinaFilhosPath  String?
+  fotoPerfilPath          String?
+  contratoAssinadoPath    String?
+  status                  String   @default("EM_EXPERIENCIA")
+
+  // Dados adicionais admissionais
+  tituloEleitoral String?
+  reservista      String?
+  corDePele       String?
+
+  // Restrição interna (visível apenas ADM e RH)
+  restricaoRecontratacao Boolean @default(false)
+  observacaoInterna      String?
 
   funcaoId String
   funcao   Funcao @relation(fields: [funcaoId], references: [id])
 
-  setorId  String
-  setor    Setor  @relation(fields: [setorId], references: [id])
+  setorId String
+  setor   Setor  @relation(fields: [setorId], references: [id])
 
-  lojaId   String
-  loja     Loja   @relation(fields: [lojaId], references: [id])
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
 
-  teamId   String?
-  time     Time?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  teamId String?
+  time   Time?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
-  user     User?
+  user User?
 
-  documentos       Documento[]
-  penalidades      Penalidade[]
-  uniformes        ControleUniforme[]
-  premios          Premio[]
-  registrosPonto   RegistroPonto[]
+  documentos         Documento[]
+  penalidades        Penalidade[]
+  uniformes          ControleUniforme[]
+  premios            Premio[]
+  registrosPonto     RegistroPonto[]
+  examesColaborador  ExameColaborador[]
+  entregasUniforme   EntregaUniforme[]
+  devolucoesUniforme DevolucaoUniforme[]
+  beneficios         ApuracaoBeneficio[]
+  bancoHoras         BancoHoras[]
+  historicoCargos    HistoricoCargo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Loja {
-  id           String        @id @default(cuid())
-  nome         String
-  cidade       String?
-  ativo        Boolean       @default(true)
-  colaboradores Colaborador[]
-  usuarios      User[]
-  times         Time[]
-  estoque      EstoqueUniforme[]
+  id               String            @id @default(cuid())
+  nome             String
+  cidade           String?
+  ativo            Boolean           @default(true)
+  colaboradores    Colaborador[]
+  usuarios         User[]
+  times            Time[]
+  estoque          EstoqueUniforme[]
   pontoConsolidado RegistroPonto[]
+  vagas            Vaga[]
+  historicoCargos  HistoricoCargo[]
 }
 
 model Time {
@@ -110,50 +136,74 @@ model Time {
 }
 
 model Setor {
-  id            String        @id @default(cuid())
-  nome          String
-  colaboradores Colaborador[]
-  funcoes       Funcao[]
+  id              String           @id @default(cuid())
+  nome            String
+  colaboradores   Colaborador[]
+  funcoes         Funcao[]
+  historicoCargos HistoricoCargo[]
 }
 
 model Funcao {
-  id           String        @id @default(cuid())
-  nome         String
-  setorId      String
-  setor        Setor         @relation(fields: [setorId], references: [id])
-  salarioBase  Float
+  id          String @id @default(cuid())
+  nome        String
+  setorId     String
+  setor       Setor  @relation(fields: [setorId], references: [id])
+  salarioBase Float  @default(0)
 
-  colaboradores Colaborador[]
-  premios      PremioTemplate[]
-  uniformes    UniformeTemplate[]
+  // Benefícios e atributos por função
+  exames               String[] @default([]) // ASO | HEMOGRAMA | PARASITOLOGICO | TOXICOLOGICO
+  prazoRenovacaoExame  Int      @default(12) // em meses
+  valorValeAlimentacao Decimal? @db.Decimal(10, 2)
+  valorPontualidade    Decimal? @db.Decimal(10, 2)
+  tipoPremio           String? // meta_perca | meta_venda | campanha | reverso_cancelamentos
+  tempoTrocaUniforme   Int      @default(12) // em meses
+  ativo                Boolean  @default(true)
+
+  colaboradores          Colaborador[]
+  premios                PremioTemplate[]
+  uniformes              UniformeTemplate[]
+  perfisUniforme         PerfilUniforme[]
+  documentosObrigatorios FuncaoDocumento[]
+  vagas                  Vaga[]
+  examesColaborador      ExameColaborador[]
+  historicoCargos        HistoricoCargo[]
 }
 
 model Documento {
-  id            String         @id @default(cuid())
+  id            String      @id @default(cuid())
   colaboradorId String
-  colaborador   Colaborador    @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
   nome          String
   path          String
-  status        String         @default("PENDENTE")
+  status        String      @default("PENDENTE")
   observacao    String?
   validadoPorId String?
-  validadoPor   User?          @relation(fields: [validadoPorId], references: [id], onDelete: SetNull)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  validadoPor   User?       @relation(fields: [validadoPorId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Penalidade {
-  id             String           @id @default(cuid())
-  colaboradorId  String
-  colaborador    Colaborador      @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
-  tipo           String
-  descricao      String
-  dataOcorrencia DateTime
-  validadeAte    DateTime
-  status         String           @default("ATIVA")
-  geradoPorId    String
-  geradoPor      User             @relation("GeradoPor", fields: [geradoPorId], references: [id])
-  notificacaoEnviada Boolean      @default(false)
+  id                 String      @id @default(cuid())
+  colaboradorId      String
+  colaborador        Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  tipo               String // INCONSISTENCIA_PONTO | QUEDA_CONDUTA | ADVERTENCIA | SUSPENSAO | JUSTA_CAUSA
+  descricao          String
+  dataOcorrencia     DateTime
+  validadeAte        DateTime
+  status             String      @default("ATIVA")
+  geradoPorId        String
+  geradoPor          User        @relation("GeradoPor", fields: [geradoPorId], references: [id])
+  notificacaoEnviada Boolean     @default(false)
+
+  // Campos disciplinares aprimorados
+  motivo                String? // Texto detalhado do motivo (mín 50 chars)
+  motivoPreCadastradoId String?
+  motivoPreCadastrado   MotivoPreCadastrado? @relation(fields: [motivoPreCadastradoId], references: [id], onDelete: SetNull)
+  diasSuspensao         Int? // Para tipo SUSPENSAO
+  pdfUrl                String?
+  contadorMotivo        Int                  @default(0) // ocorrências acumuladas deste motivo no período
+  proximoNivel          String? // aviso proativo: próxima progressão
 
   registroPontoId String?        @unique
   registroPonto   RegistroPonto? @relation(fields: [registroPontoId], references: [id], onDelete: SetNull)
@@ -163,73 +213,256 @@ model Penalidade {
 }
 
 model Premio {
-  id            String       @id @default(cuid())
-  colaboradorId String
-  colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
-  tipo          String
-  valorOriginal Float
-  valorFinal    Float
+  id             String      @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  tipo           String
+  valorOriginal  Float
+  valorFinal     Float
   dataReferencia DateTime
   validadeAte    DateTime?
-  status         String       @default("ATIVO")
+  status         String      @default("ATIVO")
   editadoPorId   String?
-  editadoPor     User?        @relation("EditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
+  editadoPor     User?       @relation("EditadoPor", fields: [editadoPorId], references: [id], onDelete: SetNull)
   observacao     String?
 
   createdAt DateTime @default(now())
 }
 
 model RegistroPonto {
-  id             String               @id @default(cuid())
-  colaboradorId  String
-  colaborador    Colaborador          @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
-  data           DateTime
-  tipo           String?
-  justificativa  String?
-  status         String               @default("PENDENTE")
-  rapGerado      Boolean              @default(false)
+  id            String      @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  data          DateTime
+  tipo          String?
+  justificativa String?
+  status        String      @default("PENDENTE")
+  rapGerado     Boolean     @default(false)
 
-  penalidade     Penalidade?
+  penalidade Penalidade?
 
-  criadoPorId    String
-  criadoPor      User                 @relation("CriadoPor", fields: [criadoPorId], references: [id])
-  lojaId         String?
-  loja           Loja?                @relation(fields: [lojaId], references: [id], onDelete: SetNull)
+  criadoPorId String
+  criadoPor   User    @relation("CriadoPor", fields: [criadoPorId], references: [id])
+  lojaId      String?
+  loja        Loja?   @relation(fields: [lojaId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 }
 
 model ControleUniforme {
-  id             String      @id @default(cuid())
-  colaboradorId  String
-  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
-  item           String
-  tamanho        String
-  dataRecebimento DateTime
+  id                String      @id @default(cuid())
+  colaboradorId     String
+  colaborador       Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  item              String
+  tamanho           String
+  dataRecebimento   DateTime
   dataTrocaPrevista DateTime?
-  devolvido      Boolean     @default(false)
+  devolvido         Boolean     @default(false)
   fotoDevolucaoPath String?
 
   createdAt DateTime @default(now())
 }
 
 model EstoqueUniforme {
-  id      String @id @default(cuid())
-  lojaId  String
-  loja    Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
-  item    String
-  tamanho String
-  quantidade Int @default(0)
+  id         String @id @default(cuid())
+  lojaId     String
+  loja       Loja   @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  item       String
+  tamanho    String
+  quantidade Int    @default(0)
 }
 
 model PremioTemplate {
-  id       String   @id @default(cuid())
-  nome     String
-  funcoes  Funcao[]
+  id      String   @id @default(cuid())
+  nome    String
+  funcoes Funcao[]
 }
 
 model UniformeTemplate {
-  id       String   @id @default(cuid())
-  nome     String
-  funcoes  Funcao[]
+  id      String   @id @default(cuid())
+  nome    String
+  funcoes Funcao[]
+}
+
+// ─── NOVOS MODELOS ────────────────────────────────────────────────────────────
+
+model Vaga {
+  id               String    @id @default(cuid())
+  funcaoId         String
+  funcao           Funcao    @relation(fields: [funcaoId], references: [id])
+  lojaId           String
+  loja             Loja      @relation(fields: [lojaId], references: [id])
+  quantidadeMaxima Int
+  quantidadeAtual  Int       @default(0)
+  status           String    @default("ABERTA") // ABERTA | PREENCHIDA | CANCELADA
+  dataAbertura     DateTime  @default(now())
+  dataFechamento   DateTime?
+  observacao       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ItemUniforme {
+  id         String              @id @default(cuid())
+  nome       String
+  tipo       String // UNIFORME | EPI
+  valor      Decimal?            @db.Decimal(10, 2)
+  ativo      Boolean             @default(true)
+  perfis     PerfilUniforme[]
+  entregas   EntregaUniforme[]
+  devolucoes DevolucaoUniforme[]
+}
+
+model PerfilUniforme {
+  id              String       @id @default(cuid())
+  funcaoId        String
+  funcao          Funcao       @relation(fields: [funcaoId], references: [id])
+  itemId          String
+  item            ItemUniforme @relation(fields: [itemId], references: [id])
+  quantidade      Int
+  // Armazenado aqui para que relatórios reflitam o prazo do item e não apenas da função
+  tempoTrocaMeses Int
+}
+
+model EntregaUniforme {
+  id               String       @id @default(cuid())
+  colaboradorId    String
+  colaborador      Colaborador  @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  itemId           String
+  item             ItemUniforme @relation(fields: [itemId], references: [id])
+  tipo             String // GRATUITO | VENDA
+  dataEntrega      DateTime
+  dataVencimento   DateTime // dataEntrega + tempoTrocaMeses da função
+  valor            Decimal?     @db.Decimal(10, 2)
+  documentoUrl     String?
+  statusAssinatura String       @default("PENDENTE") // PENDENTE | ASSINADO
+  gestorId         String
+  gestor           User         @relation("GestorEntrega", fields: [gestorId], references: [id])
+  createdAt        DateTime     @default(now())
+}
+
+model DevolucaoUniforme {
+  id                String       @id @default(cuid())
+  colaboradorId     String
+  colaborador       Colaborador  @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  itemId            String
+  item              ItemUniforme @relation(fields: [itemId], references: [id])
+  dataDevoluicao    DateTime
+  statusConservacao String?
+  documentoUrl      String?
+  observacao        String?
+  fotoUrl           String?
+  createdAt         DateTime     @default(now())
+}
+
+model ExameColaborador {
+  id             String      @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  funcaoId       String
+  funcao         Funcao      @relation(fields: [funcaoId], references: [id])
+  tipoExame      String // ASO | HEMOGRAMA | PARASITOLOGICO | TOXICOLOGICO
+  dataRealizacao DateTime
+  // dataRealizacao + prazoRenovacaoExame (padrão 12 meses)
+  dataVencimento DateTime
+  documentoUrl   String?
+  status         String      @default("VALIDO") // VALIDO | VENCIDO | PENDENTE
+  createdAt      DateTime    @default(now())
+}
+
+// Configuração de progressão disciplinar — valores padrão reais conforme planilha
+model ConfiguracaoProgressao {
+  id                                      String   @id @default(cuid())
+  inconsistenciasParaTermoConduta         Int      @default(3)
+  inconsistenciasParaAdvertencia          Int      @default(5)
+  termosCondutaMesmoMotivoParaAdvertencia Int      @default(4)
+  advertenciasParaSuspensao1dia           Int      @default(3)
+  advertenciasParaSuspensao2dias          Int      @default(4)
+  advertenciasParaSuspensao3dias          Int      @default(5)
+  advertenciasParaSuspensao7dias          Int      @default(6)
+  ativa                                   Boolean  @default(true)
+  ultimoResetEm                           DateTime @default(now())
+  criadoEm                                DateTime @default(now())
+  atualizadoEm                            DateTime @updatedAt
+}
+
+model MotivoPreCadastrado {
+  id          String       @id @default(cuid())
+  texto       String
+  // INCONSISTENCIA_PONTO | TERMO_CONDUTA | ADVERTENCIA | SUSPENSAO
+  categoria   String
+  ativo       Boolean      @default(true)
+  ordem       Int          @default(0)
+  penalidades Penalidade[]
+}
+
+model TipoDocumento {
+  id          String            @id @default(cuid())
+  nome        String
+  // OPERACIONAL | ADMISSIONAL | DISCIPLINAR | BENEFICIO
+  categoria   String
+  obrigatorio Boolean           @default(false)
+  ativo       Boolean           @default(true)
+  ordem       Int               @default(0)
+  funcoes     FuncaoDocumento[]
+}
+
+model FuncaoDocumento {
+  id        String        @id @default(cuid())
+  funcaoId  String
+  funcao    Funcao        @relation(fields: [funcaoId], references: [id])
+  tipoDocId String
+  tipoDoc   TipoDocumento @relation(fields: [tipoDocId], references: [id])
+}
+
+model ApuracaoBeneficio {
+  id                     String      @id @default(cuid())
+  colaboradorId          String
+  colaborador            Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  competencia            DateTime // dia 1 do mês de referência
+  valorValeBase          Decimal     @db.Decimal(10, 2)
+  descontosVale          Decimal     @default(0) @db.Decimal(10, 2)
+  valorValeFinal         Decimal     @db.Decimal(10, 2)
+  valorPontualidadeBase  Decimal     @db.Decimal(10, 2)
+  descontosPontualidade  Decimal     @default(0) @db.Decimal(10, 2)
+  valorPontualidadeFinal Decimal     @db.Decimal(10, 2)
+  valorPremio            Decimal?    @db.Decimal(10, 2)
+  zerouVale              Boolean     @default(false)
+  zerouPontualidade      Boolean     @default(false)
+  // ABERTA | FECHADA | EXPORTADA
+  statusApuracao         String      @default("ABERTA")
+  criadoEm               DateTime    @default(now())
+  fechadoEm              DateTime?
+}
+
+model BancoHoras {
+  id               String      @id @default(cuid())
+  colaboradorId    String
+  colaborador      Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  competencia      DateTime // dia 1 do mês de referência
+  horasAcumuladas  Decimal     @default(0) @db.Decimal(6, 2)
+  horasCompensadas Decimal     @default(0) @db.Decimal(6, 2)
+  saldoHoras       Decimal     @default(0) @db.Decimal(6, 2)
+  tipo             String // CREDITO | DEBITO
+  observacao       String?
+  registradoPorId  String?
+  criadoEm         DateTime    @default(now())
+  atualizadoEm     DateTime    @updatedAt
+}
+
+model HistoricoCargo {
+  id            String      @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  funcaoId      String
+  funcao        Funcao      @relation(fields: [funcaoId], references: [id])
+  setorId       String
+  setor         Setor       @relation(fields: [setorId], references: [id])
+  lojaId        String
+  loja          Loja        @relation(fields: [lojaId], references: [id])
+  dataInicio    DateTime
+  dataFim       DateTime?
+  // ADMISSAO | TRANSFERENCIA | PROMOCAO | DESLIGAMENTO
+  motivo        String?
+  criadoEm      DateTime    @default(now())
 }
