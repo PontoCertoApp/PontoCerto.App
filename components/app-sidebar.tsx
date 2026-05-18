@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -162,6 +163,31 @@ export function AppSidebar() {
   const pathname = usePathname();
   const user = session?.user;
 
+  // Estado para controlar quais submenus estão expandidos
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
+
+  // Inicializa o estado de expandido baseado no pathname atual
+  useEffect(() => {
+    const initialExpanded: Record<string, boolean> = {};
+    items.forEach((item) => {
+      if (item.items) {
+        // Se alguma subpágina estiver ativa ou o path iniciar com a url do menu pai, expande por padrão
+        const isChildActive = item.items.some(sub => pathname === sub.url);
+        if (isChildActive || pathname.startsWith(item.url)) {
+          initialExpanded[item.title] = true;
+        }
+      }
+    });
+    setExpandedMenus(initialExpanded);
+  }, [pathname]);
+
+  const toggleMenu = (title: string) => {
+    setExpandedMenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   const userRole = (user?.role || "").toUpperCase();
   const isUploadOperator = userRole === "UPLOAD_OPERATOR";
 
@@ -222,28 +248,34 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         tooltip={item.title}
                         isActive={isActive}
-                        className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                        onClick={() => toggleMenu(item.title)}
+                        className={`font-semibold h-10 transition-all rounded-lg ${isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"} w-full flex items-center justify-between cursor-pointer`}
                       >
-                        <item.icon className={`size-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                        <span>{item.title}</span>
+                        <div className="flex items-center gap-3">
+                          <item.icon className={`size-5 ${isActive ? "text-primary animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`} />
+                          <span>{item.title}</span>
+                        </div>
+                        <ChevronDown className={`size-4 transition-transform duration-200 ${expandedMenus[item.title] ? "rotate-180" : ""}`} />
                       </SidebarMenuButton>
-                      <SidebarMenuSub className="border-l-2 ml-6 border-primary/10">
-                        {(item as any).items.map((sub: any) => {
-                          if (!canSeeItem(sub)) return null;
-                          return (
-                            <SidebarMenuSubItem key={sub.title}>
-                              <Link href={sub.url} className="contents">
-                                <SidebarMenuSubButton
-                                  isActive={pathname === sub.url}
-                                  className={`h-8 text-xs font-medium ${pathname === sub.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                  {sub.title}
-                                </SidebarMenuSubButton>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          );
-                        })}
-                      </SidebarMenuSub>
+                      {expandedMenus[item.title] && (
+                        <SidebarMenuSub className="border-l-2 ml-6 border-primary/10 transition-all duration-300 animate-in fade-in slide-in-from-top-1">
+                          {(item as any).items.map((sub: any) => {
+                            if (!canSeeItem(sub)) return null;
+                            return (
+                              <SidebarMenuSubItem key={sub.title}>
+                                <Link href={sub.url} className="contents">
+                                  <SidebarMenuSubButton
+                                    isActive={pathname === sub.url}
+                                    className={`h-8 text-xs font-medium ${pathname === sub.url ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                                  >
+                                    {sub.title}
+                                  </SidebarMenuSubButton>
+                                </Link>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
+                        </SidebarMenuSub>
+                      )}
                     </>
                   ) : (
                     <Link href={item.url} className="contents">
